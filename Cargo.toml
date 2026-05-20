@@ -1,0 +1,9 @@
+[package]
+name = "git-ai"
+version = "3.0.0"
+edition = "2021"
+
+[dependencies]
+arboard = "3.4.0"      # Xử lý Clipboard cross-platform (thay cho pbcopy/pbpaste)
+colored = "2.1.0"      # Màu sắc terminal chuẩn trên cả Windows lẫn Mac
+crossterm = "0.27.0"   # Đọc duy nhất 1 phím ấn (thay cho read -k 1)
