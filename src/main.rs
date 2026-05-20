@@ -3,36 +3,107 @@ use colored::*;
 use crossterm::event::{read, Event, KeyCode};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use std::env;
-use std::fs::OpenOptions;
+use std::error::Error;
+use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
+use std::path::PathBuf;
 use std::process::Command;
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!(
-            "{}",
-            "❌ Vui lòng chọn lệnh: 'diff', 'go', 'install' hoặc 'uninstall'".red()
-        );
-        return;
-    }
+// Sử dụng Result chung để bắt lỗi an toàn, chống crash app
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
-    match args[1].as_str() {
-        "diff" => handle_diff(),
-        "go" => handle_go(),
-        "install" => handle_install(),
-        "uninstall" => handle_uninstall(),
+const MARKERS: &[&str] = &[
+    "# ULTIMATE GIT-AI WORKFLOW",
+    "alias git-copydiff",
+    "alias git-go",
+    "alias git-ai-uninstall",
+    "alias git-ai=",
+    "function git-copydiff",
+    "function git-go",
+    "function git-ai-uninstall",
+    "function git-ai",
+];
+
+fn main() {
+    if let Err(e) = run() {
+        eprintln!("\n{} {}", "❌ Đã xảy ra lỗi:".red().bold(), e);
+    }
+}
+
+// Router điều hướng lệnh
+fn run() -> Result<()> {
+    let args: Vec<String> = env::args().collect();
+    let cmd = args.get(1).map(|s| s.as_str()).unwrap_or("");
+
+    match cmd {
+        "diff" => handle_diff()?,
+        "go" => handle_go()?,
+        "install" => handle_install()?,
+        "uninstall" => handle_uninstall()?,
+        "help" | "--help" | "-h" | "" => handle_help(), // Tự động gọi help khi gõ "git-ai"
         _ => println!(
-            "{}",
-            "❌ Lệnh không hợp lệ. Chỉ dùng 'diff', 'go', 'install' hoặc 'uninstall'.".red()
+            "\n{} {}\n",
+            "❌ Lệnh không hợp lệ.".red().bold(),
+            "Vui lòng gõ 'git-ai help' để xem danh sách lệnh.".yellow()
         ),
     }
+    Ok(())
+}
+
+// =========================================================================
+// MENU HƯỚNG DẪN SỬ DỤNG (HELP)
+// =========================================================================
+fn handle_help() {
+    println!("\n{}", "🤖 ULTIMATE GIT-AI CLI".bold().cyan());
+    println!(
+        "{}",
+        "Công cụ hỗ trợ viết Git Commit bằng AI nhanh chóng.\n".italic()
+    );
+
+    println!("{}", "📌 DANH SÁCH LỆNH:".bold().yellow());
+    println!(
+        "  {:<12} {}",
+        "diff".green().bold(),
+        ": Quét code thay đổi, tạo Prompt & copy vào Clipboard để gửi AI."
+    );
+    println!(
+        "  {:<12} {}",
+        "go".green().bold(),
+        ": Đọc commit message từ Clipboard, tự động Add, Commit & Push."
+    );
+    println!(
+        "  {:<12} {}",
+        "install".green().bold(),
+        ": Cấu hình phím tắt (git-copydiff, git-go) vào Terminal."
+    );
+    println!(
+        "  {:<12} {}",
+        "uninstall".green().bold(),
+        ": Gỡ bỏ cấu hình phím tắt khỏi hệ thống."
+    );
+    println!(
+        "  {:<12} {}",
+        "help, -h".green().bold(),
+        ": Hiển thị bảng hướng dẫn này.\n"
+    );
+
+    println!("{}", "💡 QUY TRÌNH SỬ DỤNG CHUẨN:".bold().magenta());
+    println!(
+        "  1. Sửa code xong, gõ `{}` để quét thay đổi.",
+        "git-ai diff".cyan()
+    );
+    println!("  2. Dán (Ctrl+V) nội dung vào ChatGPT/Claude/Gemini.");
+    println!("  3. Copy lại câu trả lời (commit message) của AI.");
+    println!(
+        "  4. Gõ `{}` để tool tự động đóng gói và đẩy code lên git.\n",
+        "git-ai go".cyan()
+    );
 }
 
 // =========================================================================
 // TỰ ĐỘNG GỠ BỎ CẤU HÌNH (CROSS-PLATFORM UNINSTALL)
 // =========================================================================
-fn handle_uninstall() {
+fn handle_uninstall() -> Result<()> {
     println!(
         "{}",
         "🗑️  Đang tiến hành gỡ bỏ cấu hình khỏi hệ thống..."
@@ -40,86 +111,43 @@ fn handle_uninstall() {
             .red()
     );
 
-    // CẤU HÌNH GỠ CHO MACOS / LINUX
     #[cfg(target_family = "unix")]
     {
-        let home = env::var("HOME").expect("Không tìm thấy thư mục HOME");
-        let zshrc_path = format!("{}/.zshrc", home);
+        let profiles = get_unix_profiles();
+        let mut found = false;
 
-        if std::path::Path::new(&zshrc_path).exists() {
-            let content =
-                std::fs::read_to_string(&zshrc_path).expect("Không thể đọc file ~/.zshrc");
-            let lines: Vec<&str> = content.lines().collect();
-
-            // Lọc bỏ sạch sẽ tất cả các dòng liên quan đến git-ai
-            let mut filtered_lines = Vec::new();
-            for line in lines {
-                if !line.contains("# ULTIMATE GIT-AI WORKFLOW")
-                    && !line.contains("alias git-copydiff=")
-                    && !line.contains("alias git-go=")
-                    && !line.contains("alias git-ai-uninstall=")
-                    && !line.contains("alias git-ai=")
-                {
-                    filtered_lines.push(line);
-                }
+        for profile in profiles {
+            if clean_profile_file(&profile)? {
+                println!(
+                    "{} {}",
+                    "✅ Đã gỡ bỏ thành công khỏi".green().bold(),
+                    profile.display()
+                );
+                found = true;
             }
+        }
 
-            let new_content = filtered_lines.join("\n") + "\n";
-            std::fs::write(&zshrc_path, new_content).expect("Không thể ghi lại file ~/.zshrc");
-
+        if found {
             println!(
                 "{}",
-                "✅ Đã gỡ bỏ hoàn toàn các alias khỏi ~/.zshrc!"
-                    .green()
-                    .bold()
-            );
-            println!(
-                "{}",
-                "👉 Vui lòng chạy lệnh: source ~/.zshrc để áp dụng.".yellow()
+                "👉 Vui lòng khởi động lại Terminal hoặc chạy 'source ~/.zshrc' để áp dụng."
+                    .yellow()
             );
         } else {
             println!(
                 "{}",
-                "ℹ️ Không tìm thấy file ~/.zshrc để gỡ cấu hình.".yellow()
+                "ℹ️ Không tìm thấy cấu hình git-ai nào để gỡ.".yellow()
             );
         }
     }
 
-    // CẤU HÌNH GỠ CHO WINDOWS (POWERSHELL)
     #[cfg(target_os = "windows")]
     {
-        let output = Command::new("powershell")
-            .args(["-Command", "$PROFILE"])
-            .output()
-            .expect("Không thể kiểm tra Profile của PowerShell");
-
-        let profile_path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        let profile_path = std::path::Path::new(&profile_path_str);
-
-        if profile_path.exists() {
-            let content = std::fs::read_to_string(profile_path)
-                .expect("Không thể đọc file PowerShell Profile");
-            let lines: Vec<&str> = content.lines().collect();
-
-            let mut filtered_lines = Vec::new();
-            for line in lines {
-                if !line.contains("# ULTIMATE GIT-AI WORKFLOW")
-                    && !line.contains("function git-copydiff")
-                    && !line.contains("function git-go")
-                    && !line.contains("function git-ai-uninstall")
-                    && !line.contains("function git-ai")
-                {
-                    filtered_lines.push(line);
-                }
-            }
-
-            let new_content = filtered_lines.join("\n") + "\n";
-            std::fs::write(profile_path, new_content)
-                .expect("Không thể ghi lại file PowerShell Profile");
-
+        let profile = get_windows_profile()?;
+        if clean_profile_file(&profile)? {
             println!(
                 "{}",
-                "✅ Đã gỡ bỏ các functions khỏi PowerShell Profile!"
+                "✅ Đã gỡ bỏ các chức năng khỏi PowerShell Profile!"
                     .green()
                     .bold()
             );
@@ -134,13 +162,14 @@ fn handle_uninstall() {
             );
         }
     }
+    Ok(())
 }
 
 // =========================================================================
 // TỰ ĐỘNG CẤU HÌNH HỆ THỐNG (CROSS-PLATFORM AUTO INSTALL)
 // =========================================================================
-fn handle_install() {
-    let exe_path = env::current_exe().expect("Không thể xác định đường dẫn file thực thi");
+fn handle_install() -> Result<()> {
+    let exe_path = env::current_exe()?;
     let exe_str = exe_path.to_string_lossy();
 
     println!(
@@ -150,67 +179,39 @@ fn handle_install() {
             .blue()
     );
 
-    // CẤU HÌNH CHO MACOS (Thêm luôn lệnh gốc git-ai và lệnh gỡ cài đặt nhanh)
     #[cfg(target_family = "unix")]
     {
-        let home = env::var("HOME").expect("Không tìm thấy thư mục HOME");
-        let zshrc_path = format!("{}/.zshrc", home);
+        let profiles = get_unix_profiles();
+        // Ưu tiên cài vào file profile đang tồn tại
+        let target_profile = profiles.iter().find(|p| p.exists()).unwrap_or(&profiles[0]);
 
         let alias_lines = format!(
             "\n# ULTIMATE GIT-AI WORKFLOW\nalias git-copydiff=\"'{}' diff\"\nalias git-go=\"'{}' go\"\nalias git-ai-uninstall=\"'{}' uninstall\"\nalias git-ai=\"'{}'\"\n",
             exe_str, exe_str, exe_str, exe_str
         );
 
-        let mut file = OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(&zshrc_path)
-            .expect("Không thể mở file ~/.zshrc");
-
-        file.write_all(alias_lines.as_bytes())
-            .expect("Không thể ghi vào ~/.zshrc");
+        append_to_file(target_profile, &alias_lines)?;
 
         println!(
             "{}",
-            "✅ Cấu hình thành công! Đã thêm các lệnh vào ~/.zshrc:"
+            "✅ Cấu hình thành công! Đã thêm các phím tắt:"
                 .green()
                 .bold()
         );
+        print_commands_help();
         println!(
-            "{}",
-            "  -> git-copydiff       : Chụp snapshot code diff".cyan()
-        );
-        println!(
-            "{}",
-            "  -> git-go             : Tiến hành deploy lên mây".cyan()
-        );
-        println!(
-            "{}",
-            "  -> git-ai-uninstall   : Gỡ cài đặt bộ tool này".cyan()
-        );
-        println!(
-            "{}",
-            "  -> git-ai             : Lệnh gốc (ví dụ: git-ai diff)".cyan()
-        );
-        println!(
-            "\n{}",
-            "👉 Vui lòng chạy lệnh: source ~/.zshrc để kích hoạt ngay lập tức.".yellow()
+            "\n{} {}",
+            "👉 Vui lòng chạy lệnh:".yellow(),
+            format!("source {}", target_profile.display()).cyan()
         );
     }
 
-    // CẤU HÌNH CHO WINDOWS (POWERSHELL)
     #[cfg(target_os = "windows")]
     {
-        let output = Command::new("powershell")
-            .args(["-Command", "$PROFILE"])
-            .output()
-            .expect("Không thể kiểm tra Profile của PowerShell");
-
-        let profile_path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        let profile_path = std::path::Path::new(&profile_path_str);
+        let profile_path = get_windows_profile()?;
 
         if let Some(parent) = profile_path.parent() {
-            std::fs::create_dir_all(parent).expect("Không thể tạo thư mục Profile");
+            fs::create_dir_all(parent)?;
         }
 
         let func_lines = format!(
@@ -218,154 +219,197 @@ fn handle_install() {
             exe_str, exe_str, exe_str, exe_str
         );
 
-        let mut file = OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(profile_path)
-            .expect("Không thể mở file PowerShell Profile");
-
-        file.write_all(func_lines.as_bytes())
-            .expect("Không thể ghi vào PowerShell Profile");
+        append_to_file(&profile_path, &func_lines)?;
 
         println!(
             "{}",
-            "✅ Cấu hình thành công! Đã thêm các lệnh vào PowerShell Profile:"
+            "✅ Cấu hình thành công! Đã thêm các phím tắt:"
                 .green()
                 .bold()
         );
-        println!(
-            "{}",
-            "  -> git-copydiff       : Chụp snapshot code diff".cyan()
-        );
-        println!(
-            "{}",
-            "  -> git-go             : Tiến hành deploy lên mây".cyan()
-        );
-        println!(
-            "{}",
-            "  -> git-ai-uninstall   : Gỡ cài đặt bộ tool này".cyan()
-        );
-        println!("{}", "  -> git-ai             : Lệnh gốc".cyan());
+        print_commands_help();
         println!(
             "\n{}",
             "👉 Vui lòng khởi động lại PowerShell để kích hoạt các lệnh mới.".yellow()
         );
     }
+    Ok(())
 }
 
 // 1. CHỨC NĂNG SNAPSHOT CAPTURE (git-ai diff)
-fn handle_diff() {
-    let output = Command::new("git")
-        .args(["diff"])
-        .output()
-        .expect("Không thể chạy lệnh git. Hãy chắc chắn git đã được cài đặt.");
-
+fn handle_diff() -> Result<()> {
+    let output = Command::new("git").args(["diff"]).output()?;
     let diff_str = String::from_utf8_lossy(&output.stdout);
 
     if diff_str.trim().is_empty() {
         println!(
             "\n{}",
-            "⚠️ [SYSTEM]: Không phát hiện thay đổi nào trong code. Hủy chụp snapshot!"
+            "⚠️ [HỆ THỐNG]: Không phát hiện thay đổi nào trong code. Đã hủy chụp snapshot!"
                 .yellow()
                 .bold()
         );
-        return;
+        return Ok(());
     }
 
     let prompt = format!(
-        r#"Act as an expert developer. Output ONLY the raw commit message for the diff below. Rules: 1. Subject line: Conventional Commits, < 50 chars. 2. Blank line. 3. Body: 1-2 extremely short sentences explaining WHAT and WHY. Be direct, no fluff. STRICTLY NO markdown formatting (no ```), NO preamble, NO greetings. Diff:
-
-{}"#,
+        "Act as an expert developer. Output ONLY the raw commit message for the diff below. Rules: 1. Subject line: Conventional Commits, < 50 chars. 2. Blank line. 3. Body: 1-2 extremely short sentences explaining WHAT and WHY. Be direct, no fluff. STRICTLY NO markdown formatting (no ```), NO preamble, NO greetings. Diff:\n\n{}",
         diff_str
     );
 
-    let mut clipboard = Clipboard::new().expect("Không thể kết nối tới Clipboard hệ thống.");
-    clipboard
-        .set_text(prompt)
-        .expect("Không thể ghi vào Clipboard.");
+    let mut clipboard = Clipboard::new()?;
+    clipboard.set_text(prompt)?;
 
     println!(
         "\n{}",
-        "✨ [SYSTEM]: Snapshot captured (Short & Direct). Feed the AI beast! 🤖"
+        "✨ [HỆ THỐNG]: Đã chụp snapshot. Hãy dán (Ctrl+V) vào AI để lấy commit message! 🤖"
             .magenta()
             .bold()
     );
+    Ok(())
 }
 
 // 2. CHỨC NĂNG AUTO-DEPLOY (git-ai go)
-fn handle_go() {
-    println!("\n{}", "📂 [CHANGELOG PREVIEW]".cyan().bold());
+fn handle_go() -> Result<()> {
+    println!("\n{}", "📂 [XEM TRƯỚC THAY ĐỔI]".cyan().bold());
 
-    let status_cmd = Command::new("git")
-        .args(["status", "-s"])
-        .status()
-        .expect("Không thể lấy trạng thái git.");
-
+    let status_cmd = Command::new("git").args(["status", "-s"]).status()?;
     if !status_cmd.success() {
-        return;
+        return Ok(());
     }
 
-    let mut clipboard = Clipboard::new().expect("Không thể mở Clipboard.");
-    let commit_msg = clipboard.get_text().unwrap_or_else(|_| "".to_string());
+    let mut clipboard = Clipboard::new()?;
+    let commit_msg = clipboard.get_text().unwrap_or_default();
 
-    println!("\n{}", "💬 [AI-CRAFTED MESSAGE]".magenta().bold());
+    println!("\n{}", "💬 [NỘI DUNG COMMIT TỪ AI]".magenta().bold());
     println!("{}", commit_msg.green());
     println!();
 
-    print!("{}", "🚀 Execute deployment? (Y/n): ".yellow().bold());
-    io::stdout().flush().unwrap();
+    if ask_confirm("🚀 Xác nhận deploy (commit & push)? (Y/n): ")? {
+        println!("{}", "⚡ Đang tiến hành đẩy code...".blue().bold());
 
-    enable_raw_mode().unwrap();
-
-    let execute_deploy = loop {
-        if let Ok(Event::Key(key_event)) = read() {
-            match key_event.code {
-                KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    break true;
-                }
-                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
-                    break false;
-                }
-                _ => {}
-            }
+        if !Command::new("git").args(["add", "."]).status()?.success() {
+            return Ok(());
         }
-    };
-
-    disable_raw_mode().unwrap();
-    println!();
-
-    if execute_deploy {
-        println!("{}", "⚡ Priming engines...".blue().bold());
-
-        let add_ok = Command::new("git")
-            .args(["add", "."])
-            .status()
-            .map_or(false, |s| s.success());
-        if !add_ok {
-            return;
-        }
-
-        let commit_ok = Command::new("git")
+        if !Command::new("git")
             .args(["commit", "-m", &commit_msg])
-            .status()
-            .map_or(false, |s| s.success());
-        if !commit_ok {
-            return;
+            .status()?
+            .success()
+        {
+            return Ok(());
         }
 
-        let push_ok = Command::new("git")
-            .args(["push"])
-            .status()
-            .map_or(false, |s| s.success());
-        if push_ok {
+        if Command::new("git").args(["push"]).status()?.success() {
             println!(
                 "\n{}",
-                "✅ Mission Accomplished. Code is in the clouds! ☁️"
+                "✅ Hoàn tất. Code đã được đẩy lên mây thành công! ☁️"
                     .green()
                     .bold()
             );
         }
     } else {
-        println!("\n{}", "❌ Mission Aborted. Stand down.".red().bold());
+        println!("\n{}", "❌ Đã hủy quá trình deploy.".red().bold());
     }
+    Ok(())
+}
+
+// =========================================================================
+// HELPER FUNCTIONS (CÁC HÀM HỖ TRỢ CHUẨN DRY)
+// =========================================================================
+
+#[cfg(target_family = "unix")]
+fn get_unix_profiles() -> Vec<PathBuf> {
+    let home = env::var("HOME").unwrap_or_else(|_| "~".to_string());
+    // Hỗ trợ cả zsh và bash
+    vec![
+        PathBuf::from(format!("{}/.zshrc", home)),
+        PathBuf::from(format!("{}/.bashrc", home)),
+    ]
+}
+
+#[cfg(target_os = "windows")]
+fn get_windows_profile() -> Result<PathBuf> {
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-Command", "Write-Output $PROFILE"]) // Dùng -NoProfile để load nhanh hơn
+        .output()?;
+    let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    Ok(PathBuf::from(path_str))
+}
+
+fn clean_profile_file(path: &PathBuf) -> Result<bool> {
+    if !path.exists() {
+        return Ok(false);
+    }
+
+    let content = fs::read_to_string(path)?;
+    let lines: Vec<&str> = content.lines().collect();
+    let mut filtered_lines = Vec::new();
+    let mut changed = false;
+
+    for line in lines {
+        if MARKERS.iter().any(|&m| line.contains(m)) {
+            changed = true;
+        } else {
+            filtered_lines.push(line);
+        }
+    }
+
+    if changed {
+        let new_content = filtered_lines.join("\n") + "\n";
+        fs::write(path, new_content)?;
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+fn append_to_file(path: &PathBuf, content: &str) -> Result<()> {
+    let mut file = OpenOptions::new().append(true).create(true).open(path)?;
+    file.write_all(content.as_bytes())?;
+    Ok(())
+}
+
+fn ask_confirm(prompt: &str) -> Result<bool> {
+    print!("{}", prompt.yellow().bold());
+    io::stdout().flush()?;
+
+    enable_raw_mode()?;
+    let mut confirm = false;
+
+    loop {
+        if let Event::Key(key_event) = read()? {
+            match key_event.code {
+                KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
+                    confirm = true;
+                    break;
+                }
+                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                    break;
+                }
+                _ => {}
+            }
+        }
+    }
+
+    disable_raw_mode()?;
+    println!();
+    Ok(confirm)
+}
+
+fn print_commands_help() {
+    println!(
+        "{}",
+        "  -> git-copydiff       : Chụp snapshot code diff".cyan()
+    );
+    println!(
+        "{}",
+        "  -> git-go             : Đóng gói và đẩy code lên git".cyan()
+    );
+    println!(
+        "{}",
+        "  -> git-ai-uninstall   : Gỡ cài đặt bộ tool này".cyan()
+    );
+    println!(
+        "{}",
+        "  -> git-ai             : Lệnh gốc (ví dụ: git-ai help)".cyan()
+    );
 }
