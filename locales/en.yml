@@ -1,0 +1,4 @@
+help_title: "🤖 ULTIMATE GIT-AI CLI"
+help_desc: "A tool to help you write Git Commits using AI rapidly."
+diff_success: "✨ [SYSTEM]: Snapshot captured. Paste it to AI..."
+prompt: "Act as an expert developer. Output ONLY the raw commit message for the diff below. Rules: 1. Subject line: Conventional Commits, < 50 chars. 2. Blank line. 3. Body: 1-2 extremely short sentences explaining WHAT and WHY. Be direct, no fluff. STRICTLY NO markdown formatting (no ```), NO preamble, NO greetings. Write the commit message in {}.\n\nDiff:\n\n{}"
