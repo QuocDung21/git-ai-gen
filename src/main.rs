@@ -1,3 +1,4 @@
+mod dashboard;
 mod ui;
 
 use crate::ui::logger;
@@ -50,7 +51,9 @@ enum Commands {
     Go,
 
     #[command(visible_alias = "l")]
-    Lang { lang: String },
+    Lang {
+        lang: String,
+    },
 
     #[command(visible_alias = "i")]
     Install,
@@ -58,11 +61,9 @@ enum Commands {
     #[command(visible_alias = "u")]
     Uninstall,
 
-    /// Khôi phục cài đặt gốc, xóa cấu hình.
     #[command(visible_alias = "r")]
     Reset,
 
-    /// Hiển thị đường dẫn profile cấu hình (Dùng để debug)
     Test,
 }
 
@@ -81,17 +82,21 @@ fn main() -> Result<()> {
 
 fn run(cli: &Cli) -> Result<()> {
     match &cli.command {
-        Some(Commands::Diff) => handle_diff()?,
+        Some(Commands::Diff) => {
+            let msg = handle_diff()?;
+            logger::system(&msg);
+        }
         Some(Commands::Go) => handle_go()?,
-        Some(Commands::Lang { lang }) => handle_lang(lang)?,
+        Some(Commands::Lang { lang }) => {
+            let msg = handle_lang(lang)?;
+            println!("{}", msg);
+        }
         Some(Commands::Install) => handle_install()?,
         Some(Commands::Uninstall) => handle_uninstall()?,
-        Some(Commands::Reset) => handle_reset()?,
+        Some(Commands::Reset) => handle_restore()?,
         Some(Commands::Test) => handle_test()?,
         None => {
-            use clap::CommandFactory;
-            let mut cmd = Cli::command();
-            cmd.print_help()?;
+            dashboard::run_dashboard()?;
         }
     }
     Ok(())
@@ -101,25 +106,23 @@ fn run(cli: &Cli) -> Result<()> {
 // CÁC HÀM XỬ LÝ LỆNH TƯƠNG ỨNG
 // =========================================================================
 
-fn handle_lang(lang: &str) -> Result<()> {
+fn handle_lang(lang: &str) -> Result<String> {
     match lang {
         "vi" | "en" => {
             Command::new("git")
                 .args(["config", "--global", "git-ai.lang", lang])
                 .status()?;
-            logger::success(&format!("Đã thiết lập ngôn ngữ: {}", lang));
+            Ok(format!("✅ Đã thiết lập ngôn ngữ: {}", lang))
         }
         "auto" => {
             let _ = Command::new("git")
                 .args(["config", "--global", "--unset", "git-ai.lang"])
                 .status();
-            logger::success("Đã về chế độ tự động.");
+            Ok("✅ Đã về chế độ tự động.".to_string())
         }
-        _ => logger::error("Lệnh không hợp lệ. Dùng: vi, en, hoặc auto"),
+        _ => Ok("❌ Lệnh không hợp lệ.".to_string()),
     }
-    Ok(())
 }
-
 fn handle_uninstall() -> Result<()> {
     logger::warn("🗑️  Đang tiến hành gỡ bỏ cấu hình khỏi hệ thống...");
 
@@ -241,26 +244,18 @@ fn handle_install() -> Result<()> {
 
 #[allow(dead_code)]
 fn handle_test() -> Result<()> {
-    // let free_model = "kilo/deepseek/deepseek-v4-flash:free";
-    // let result = with_spinner("Thinking...".to_string(), || {
-    //     call_external_app("kilo", &["run", "-m", free_model, "Hello"], "")
-    // });
-    // let ai_response = result?;
-
-    // logger::success(&format!("AI phản hồi:\n{}", ai_response));
     handle_check_status()?;
     Ok(())
 }
 
-fn handle_diff() -> Result<()> {
+pub fn handle_diff() -> Result<String> {
     let output = Command::new("git").args(["diff"]).output()?;
     let diff_str = String::from_utf8_lossy(&output.stdout);
 
     if diff_str.trim().is_empty() {
-        logger::warn(
-            "⚠️  [HỆ THỐNG]: Không phát hiện thay đổi nào trong code. Đã hủy chụp snapshot!",
+        return Ok(
+            "⚠️ [HỆ THỐNG]: Không phát hiện thay đổi nào. Đã hủy chụp snapshot!".to_string(),
         );
-        return Ok(());
     }
 
     let ai_lang = get_ai_language();
@@ -273,11 +268,13 @@ fn handle_diff() -> Result<()> {
     let mut clipboard = Clipboard::new()?;
     clipboard.set_text(prompt)?;
 
-    logger::system(&format!("✨ [HỆ THỐNG]: Đã chụp snapshot (Yêu cầu AI viết bằng {}). Hãy dán (Ctrl+V) vào AI để lấy commit message! 🤖", ai_lang));
-    Ok(())
+    Ok(format!(
+        "✨ Đã chụp snapshot (Yêu cầu AI viết bằng {}). Dán vào AI ngay! 🤖",
+        ai_lang
+    ))
 }
 
-fn handle_check_status() -> Result<bool> {
+pub fn handle_check_status() -> Result<bool> {
     let output = Command::new("git").args(["status", "-s"]).output()?;
     let status_text = String::from_utf8_lossy(&output.stdout);
     if status_text.trim().is_empty() {
@@ -289,7 +286,7 @@ fn handle_check_status() -> Result<bool> {
     Ok(true)
 }
 
-fn handle_go() -> Result<()> {
+pub fn handle_go() -> Result<()> {
     logger::heading("📂 [XEM TRƯỚC THAY ĐỔI]");
 
     if !handle_check_status()? {
@@ -326,7 +323,7 @@ fn handle_go() -> Result<()> {
     Ok(())
 }
 
-fn handle_reset() -> Result<()> {
+fn handle_restore() -> Result<()> {
     logger::heading("🔄 Đang khôi phục cài đặt gốc...");
     let status = Command::new("git")
         .args(["config", "--global", "--remove-section", "git-ai"])
