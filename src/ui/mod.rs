@@ -129,6 +129,9 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::WorkspaceHistory => modals::centered_rect(60, 50, f.size()),
             ActiveModal::ViewPrompt => modals::centered_rect(80, 80, f.size()),
             ActiveModal::KiloModelSelect => modals::centered_rect(70, 70, f.size()),
+            ActiveModal::ManualCommit => modals::centered_rect(65, 38, f.size()),
+            ActiveModal::GitMenu => modals::centered_rect(60, 70, f.size()),
+            ActiveModal::CommitTree => modals::centered_rect(85, 80, f.size()),
             ActiveModal::None => f.size(),
         };
 
@@ -155,6 +158,9 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::WorkspaceHistory => modals::render_workspace_history(f, app, area),
             ActiveModal::ViewPrompt => modals::render_view_prompt(f, app, area),
             ActiveModal::KiloModelSelect => modals::render_kilo_model_select(f, app, area),
+            ActiveModal::ManualCommit => modals::render_manual_commit(f, app, area),
+            ActiveModal::GitMenu => modals::render_git_menu(f, app, area),
+            ActiveModal::CommitTree => modals::render_commit_tree(f, app, area),
             ActiveModal::None => {}
         }
     }

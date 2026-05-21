@@ -2170,3 +2170,289 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
         .block(block);
     f.render_widget(paragraph, area);
 }
+
+pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let actions = if is_vi {
+        vec![
+            ("Commit", vec![
+                ("🤖 AI Commit & Push", 'g'),
+                ("✍️  Commit thủ công", 'c'),
+                ("📝 Amend commit cuối", 'm'),
+            ]),
+            ("Remote", vec![
+                ("📥 Fetch", 'f'),
+                ("⬇️  Pull", 'p'),
+                ("⬆️  Push", 'u'),
+                ("🌐 Remote Info", 'i'),
+            ]),
+            ("Khác", vec![
+                ("🌿 Quản lý Branch", 'b'),
+                ("📦 Stash", 's'),
+                ("📜 Lịch sử Commit", 'v'),
+            ]),
+        ]
+    } else {
+        vec![
+            ("Commit", vec![
+                ("🤖 AI Commit & Push", 'g'),
+                ("✍️  Manual Commit", 'c'),
+                ("📝 Amend Last Commit", 'm'),
+            ]),
+            ("Remote", vec![
+                ("📥 Fetch", 'f'),
+                ("⬇️  Pull", 'p'),
+                ("⬆️  Push", 'u'),
+                ("🌐 Remote Info", 'i'),
+            ]),
+            ("Other", vec![
+                ("🌿 Branch Management", 'b'),
+                ("📦 Stash", 's'),
+                ("🌳 Commit Tree (graph)", 't'),
+                ("📜 Commit History", 'v'),
+            ]),
+        ]
+    };
+
+    let mut content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "🛠️  MENU GIT OPERATIONS"
+            } else {
+                "🛠️  GIT OPERATIONS MENU"
+            },
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+    ];
+
+    let mut idx = 0;
+    for (group, items) in &actions {
+        content.push(Line::from(vec![Span::styled(
+            format!("  ■ {}", group),
+            Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+        )]));
+
+        for (name, key) in items {
+            let is_selected = idx == app.selected_git_action;
+
+            let prefix = if is_selected {
+                Span::styled(" ▶ ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+            } else {
+                Span::styled("   ", Style::default())
+            };
+
+            let style = if is_selected {
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.select_bg)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(theme.fg)
+            };
+
+            content.push(Line::from(vec![
+                prefix,
+                Span::styled(format!("[{}] {}", key, name), style),
+            ]));
+            idx += 1;
+        }
+        content.push(Line::from(""));
+    }
+
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "  [↑/↓] Di chuyển  [Enter] Chọn  [Esc] Đóng"
+        } else {
+            "  [↑/↓] Navigate  [Enter] Select  [Esc] Close"
+        },
+        Style::default().fg(theme.border),
+    )]));
+
+    let block = Block::default()
+        .title(Span::styled(
+            if is_vi {
+                " 🛠️ GIT MENU "
+            } else {
+                " 🛠️ GIT MENU "
+            },
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .block(block);
+    f.render_widget(paragraph, area);
+}
+
+pub fn render_manual_commit(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let display_msg = if app.manual_commit_message.len() > 70 {
+        format!("{}...", &app.manual_commit_message[..67])
+    } else {
+        app.manual_commit_message.clone()
+    };
+
+    let content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "✍️ COMMIT THỦ CÔNG"
+            } else {
+                "✍️ MANUAL COMMIT"
+            },
+            Style::default()
+                .fg(theme.green)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "  Nhập commit message bên dưới:"
+            } else {
+                "  Enter commit message below:"
+            },
+            Style::default().fg(theme.border),
+        )]),
+        Line::from(vec![
+            Span::styled("  ┌─── ", Style::default().fg(theme.green)),
+            Span::styled(
+                format!("{}_", display_msg),
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.bg)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "  [Enter] Commit  [Esc] Hủy"
+            } else {
+                "  [Enter] Commit  [Esc] Cancel"
+            },
+            Style::default().fg(theme.border),
+        )]),
+    ];
+
+    let block = Block::default()
+        .title(Span::styled(
+            if is_vi {
+                " ✍️ MANUAL COMMIT "
+            } else {
+                " ✍️ MANUAL COMMIT "
+            },
+            Style::default()
+                .fg(theme.green)
+                .add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.green))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .block(block);
+    f.render_widget(paragraph, area);
+}
+
+pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let mut content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "🌳 LỊCH SỬ COMMIT DẠNG CÂY (giống VS Code)"
+            } else {
+                "🌳 COMMIT HISTORY TREE (VS Code style)"
+            },
+            Style::default()
+                .fg(theme.green)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+    ];
+
+    if app.commit_logs.is_empty() {
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "Không có commit nào."
+            } else {
+                "No commits found."
+            },
+            Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+        )]));
+    } else {
+        for (i, entry) in app.commit_logs.iter().enumerate() {
+            let is_selected = i == app.selected_log_index;
+
+            let tree = if i == 0 {
+                Span::styled("● ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+            } else {
+                Span::styled("│ ", Style::default().fg(theme.border))
+            };
+
+            let initial = entry.author.chars().next().unwrap_or('?');
+            let avatar = Span::styled(
+                format!(" {} ", initial),
+                Style::default().fg(theme.bg).bg(theme.purple).add_modifier(Modifier::BOLD),
+            );
+
+            let author = Span::styled(format!("{:<14}", entry.author), Style::default().fg(theme.fg));
+            let hash = Span::styled(format!("[{}]", entry.short_hash), Style::default().fg(theme.yellow).add_modifier(Modifier::BOLD));
+
+            let subject_style = if is_selected {
+                Style::default().fg(theme.fg).bg(theme.select_bg).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(theme.fg)
+            };
+            let subject = Span::styled(format!(" {}", entry.subject), subject_style);
+
+            content.push(Line::from(vec![tree, avatar, author, hash, subject]));
+        }
+    }
+
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "  ↑/↓ Chọn  [Esc] Đóng  |  t = Tree View"
+        } else {
+            "  ↑/↓ Select  [Esc] Close  |  t = Tree View"
+        },
+        Style::default().fg(theme.orange),
+    )]));
+
+    let block = Block::default()
+        .title(Span::styled(
+            if is_vi {
+                " 🌳 COMMIT TREE "
+            } else {
+                " 🌳 COMMIT TREE "
+            },
+            Style::default().fg(theme.green).add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.green))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .block(block);
+    f.render_widget(paragraph, area);
+}

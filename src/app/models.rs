@@ -30,9 +30,12 @@ pub struct ChangedFile {
 #[derive(Clone, Debug, PartialEq)]
 pub struct CommitLogEntry {
     pub hash: String,
+    pub short_hash: String,
     pub author: String,
+    pub author_email: String,
     pub time: String,
     pub subject: String,
+    pub parents: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -95,4 +98,7 @@ pub enum ActiveModal {
     WorkspaceHistory, // Workspace history selector modal
     ViewPrompt,
     KiloModelSelect,
+    ManualCommit,
+    GitMenu,
+    CommitTree,
 }

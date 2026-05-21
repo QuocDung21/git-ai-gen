@@ -774,6 +774,236 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         }
                         continue;
                     }
+                    ActiveModal::ManualCommit => {
+                        match key.code {
+                            KeyCode::Esc => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Enter => {
+                                let msg = app.manual_commit_message.trim().to_string();
+                                if msg.is_empty() {
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "❌ Commit message không được để trống!".to_string()
+                                    } else {
+                                        "❌ Commit message cannot be empty!".to_string()
+                                    };
+                                } else if app.staged_count == 0 {
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "⚠️ Chưa có file nào staged! Hãy nhấn [Space] để stage trước.".to_string()
+                                    } else {
+                                        "⚠️ No files staged! Press [Space] to stage first.".to_string()
+                                    };
+                                } else {
+                                    match crate::git::commit::commit(&msg) {
+                                        Ok(_) => {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                format!("✅ Đã commit thủ công: {}", msg)
+                                            } else {
+                                                format!("✅ Manual commit successful: {}", msg)
+                                            };
+                                            app.active_modal = ActiveModal::None;
+                                            app.manual_commit_message.clear();
+                                            app.refresh_git_status();
+                                        }
+                                        Err(e) => {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                format!("❌ Commit thất bại: {}", e)
+                                            } else {
+                                                format!("❌ Commit failed: {}", e)
+                                            };
+                                        }
+                                    }
+                                }
+                            }
+                            KeyCode::Backspace => {
+                                app.manual_commit_message.pop();
+                            }
+                            KeyCode::Char(c) => {
+                                app.manual_commit_message.push(c);
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::GitMenu => {
+                        let max = 9;
+
+                        // Quick shortcuts even when menu is open (thao tác nhanh)
+                        match key.code {
+                            KeyCode::Char('g') | KeyCode::Char('G') => {
+                                // AI Commit & Push
+                                let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() { cb.get_text().unwrap_or_default() } else { String::new() };
+                                app.commit_message_preview = if clipboard_msg.trim().is_empty() {
+                                    if app.current_lang == "vi" { "(Chưa có commit message trong clipboard)".to_string() } else { "(No commit message in clipboard)".to_string() }
+                                } else { clipboard_msg.trim().to_string() };
+                                app.go_step = GoStep::Confirm;
+                                app.active_modal = ActiveModal::GoConfirm;
+                                continue;
+                            }
+                            KeyCode::Char('c') | KeyCode::Char('C') => {
+                                app.manual_commit_message.clear();
+                                app.active_modal = ActiveModal::ManualCommit;
+                                continue;
+                            }
+                            KeyCode::Char('m') | KeyCode::Char('M') => {
+                                app.fetch_amend_msg();
+                                app.active_modal = ActiveModal::AmendCommit;
+                                continue;
+                            }
+                            KeyCode::Char('f') | KeyCode::Char('F') => {
+                                app.status_message = if app.current_lang == "vi" { "⚡ Đang Fetch..." } else { "⚡ Fetching..." }.to_string();
+                                let _ = crate::git::remote::git_fetch();
+                                app.status_message = if app.current_lang == "vi" { "✅ Fetch hoàn tất" } else { "✅ Fetch completed" }.to_string();
+                                app.active_modal = ActiveModal::None;
+                                app.refresh_git_status();
+                                continue;
+                            }
+                            KeyCode::Char('p') | KeyCode::Char('P') => {
+                                app.status_message = if app.current_lang == "vi" { "⚡ Đang Pull..." } else { "⚡ Pulling..." }.to_string();
+                                let _ = crate::git::remote::git_pull();
+                                app.status_message = if app.current_lang == "vi" { "✅ Pull hoàn tất" } else { "✅ Pull completed" }.to_string();
+                                app.active_modal = ActiveModal::None;
+                                app.refresh_git_status();
+                                continue;
+                            }
+                            KeyCode::Char('u') | KeyCode::Char('U') => {
+                                app.status_message = if app.current_lang == "vi" { "⚡ Đang Push..." } else { "⚡ Pushing..." }.to_string();
+                                match crate::git::remote::git_push() {
+                                    Ok(_) => { app.status_message = if app.current_lang == "vi" { "✅ Push thành công" } else { "✅ Push successful" }.to_string(); }
+                                    Err(e) => { app.status_message = format!("❌ Push failed: {}", e); }
+                                }
+                                app.active_modal = ActiveModal::None;
+                                app.refresh_git_status();
+                                continue;
+                            }
+                            KeyCode::Char('i') | KeyCode::Char('I') => {
+                                app.fetch_remote_info();
+                                app.active_modal = ActiveModal::RemoteInfo;
+                                continue;
+                            }
+                            KeyCode::Char('b') | KeyCode::Char('B') => {
+                                app.fetch_branches();
+                                app.active_modal = ActiveModal::BranchSelect;
+                                continue;
+                            }
+                            KeyCode::Char('s') | KeyCode::Char('S') => {
+                                app.fetch_stash();
+                                app.active_modal = ActiveModal::StashList;
+                                continue;
+                            }
+                            KeyCode::Char('v') | KeyCode::Char('V') => {
+                                app.fetch_commit_logs();
+                                app.active_modal = ActiveModal::GitLog;
+                                continue;
+                            }
+                            KeyCode::Char('t') | KeyCode::Char('T') => {
+                                app.fetch_commit_tree();
+                                app.selected_log_index = 0;
+                                app.active_modal = ActiveModal::CommitTree;
+                                continue;
+                            }
+                            _ => {}
+                        }
+
+                        match key.code {
+                            KeyCode::Esc | KeyCode::Char('q') => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Enter => {
+                                match app.selected_git_action {
+                                    0 => { // AI Commit & Push
+                                        let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() { cb.get_text().unwrap_or_default() } else { String::new() };
+                                        app.commit_message_preview = if clipboard_msg.trim().is_empty() {
+                                            if app.current_lang == "vi" { "(Chưa có commit message trong clipboard)".to_string() } else { "(No commit message in clipboard)".to_string() }
+                                        } else { clipboard_msg.trim().to_string() };
+                                        app.go_step = GoStep::Confirm;
+                                        app.active_modal = ActiveModal::GoConfirm;
+                                    }
+                                    1 => { // Manual Commit
+                                        app.manual_commit_message.clear();
+                                        app.active_modal = ActiveModal::ManualCommit;
+                                    }
+                                    2 => { // Amend
+                                        app.fetch_amend_msg();
+                                        app.active_modal = ActiveModal::AmendCommit;
+                                    }
+                                    3 => { // Fetch
+                                        app.status_message = if app.current_lang == "vi" { "⚡ Đang Fetch..." } else { "⚡ Fetching..." }.to_string();
+                                        let _ = crate::git::remote::git_fetch();
+                                        app.status_message = if app.current_lang == "vi" { "✅ Fetch hoàn tất" } else { "✅ Fetch completed" }.to_string();
+                                        app.active_modal = ActiveModal::None;
+                                        app.refresh_git_status();
+                                    }
+                                    4 => { // Pull
+                                        app.status_message = if app.current_lang == "vi" { "⚡ Đang Pull..." } else { "⚡ Pulling..." }.to_string();
+                                        let _ = crate::git::remote::git_pull();
+                                        app.status_message = if app.current_lang == "vi" { "✅ Pull hoàn tất" } else { "✅ Pull completed" }.to_string();
+                                        app.active_modal = ActiveModal::None;
+                                        app.refresh_git_status();
+                                    }
+                                    5 => { // Push
+                                        app.status_message = if app.current_lang == "vi" { "⚡ Đang Push..." } else { "⚡ Pushing..." }.to_string();
+                                        match crate::git::remote::git_push() {
+                                            Ok(_) => { app.status_message = if app.current_lang == "vi" { "✅ Push thành công" } else { "✅ Push successful" }.to_string(); }
+                                            Err(e) => { app.status_message = format!("❌ Push failed: {}", e); }
+                                        }
+                                        app.active_modal = ActiveModal::None;
+                                        app.refresh_git_status();
+                                    }
+                                    6 => { // Remote Info
+                                        app.fetch_remote_info();
+                                        app.active_modal = ActiveModal::RemoteInfo;
+                                    }
+                                    7 => { // Branch
+                                        app.fetch_branches();
+                                        app.active_modal = ActiveModal::BranchSelect;
+                                    }
+                                    8 => { // Stash
+                                        app.fetch_stash();
+                                        app.active_modal = ActiveModal::StashList;
+                                    }
+                                    9 => { // Log
+                                        app.fetch_commit_logs();
+                                        app.active_modal = ActiveModal::GitLog;
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                if app.selected_git_action > 0 {
+                                    app.selected_git_action -= 1;
+                                }
+                            }
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                if app.selected_git_action < max {
+                                    app.selected_git_action += 1;
+                                }
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::CommitTree => {
+                        match key.code {
+                            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('t') | KeyCode::Char('T') => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                if app.selected_log_index > 0 {
+                                    app.selected_log_index -= 1;
+                                } else if !app.commit_logs.is_empty() {
+                                    app.selected_log_index = app.commit_logs.len() - 1;
+                                }
+                            }
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                if !app.commit_logs.is_empty() {
+                                    app.selected_log_index = (app.selected_log_index + 1) % app.commit_logs.len();
+                                }
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
                     ActiveModal::GoConfirm => {
                         match app.go_step.clone() {
                             GoStep::Confirm => match key.code {
@@ -1239,23 +1469,12 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         }
                     },
                     KeyCode::Char('g') => {
-                        let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() {
-                            cb.get_text().unwrap_or_default()
-                        } else {
-                            String::new()
-                        };
-                        app.commit_message_preview = if clipboard_msg.trim().is_empty() {
-                            if app.current_lang == "vi" {
-                                "(Chưa có commit message trong clipboard)".to_string()
-                            } else {
-                                "(No commit message in clipboard)".to_string()
-                            }
-                        } else {
-                            clipboard_msg.trim().to_string()
-                        };
-                        app.go_step = GoStep::Confirm;
-                        app.go_result = String::new();
-                        app.active_modal = ActiveModal::GoConfirm;
+                        app.selected_git_action = 0;
+                        app.active_modal = ActiveModal::GitMenu;
+                    }
+                    KeyCode::Char('c') | KeyCode::Char('C') => {
+                        app.manual_commit_message.clear();
+                        app.active_modal = ActiveModal::ManualCommit;
                     }
                     KeyCode::Char('r') => {
                         let locales = crate::cli::Locales::new(&app.current_lang);

@@ -180,9 +180,9 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                 (
                     "G",
                     if is_vi {
-                        "Đóng gói (Go)"
+                        "Git Menu (Add/Commit/Fetch/Pull/Remote...)"
                     } else {
-                        "Commit & Push (Go)"
+                        "Git Menu (Add/Commit/Fetch/Pull/Remote...)"
                     },
                     theme.green,
                 ),

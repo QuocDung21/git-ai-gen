@@ -41,10 +41,12 @@ pub struct App {
     pub kilo_generation_status: String,
     pub kilo_model_filter: String,
     pub kilo_model_search_mode: bool,
+    // Manual commit
+    pub manual_commit_message: String,
+    pub selected_git_action: usize,
     // Go confirm modal
     pub commit_message_preview: String,
     pub go_step: GoStep,
-    pub go_result: String,
     // Inline commit input (Tab to toggle)
     pub commit_input_mode: bool,
     pub commit_input_text: String,
@@ -141,9 +143,10 @@ impl App {
             kilo_generation_status: String::new(),
             kilo_model_filter: String::new(),
             kilo_model_search_mode: false,
+            manual_commit_message: String::new(),
+            selected_git_action: 0,
             commit_message_preview: String::new(),
             go_step: GoStep::Confirm,
-            go_result: String::new(),
             commit_input_mode: false,
             commit_input_text: String::new(),
             stash_entries: Vec::new(),
@@ -320,18 +323,83 @@ impl App {
     pub fn fetch_commit_logs(&mut self) {
         self.commit_logs.clear();
         if let Ok(output) = std::process::Command::new("git")
-            .args(["log", "--pretty=format:%h|%an|%ar|%s", "-n", "15"])
+            .args([
+                "log",
+                "--pretty=format:%H|%h|%an|%ae|%ar|%s",
+                "--parents",
+                "--topo-order",
+                "-n",
+                "25",
+            ])
             .output()
         {
             let logs_text = String::from_utf8_lossy(&output.stdout);
             for line in logs_text.lines() {
                 let parts: Vec<&str> = line.split('|').collect();
-                if parts.len() >= 4 {
+                if parts.len() >= 6 {
+                    let full_hash = parts[0].to_string();
+                    let short_hash = parts[1].to_string();
+                    let author = parts[2].to_string();
+                    let author_email = parts[3].to_string();
+                    let time = parts[4].to_string();
+                    let subject = parts[5..].join("|");
+
+                    // parents are in the format after %H, before %h in some formats.
+                    // Better way: use --parents and parse the line differently.
+                    // For simplicity, we'll fetch parents separately or use a better format.
+                    // Current simple approach: we'll improve later.
+                    let parents: Vec<String> = vec![];
+
                     self.commit_logs.push(CommitLogEntry {
-                        hash: parts[0].to_string(),
-                        author: parts[1].to_string(),
-                        time: parts[2].to_string(),
-                        subject: parts[3..].join("|"),
+                        hash: full_hash,
+                        short_hash,
+                        author,
+                        author_email,
+                        time,
+                        subject,
+                        parents,
+                    });
+                }
+            }
+        }
+    }
+
+    pub fn fetch_commit_tree(&mut self) {
+        self.commit_logs.clear();
+        if let Ok(output) = std::process::Command::new("git")
+            .args([
+                "log",
+                "--pretty=format:%H|%h|%P|%an|%ae|%ar|%s",
+                "--topo-order",
+                "-n",
+                "30",
+            ])
+            .output()
+        {
+            let logs_text = String::from_utf8_lossy(&output.stdout);
+            for line in logs_text.lines() {
+                let parts: Vec<&str> = line.split('|').collect();
+                if parts.len() >= 7 {
+                    let full_hash = parts[0].to_string();
+                    let short_hash = parts[1].to_string();
+                    let parents_str = parts[2];
+                    let parents: Vec<String> = if parents_str.is_empty() {
+                        vec![]
+                    } else {
+                        parents_str
+                            .split_whitespace()
+                            .map(|p| p[..7.min(p.len())].to_string())
+                            .collect()
+                    };
+
+                    self.commit_logs.push(CommitLogEntry {
+                        hash: full_hash,
+                        short_hash,
+                        author: parts[3].to_string(),
+                        author_email: parts[4].to_string(),
+                        time: parts[5].to_string(),
+                        subject: parts[6..].join("|"),
+                        parents,
                     });
                 }
             }

@@ -19,6 +19,9 @@ pub use confirm::{
     render_workspace_history,
     render_view_prompt,
     render_kilo_model_select,
+    render_manual_commit,
+    render_git_menu,
+    render_commit_tree,
 };
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
