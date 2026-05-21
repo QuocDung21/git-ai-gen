@@ -1,3 +1,4 @@
+mod constant;
 mod dashboard;
 mod ui;
 
@@ -30,105 +31,49 @@ const MARKERS: &[&str] = &[
 // LOCALIZATION (I18N)
 // =========================================================================
 
+#[derive(serde::Deserialize)]
 pub struct Locales {
-    pub help_title: &'static str,
-    pub help_desc: &'static str,
-    pub diff_success: &'static str,
-    pub error_prefix: &'static str,
-    pub press_enter: &'static str,
-    pub no_changes: &'static str,
-    pub prompt_expert: &'static str,
-    pub status_clean: &'static str,
-    pub status_pending: &'static str,
-    pub status_fail: &'static str,
-    pub preview_heading: &'static str,
-    pub commit_content: &'static str,
-    pub confirm_deploy: &'static str,
-    pub pushing: &'static str,
-    pub push_success: &'static str,
-    pub deploy_cancel: &'static str,
-    pub reset_heading: &'static str,
-    pub reset_success: &'static str,
-    pub reset_info: &'static str,
-    pub reset_clean: &'static str,
-    pub confirm_remove_alias: &'static str,
-    pub keep_alias: &'static str,
-    pub lang_set: &'static str,
-    pub lang_auto: &'static str,
-    pub lang_invalid: &'static str,
-    pub cmd_help_diff: &'static str,
-    pub cmd_help_go: &'static str,
-    pub cmd_help_un: &'static str,
-    pub cmd_help_base: &'static str,
+    pub help_title: String,
+    pub help_desc: String,
+    pub diff_success: String,
+    pub error_prefix: String,
+    pub press_enter: String,
+    pub no_changes: String,
+    pub prompt_expert: String,
+    pub status_clean: String,
+    pub status_pending: String,
+    pub status_fail: String,
+    pub preview_heading: String,
+    pub commit_content: String,
+    pub confirm_deploy: String,
+    pub pushing: String,
+    pub push_success: String,
+    pub deploy_cancel: String,
+    pub reset_heading: String,
+    pub reset_success: String,
+    pub reset_info: String,
+    pub reset_clean: String,
+    pub confirm_remove_alias: String,
+    pub keep_alias: String,
+    pub lang_set: String,
+    pub lang_auto: String,
+    pub lang_invalid: String,
+    pub cmd_help_diff: String,
+    pub cmd_help_go: String,
+    pub cmd_help_un: String,
+    pub cmd_help_base: String,
 }
 
 impl Locales {
     pub fn new(lang: &str) -> Self {
-        if lang == "Vietnamese" || lang == "vi" {
-            Self {
-                help_title: "🤖 ULTIMATE GIT-AI CLI",
-                help_desc: "Công cụ hỗ trợ viết Git Commit bằng AI nhanh chóng.",
-                diff_success: "✨ [HỆ THỐNG]: Đã chụp snapshot. Hãy dán vào AI...",
-                error_prefix: "❌ Đã xảy ra lỗi:",
-                press_enter: "👉 Nhấn Enter để quay lại Dashboard...",
-                no_changes: "⚠️ [HỆ THỐNG]: Không phát hiện thay đổi nào. Đã hủy chụp snapshot!",
-                prompt_expert: "Act as an expert developer. Output ONLY the raw commit message for the diff below. Rules: 1. Subject line: Conventional Commits, < 50 chars. 2. Blank line. 3. Body: 1-2 extremely short sentences explaining WHAT and WHY. Be direct, no fluff. STRICTLY NO markdown formatting (no ```), NO preamble, NO greetings. Write the commit message in",
-                status_clean: "✅ Thư mục hiện tại đang sạch (không có thay đổi).",
-                status_pending: "📂 Các thay đổi đang chờ:",
-                status_fail: "❌ Không thể đọc trạng thái Git.",
-                preview_heading: "📂 [XEM TRƯỚC THAY ĐỔI]",
-                commit_content: "💬 [NỘI DUNG COMMIT TỪ AI]",
-                confirm_deploy: "🚀 Xác nhận deploy (commit & push)? (Y/n): ",
-                pushing: "⚡ Đang tiến hành đẩy code...",
-                push_success: "Hoàn tất. Code đã được đẩy lên mây thành công! ☁️",
-                deploy_cancel: "Đã hủy quá trình deploy.",
-                reset_heading: "🔄 Đang khôi phục cài đặt gốc...",
-                reset_success: "Đã xóa toàn bộ cấu hình của git-ai khỏi hệ thống Git.",
-                reset_info: "👉 Công cụ đã được đưa về trạng thái mặc định ban đầu.",
-                reset_clean: "Máy tính của bạn rất sạch sẽ. Không có cấu hình git-ai nào cần xóa!",
-                confirm_remove_alias: "🗑️  Bạn có muốn gỡ bỏ luôn các phím tắt (alias) khỏi Terminal không? (y/N): ",
-                keep_alias: "Đã bỏ qua. Giữ lại các phím tắt trong Terminal.",
-                lang_set: "✅ Đã thiết lập ngôn ngữ:",
-                lang_auto: "✅ Đã về chế độ tự động.",
-                lang_invalid: "❌ Lệnh không hợp lệ. Dùng: vi, en, hoặc auto",
-                cmd_help_diff: "  -> git-copydiff     : Chụp snapshot code diff",
-                cmd_help_go: "  -> git-go           : Đóng gói và đẩy code lên git",
-                cmd_help_un: "  -> git-ai-uninstall : Gỡ cài đặt bộ tool này",
-                cmd_help_base: "  -> git-ai           : Lệnh gốc (ví dụ: git-ai help)",
-            }
+        let yaml_content = if lang == "Vietnamese" || lang == "vi" {
+            include_str!("../locales/vi.yml")
         } else {
-            Self {
-                help_title: "🤖 ULTIMATE GIT-AI CLI",
-                help_desc: "A tool to help you write Git Commits using AI rapidly.",
-                diff_success: "✨ [SYSTEM]: Snapshot captured. Paste it to AI...",
-                error_prefix: "❌ An error occurred:",
-                press_enter: "👉 Press Enter to return to Dashboard...",
-                no_changes: "⚠️ [SYSTEM]: No changes detected. Snapshot cancelled!",
-                prompt_expert: "Act as an expert developer. Output ONLY the raw commit message for the diff below. Rules: 1. Subject line: Conventional Commits, < 50 chars. 2. Blank line. 3. Body: 1-2 extremely short sentences explaining WHAT and WHY. Be direct, no fluff. STRICTLY NO markdown formatting (no ```), NO preamble, NO greetings. Write the commit message in",
-                status_clean: "✅ Working tree clean (No changes).",
-                status_pending: "📂 Pending changes:",
-                status_fail: "❌ Failed to read Git status.",
-                preview_heading: "📂 [PREVIEW CHANGES]",
-                commit_content: "💬 [COMMIT CONTENT FROM AI]",
-                confirm_deploy: "🚀 Confirm deploy (commit & push)? (Y/n): ",
-                pushing: "⚡ Pushing code...",
-                push_success: "Done. Code pushed to cloud successfully! ☁️",
-                deploy_cancel: "Deploy cancelled.",
-                reset_heading: "🔄 Restoring factory settings...",
-                reset_success: "All git-ai configurations removed from Git system.",
-                reset_info: "👉 Tool restored to initial default state.",
-                reset_clean: "System clean. No git-ai configurations to remove!",
-                confirm_remove_alias: "🗑️  Remove aliases from Terminal? (y/N): ",
-                keep_alias: "Skipped. Aliases kept in Terminal.",
-                lang_set: "✅ Language set to:",
-                lang_auto: "✅ Reverted to auto mode.",
-                lang_invalid: "❌ Invalid command. Use: vi, en, or auto",
-                cmd_help_diff: "  -> git-copydiff     : Capture code diff snapshot",
-                cmd_help_go: "  -> git-go           : Package and push code to git",
-                cmd_help_un: "  -> git-ai-uninstall : Uninstall this toolset",
-                cmd_help_base: "  -> git-ai           : Base command (e.g., git-ai help)",
-            }
-        }
+            include_str!("../locales/en.yml")
+        };
+
+        serde_yaml::from_str(yaml_content)
+            .unwrap_or_else(|e| panic!("Trục trặc khi parse file ngôn ngữ '{}': {}", lang, e))
     }
 }
 
@@ -201,7 +146,7 @@ fn run(cli: &Cli, locales: &Locales) -> Result<()> {
             let msg = handle_lang(lang, locales)?;
             println!("{}", msg);
         }
-        Some(Commands::Install) => handle_install()?, // Install is generally system level, keeping minimal localization
+        Some(Commands::Install) => handle_install()?,
         Some(Commands::Uninstall) => handle_uninstall()?,
         Some(Commands::Reset) => handle_restore(locales)?,
         Some(Commands::Test) => handle_test()?,
@@ -231,11 +176,12 @@ pub fn handle_lang(lang: &str, locales: &Locales) -> Result<String> {
                 .status();
             let resolved_lang = get_ai_language();
             let new_locales = Locales::new(&resolved_lang);
-            Ok(new_locales.lang_auto.to_string())
+            Ok(new_locales.lang_auto)
         }
-        _ => Ok(locales.lang_invalid.to_string()),
+        _ => Ok(locales.lang_invalid.clone()),
     }
 }
+
 fn handle_uninstall() -> Result<()> {
     logger::warn("🗑️  Uninstalling configuration from system...");
 
@@ -307,7 +253,7 @@ fn handle_install() -> Result<()> {
         append_to_file(&target_profile, &alias_lines)?;
 
         logger::success("Configuration successful! Added aliases:");
-        let dummy_locales = Locales::new("English"); // Fallback for install log
+        let dummy_locales = Locales::new("English");
         print_commands_help(&dummy_locales);
         logger::note(&format!(
             "\n👉 Please run command: source {}",
@@ -350,7 +296,7 @@ fn handle_install() -> Result<()> {
         append_to_file(&profile_path, &func_lines)?;
 
         logger::success("Configuration successful! Added aliases:");
-        let dummy_locales = Locales::new("English"); // Fallback for install log
+        let dummy_locales = Locales::new("English");
         print_commands_help(&dummy_locales);
         logger::note("\n👉 Please restart PowerShell to apply new commands.");
     }
@@ -368,7 +314,7 @@ pub fn handle_diff(locales: &Locales) -> Result<String> {
     let diff_str = String::from_utf8_lossy(&output.stdout);
 
     if diff_str.trim().is_empty() {
-        return Ok(locales.no_changes.to_string());
+        return Ok(locales.no_changes.clone());
     }
 
     let ai_lang = get_ai_language();
@@ -381,23 +327,23 @@ pub fn handle_diff(locales: &Locales) -> Result<String> {
     let mut clipboard = Clipboard::new()?;
     clipboard.set_text(prompt)?;
 
-    Ok(locales.diff_success.to_string())
+    Ok(locales.diff_success.clone())
 }
 
 pub fn handle_check_status(locales: &Locales) -> Result<bool> {
     let output = Command::new("git").args(["status", "-s"]).output()?;
     let status_text = String::from_utf8_lossy(&output.stdout);
     if status_text.trim().is_empty() {
-        logger::info(locales.status_clean);
+        logger::info(&locales.status_clean);
         return Ok(false);
     }
-    logger::info(locales.status_pending);
+    logger::info(&locales.status_pending);
     logger::text(&status_text);
     Ok(true)
 }
 
 pub fn handle_go(locales: &Locales) -> Result<()> {
-    logger::heading(locales.preview_heading);
+    logger::heading(&locales.preview_heading);
 
     if !handle_check_status(locales)? {
         return Ok(());
@@ -406,12 +352,12 @@ pub fn handle_go(locales: &Locales) -> Result<()> {
     let mut clipboard = Clipboard::new()?;
     let commit_msg = clipboard.get_text().unwrap_or_default();
 
-    logger::system(locales.commit_content);
+    logger::system(&locales.commit_content);
     logger::green_text(&commit_msg);
     logger::text("");
 
-    if ask_confirm(locales.confirm_deploy)? {
-        logger::heading(locales.pushing);
+    if ask_confirm(&locales.confirm_deploy)? {
+        logger::heading(&locales.pushing);
 
         if !Command::new("git").args(["add", "."]).status()?.success() {
             return Ok(());
@@ -425,34 +371,34 @@ pub fn handle_go(locales: &Locales) -> Result<()> {
         }
 
         if Command::new("git").args(["push"]).status()?.success() {
-            logger::success(locales.push_success);
+            logger::success(&locales.push_success);
         }
     } else {
-        logger::error(locales.deploy_cancel);
+        logger::error(&locales.deploy_cancel);
     }
     Ok(())
 }
 
 pub fn handle_restore(locales: &Locales) -> Result<()> {
-    logger::heading(locales.reset_heading);
+    logger::heading(&locales.reset_heading);
     let status = Command::new("git")
         .args(["config", "--global", "--remove-section", "git-ai"])
         .status();
 
     match status {
         Ok(s) if s.success() => {
-            logger::success(locales.reset_success);
-            logger::info(locales.reset_info);
+            logger::success(&locales.reset_success);
+            logger::info(&locales.reset_info);
         }
         _ => {
-            logger::info(locales.reset_clean);
+            logger::info(&locales.reset_clean);
         }
     }
 
-    if ask_confirm_default_no(locales.confirm_remove_alias)? {
+    if ask_confirm_default_no(&locales.confirm_remove_alias)? {
         handle_uninstall()?;
     } else {
-        logger::success(locales.keep_alias);
+        logger::success(&locales.keep_alias);
     }
     Ok(())
 }
@@ -614,8 +560,8 @@ fn append_to_file(path: &PathBuf, content: &str) -> Result<()> {
 }
 
 fn print_commands_help(locales: &Locales) {
-    logger::info(locales.cmd_help_diff);
-    logger::info(locales.cmd_help_go);
-    logger::info(locales.cmd_help_un);
-    logger::info(locales.cmd_help_base);
+    logger::info(&locales.cmd_help_diff);
+    logger::info(&locales.cmd_help_go);
+    logger::info(&locales.cmd_help_un);
+    logger::info(&locales.cmd_help_base);
 }
