@@ -161,9 +161,7 @@ enum Commands {
     Go,
 
     #[command(visible_alias = "l")]
-    Lang {
-        lang: String,
-    },
+    Lang { lang: String },
 
     #[command(visible_alias = "i")]
     Install,
@@ -174,6 +172,7 @@ enum Commands {
     #[command(visible_alias = "r")]
     Reset,
 
+    #[command(visible_alias = "t")]
     Test,
 }
 
@@ -205,7 +204,7 @@ fn run(cli: &Cli, locales: &Locales) -> Result<()> {
         Some(Commands::Install) => handle_install()?, // Install is generally system level, keeping minimal localization
         Some(Commands::Uninstall) => handle_uninstall()?,
         Some(Commands::Reset) => handle_restore(locales)?,
-        Some(Commands::Test) => handle_test(locales)?,
+        Some(Commands::Test) => handle_test()?,
         None => {
             dashboard::run_dashboard()?;
         }
@@ -359,8 +358,8 @@ fn handle_install() -> Result<()> {
 }
 
 #[allow(dead_code)]
-fn handle_test(locales: &Locales) -> Result<()> {
-    handle_check_status(locales)?;
+fn handle_test() -> Result<()> {
+    print!("Testing...");
     Ok(())
 }
 
