@@ -15,6 +15,8 @@ use ratatui::{
 use std::process::Command;
 use std::{env, io, time::Duration};
 
+use crate::helper::Helper;
+
 struct ChangedFile {
     status: String,
     path: String,
@@ -132,7 +134,7 @@ impl App {
             .map(|p| p.display().to_string())
             .unwrap_or_else(|_| "Unknown".to_string());
 
-        let current_lang = crate::get_ai_language();
+        let current_lang =  Helper::get_ai_language();
         let init_msg = if current_lang == "vi" {
             "Sẵn sàng tạo Commit Message! Nhấn Space để stage, Backspace để revert."
         } else {
@@ -294,7 +296,7 @@ impl App {
 
         let file = &self.files[self.selected_index];
         let is_untracked = file.status.starts_with("??") || file.status.contains("??");
-        
+
         let output = if is_untracked {
             if let Ok(content) = std::fs::read_to_string(&file.path) {
                 let lines: Vec<&str> = content.lines().take(500).collect();
@@ -522,54 +524,44 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
         terminal.draw(|f| ui(f, app))?;
 
         // Handle GoStep::Pushing: run git commands outside of event poll
+        // Trong hàm run_app tại vòng lặp chính (loop)
         if app.active_modal == ActiveModal::GoConfirm {
             if let GoStep::Pushing = &app.go_step {
                 let is_vi = app.current_lang == "vi";
                 let msg = app.commit_message_preview.clone();
 
-                // Step 1: git add .
-                let add_ok = Command::new("git").args(["add", "."]).output()
+                // ĐÃ SỬA: Loại bỏ hoàn toàn bước "git add ." tự động bừa bãi
+                // Tiến hành commit trực tiếp các file đã được chọn (Staged) qua phím Space
+                let commit_ok = Command::new("git").args(["commit", "-m", &msg]).output()
                     .map(|o| o.status.success()).unwrap_or(false);
 
-                if !add_ok {
+                if !commit_ok {
                     app.go_step = GoStep::Done(if is_vi {
-                        "❌ Lỗi: git add thất bại.".to_string()
+                        "❌ Lỗi: git commit thất bại. Hãy chắc chắn bạn đã chọn file cần commit.".to_string()
                     } else {
-                        "❌ Error: git add failed.".to_string()
+                        "❌ Error: git commit failed. Make sure you have staged files to commit.".to_string()
                     });
                 } else {
-                    // Step 2: git commit -m <msg>
-                    let commit_ok = Command::new("git").args(["commit", "-m", &msg]).output()
-                        .map(|o| o.status.success()).unwrap_or(false);
-
-                    if !commit_ok {
-                        app.go_step = GoStep::Done(if is_vi {
-                            "❌ Lỗi: git commit thất bại. Kiểm tra commit message.".to_string()
-                        } else {
-                            "❌ Error: git commit failed. Check your commit message.".to_string()
-                        });
-                    } else {
-                        // Step 3: git push
-                        let push_output = Command::new("git").arg("push").output();
-                        match push_output {
-                            Ok(out) if out.status.success() => {
-                                app.go_step = GoStep::Done(if is_vi {
-                                    "✅ Commit & Push thành công! Code đã lên mây ☁️".to_string()
-                                } else {
-                                    "✅ Commit & Push successful! Code is in the cloud ☁️".to_string()
-                                });
-                            }
-                            Ok(out) => {
-                                let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
-                                app.go_step = GoStep::Done(format!(
-                                    "{} {}",
-                                    if is_vi { "❌ Push thất bại:" } else { "❌ Push failed:" },
-                                    err
-                                ));
-                            }
-                            Err(e) => {
-                                app.go_step = GoStep::Done(format!("❌ Error: {}", e));
-                            }
+                    // Bước tiếp theo: git push
+                    let push_output = Command::new("git").arg("push").output();
+                    match push_output {
+                        Ok(out) if out.status.success() => {
+                            app.go_step = GoStep::Done(if is_vi {
+                                "✅ Commit & Push thành công! Code đã lên mây ☁️".to_string()
+                            } else {
+                                "✅ Commit & Push successful! Code is in the cloud ☁️".to_string()
+                            });
+                        }
+                        Ok(out) => {
+                            let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
+                            app.go_step = GoStep::Done(format!(
+                                "{} {}",
+                                if is_vi { "❌ Push thất bại:" } else { "❌ Push failed:" },
+                                err
+                            ));
+                        }
+                        Err(e) => {
+                            app.go_step = GoStep::Done(format!("❌ Error: {}", e));
                         }
                     }
                 }
@@ -624,7 +616,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 let locales = crate::Locales::new(&app.current_lang);
                                 if let Ok(msg) = crate::handle_lang("vi", &locales) {
                                     app.status_message = msg;
-                                    app.current_lang = crate::get_ai_language();
+                                    app.current_lang = Helper::get_ai_language();
                                 }
                                 app.active_modal = ActiveModal::None;
                             }
@@ -632,7 +624,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 let locales = crate::Locales::new(&app.current_lang);
                                 if let Ok(msg) = crate::handle_lang("en", &locales) {
                                     app.status_message = msg;
-                                    app.current_lang = crate::get_ai_language();
+                                    app.current_lang = Helper::get_ai_language();
                                 }
                                 app.active_modal = ActiveModal::None;
                             }
@@ -640,7 +632,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 let locales = crate::Locales::new(&app.current_lang);
                                 if let Ok(msg) = crate::handle_lang("auto", &locales) {
                                     app.status_message = msg;
-                                    app.current_lang = crate::get_ai_language();
+                                    app.current_lang = Helper::get_ai_language();
                                 }
                                 app.active_modal = ActiveModal::None;
                             }
@@ -667,7 +659,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 let locales = crate::Locales::new(&app.current_lang);
                                 if let Ok(msg) = crate::handle_lang(selection, &locales) {
                                     app.status_message = msg;
-                                    app.current_lang = crate::get_ai_language();
+                                    app.current_lang = Helper::get_ai_language();
                                 }
                                 app.active_modal = ActiveModal::None;
                             }
@@ -788,7 +780,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     let status = Command::new("git")
                                         .args(["checkout", &branch_name])
                                         .output();
-                                    
+
                                     match status {
                                         Ok(output) if output.status.success() => {
                                             app.status_message = if app.current_lang == "vi" {
@@ -831,34 +823,38 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             GoStep::Confirm => {
                                 match key.code {
                                     KeyCode::Tab => {
-                                        // Toggle between clipboard and manual input
                                         app.commit_input_mode = !app.commit_input_mode;
                                         if app.commit_input_mode && app.commit_input_text.is_empty() {
                                             app.commit_input_text = app.commit_message_preview.clone();
                                         }
                                     }
-                                    KeyCode::Enter if !app.commit_input_mode => {
-                                        let msg = if app.commit_input_mode {
-                                            app.commit_input_text.trim().to_string()
+                                    KeyCode::Enter => {
+                                        // ĐÃ SỬA: Chặn hành động nếu không có file nào được chọn
+                                        if app.staged_count == 0 {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                "⚠️ Không thể tiến hành! Hãy nhấn [Space] ngoài danh sách để chọn ít nhất 1 file.".to_string()
+                                            } else {
+                                                "⚠️ Cannot proceed! Please press [Space] outside to select at least 1 file.".to_string()
+                                            };
+                                            app.active_modal = ActiveModal::None;
                                         } else {
-                                            app.commit_message_preview.trim().to_string()
-                                        };
-                                        if !msg.is_empty() {
-                                            app.commit_message_preview = msg;
-                                            app.go_step = GoStep::Pushing;
-                                        }
-                                    }
-                                    KeyCode::Enter if app.commit_input_mode => {
-                                        let msg = app.commit_input_text.trim().to_string();
-                                        if !msg.is_empty() {
-                                            app.commit_message_preview = msg;
-                                            app.go_step = GoStep::Pushing;
+                                            let msg = if app.commit_input_mode {
+                                                app.commit_input_text.trim().to_string()
+                                            } else {
+                                                app.commit_message_preview.trim().to_string()
+                                            };
+                                            if !msg.is_empty() {
+                                                app.commit_message_preview = msg;
+                                                app.go_step = GoStep::Pushing;
+                                            }
                                         }
                                     }
                                     KeyCode::Char('y') | KeyCode::Char('Y') if !app.commit_input_mode => {
-                                        let msg = app.commit_message_preview.trim().to_string();
-                                        if !msg.is_empty() {
-                                            app.go_step = GoStep::Pushing;
+                                        if app.staged_count > 0 {
+                                            let msg = app.commit_message_preview.trim().to_string();
+                                            if !msg.is_empty() {
+                                                app.go_step = GoStep::Pushing;
+                                            }
                                         }
                                     }
                                     KeyCode::Backspace if app.commit_input_mode => {
@@ -882,20 +878,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     _ => {}
                                 }
                             }
-                            GoStep::Pushing => {
-                                // Block input while pushing
-                            }
-                            GoStep::Done(_) => {
-                                match key.code {
-                                    KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') => {
-                                        app.active_modal = ActiveModal::None;
-                                        app.go_step = GoStep::Confirm;
-                                        app.go_result = String::new();
-                                        app.refresh_git_status();
-                                    }
-                                    _ => {}
-                                }
-                            }
+                            _ => {}
                         }
                         continue;
                     }
@@ -1121,34 +1104,36 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         app.diff_scroll_offset = app.diff_scroll_offset.saturating_add(5);
                     }
                     KeyCode::Char('d') => {
-                        // Capture diff, copy to clipboard, then open DiffResult modal
-                        let diff_output = Command::new("git").args(["diff", "HEAD"]).output()
-                            .or_else(|_| Command::new("git").args(["diff"]).output());
-                        
+                        // ĐÃ SỬA: Chỉ lấy diff của các file ĐÃ CHỌN (staged) bằng lệnh --cached
+                        let diff_output = Command::new("git").args(["diff", "--cached"]).output();
+
                         match diff_output {
                             Ok(out) => {
                                 let diff_str = String::from_utf8_lossy(&out.stdout).to_string();
                                 if diff_str.trim().is_empty() {
+                                    // ĐÃ SỬA: Thông báo nhắc nhở người dùng chọn file trước khi xin AI commit message
                                     app.status_message = if app.current_lang == "vi" {
-                                        "⚠️ Không có thay đổi nào để snapshot!".to_string()
+                                        "⚠️ Bạn chưa chọn (stage) file nào! Hãy nhấn [Space] để chọn file trước khi bấm 'd'.".to_string()
                                     } else {
-                                        "⚠️ No changes to snapshot!".to_string()
+                                        "⚠️ No files staged! Please press [Space] to select files before pressing 'd'.".to_string()
                                     };
                                 } else {
-                                    // Count stats
+                                    // Đếm dòng thêm/bớt dựa trên các file đã chọn
                                     app.diff_added_lines = diff_str.lines()
                                         .filter(|l| l.starts_with('+') && !l.starts_with("++"))
                                         .count();
                                     app.diff_removed_lines = diff_str.lines()
                                         .filter(|l| l.starts_with('-') && !l.starts_with("--"))
                                         .count();
-                                    // Truncate preview (first 40 lines of diff)
+
+                                    // Truncate preview (hiển thị 40 dòng đầu trong modal kết quả)
                                     let preview: String = diff_str.lines().take(40)
                                         .collect::<Vec<_>>().join("\n");
                                     app.diff_snapshot = preview;
-                                    // Copy full prompt to clipboard
+
+                                    // Copy prompt + chỉ diff của những file đã chọn vào Clipboard
                                     let locales = crate::Locales::new(&app.current_lang);
-                                    let ai_lang = crate::get_ai_language();
+                                    let ai_lang = Helper::get_ai_language();
                                     let prompt = format!(
                                         "{} {}.\n\nDiff:\n\n{}",
                                         locales.prompt_expert, ai_lang, diff_str
@@ -1354,6 +1339,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         app.active_modal = ActiveModal::StashList;
                         app.fetch_stash();
                     }
+
                     KeyCode::Char('i') | KeyCode::Char('I') => {
                         app.fetch_remote_info();
                         app.active_modal = ActiveModal::RemoteInfo;
@@ -1643,15 +1629,15 @@ fn ui(f: &mut Frame, app: &App) {
     } else {
         for (i, file) in app.files.iter().enumerate() {
             let is_selected = i == app.selected_index;
-            
+
             // Check status to determine color badge
             let first_char = file.status.chars().next().unwrap_or(' ');
             let second_char = file.status.chars().nth(1).unwrap_or(' ');
-            
+
             let is_staged = first_char != ' ' && first_char != '?';
             let is_untracked = first_char == '?' && second_char == '?';
             let is_deleted = first_char == 'D' || second_char == 'D';
-            
+
             let (badge_text, badge_style) = if is_staged {
                 (" [S] ", Style::default().fg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)) // Green Staged
             } else if is_untracked {
@@ -1737,7 +1723,7 @@ fn ui(f: &mut Frame, app: &App) {
         0
     };
     let scroll_offset = app.diff_scroll_offset.min(max_scroll);
-    
+
     // Add scroll status info to diff panel title
     let scroll_info = if max_scroll > 0 {
         format!(" [{}/{}]", scroll_offset + 1, diff_lines.len())
@@ -1780,11 +1766,11 @@ fn ui(f: &mut Frame, app: &App) {
     // 5. RIGHT COLUMN: ⚡ KEYBOARD LEGEND
     let mut legend_lines = vec![Line::from("")];
     let groups = vec![
-        ("Navigation / Điều hướng", vec![
+        ("Navigation", vec![
             ("↑/↓ / j/k", if is_vi { "Chọn tập tin" } else { "Select file" }, Color::Rgb(189, 147, 249)),
             ("PgUp/Dn", if is_vi { "Cuộn diff" } else { "Scroll diff" }, Color::Rgb(189, 147, 249)),
         ]),
-        ("Git Operations / Thao tác", vec![
+        ("Git Operations", vec![
             ("Space", if is_vi { "Stage/Unstage" } else { "Stage/Unstage" }, Color::Rgb(80, 250, 123)),
             ("Backspace", if is_vi { "Revert / Xóa" } else { "Revert / Delete" }, Color::Rgb(255, 85, 85)),
             ("A", if is_vi { "Stage tất cả" } else { "Stage all" }, Color::Rgb(80, 250, 123)),
@@ -1796,7 +1782,7 @@ fn ui(f: &mut Frame, app: &App) {
             ("D", if is_vi { "Copy diff -> AI" } else { "Copy diff -> AI" }, Color::Rgb(241, 250, 140)),
             ("G", if is_vi { "Đóng gói (Go)" } else { "Commit & Push (Go)" }, Color::Rgb(80, 250, 123)),
         ]),
-        ("System / Hệ thống", vec![
+        ("System", vec![
             ("O", if is_vi { "Mở VS Code" } else { "Open VS Code" }, Color::Rgb(255, 121, 198)),
             ("W", if is_vi { "Chọn Project" } else { "Select Project" }, Color::Rgb(139, 233, 253)),
             ("L", if is_vi { "Đổi ngôn ngữ" } else { "Toggle lang" }, Color::Rgb(189, 147, 249)),
@@ -1886,11 +1872,11 @@ fn ui(f: &mut Frame, app: &App) {
             ];
 
             let shortcut_groups = vec![
-                ("Navigation / Điều hướng", vec![
+                ("Navigation ", vec![
                     ("↑/↓ / j/k", if is_vi { "Chọn tập tin trong danh sách" } else { "Navigate/Select file in change list" }),
                     ("PgUp/PgDn", if is_vi { "Cuộn xem Diff chi tiết" } else { "Scroll detailed code diff viewer" }),
                 ]),
-                ("Git Operations / Thao tác Git", vec![
+                ("Git Operations ", vec![
                     ("Space", if is_vi { "Stage / Unstage (git add / restore)" } else { "Stage / Unstage file (git add / restore)" }),
                     ("Backspace", if is_vi { "Khôi phục / Xóa bỏ thay đổi (git restore)" } else { "Revert / Delete changes (git restore)" }),
                     ("a", if is_vi { "Stage toàn bộ thay đổi (git add .)" } else { "Stage all changes (git add .)" }),
@@ -1902,7 +1888,7 @@ fn ui(f: &mut Frame, app: &App) {
                     ("d", if is_vi { "Chụp ảnh Diff chuyển qua AI Clipboard" } else { "Capture & Copy code diff to AI Clipboard" }),
                     ("g", if is_vi { "Đóng gói toàn bộ, tự động commit & push (Go)" } else { "Commit & Push changes auto (Go)" }),
                 ]),
-                ("System Operations / Hệ thống", vec![
+                ("System Operations ", vec![
                     ("o", if is_vi { "Mở thư mục hiện tại bằng VS Code" } else { "Open workspace folder in VS Code" }),
                     ("w", if is_vi { "Đổi sang thư mục Project khác" } else { "Switch to another workspace project" }),
                     ("l", if is_vi { "Thay đổi ngôn ngữ TUI (Language Panel)" } else { "Open language configuration panel" }),
@@ -2382,12 +2368,11 @@ fn ui(f: &mut Frame, app: &App) {
             f.render_widget(paragraph, area);
         }
         ActiveModal::GoConfirm => {
-            let area = centered_rect(68, 65, f.size());
+            let area = centered_rect(70, 70, f.size());
             f.render_widget(Clear, area);
 
             let content = match &app.go_step {
                 GoStep::Confirm => {
-                    // Preview commit message (truncate at 3 lines)
                     let msg_lines: Vec<&str> = app.commit_message_preview.lines().take(3).collect();
                     let msg_preview = msg_lines.join(" | ");
                     let msg_truncated = if msg_preview.len() > 80 {
@@ -2396,36 +2381,50 @@ fn ui(f: &mut Frame, app: &App) {
                         msg_preview
                     };
 
-                    vec![
+                    let mut lines = vec![
                         Line::from(""),
                         Line::from(vec![
                             Span::styled(
-                                if is_vi { "🚀 XÁC NHẬN COMMIT & PUSH 🚀" } else { "🚀 CONFIRM COMMIT & PUSH 🚀" },
+                                if is_vi { "🚀 XÁC NHẬN ĐÓNG GÓI COMMIT & PUSH 🚀" } else { "🚀 CONFIRM COMMIT & PUSH 🚀" },
                                 Style::default().fg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)
                             )
                         ]),
                         Line::from(""),
-                        Line::from(vec![
-                            Span::styled("  🟢 ", Style::default().fg(Color::Rgb(80, 250, 123))),
+                    ];
+
+                    // ĐÃ THÊM: Duyệt danh sách hiển thị các file được chọn trực quan
+                    if app.staged_count > 0 {
+                        lines.push(Line::from(vec![
                             Span::styled(
-                                format!("{} staged", app.staged_count),
-                                Style::default().fg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)
-                            ),
-                            Span::styled("   🟡 ", Style::default().fg(Color::Rgb(241, 250, 140))),
+                                if is_vi { "📂 Các file bạn đã chọn để commit:" } else { "📂 Selected files to commit:" },
+                                Style::default().fg(Color::Rgb(139, 233, 253)).add_modifier(Modifier::BOLD)
+                            )
+                        ]));
+                        for file in &app.files {
+                            let first_char = file.status.chars().next().unwrap_or(' ');
+                            // Nếu ký tự đầu tiên không phải khoảng trắng hoặc dấu chấm hỏi -> File đang được Stage
+                            if first_char != ' ' && first_char != '?' {
+                                lines.push(Line::from(vec![
+                                    Span::styled("   🟢 ", Style::default().fg(Color::Rgb(80, 250, 123))),
+                                    Span::styled(file.path.clone(), Style::default().fg(Color::Rgb(248, 248, 242))),
+                                ]));
+                            }
+                        }
+                    } else {
+                        lines.push(Line::from(vec![
                             Span::styled(
-                                format!("{} unstaged", app.unstaged_count),
-                                Style::default().fg(Color::Rgb(241, 250, 140)).add_modifier(Modifier::BOLD)
-                            ),
-                            Span::styled("   🟣 ", Style::default().fg(Color::Rgb(189, 147, 249))),
-                            Span::styled(
-                                format!("{} untracked", app.untracked_count),
-                                Style::default().fg(Color::Rgb(189, 147, 249)).add_modifier(Modifier::BOLD)
-                            ),
-                        ]),
+                                if is_vi { "⚠️ CẢNH BÁO: Chưa chọn file nào! Vui lòng thoát ra nhấn phím [Space] để chọn." }
+                                else { "⚠️ WARNING: No files selected! Please exit and press [Space] to select." },
+                                Style::default().fg(Color::Rgb(255, 85, 85)).add_modifier(Modifier::BOLD)
+                            )
+                        ]));
+                    }
+
+                    lines.extend(vec![
                         Line::from(""),
                         Line::from(vec![
                             Span::styled(
-                                if is_vi { "  📋 Commit message từ Clipboard:" } else { "  📋 Commit message from Clipboard:" },
+                                if is_vi { "📋 Commit message từ Clipboard:" } else { "📋 Commit message from Clipboard:" },
                                 Style::default().fg(Color::Rgb(98, 114, 164)).add_modifier(Modifier::ITALIC)
                             )
                         ]),
@@ -2438,32 +2437,28 @@ fn ui(f: &mut Frame, app: &App) {
                         Line::from(""),
                         Line::from(vec![
                             Span::styled(
-                                if is_vi {
-                                    "  ⚡ Sẽ thực hiện: git add . → git commit → git push"
-                                } else {
-                                    "  ⚡ Will execute: git add . → git commit → git push"
-                                },
+                                if is_vi { "  ⚡ Tiến trình: git commit -> git push" } else { "  ⚡ Execution: git commit -> git push" },
                                 Style::default().fg(Color::Rgb(255, 184, 108))
                             )
                         ]),
                         Line::from(""),
-                        Line::from(vec![
+                    ]);
+
+                    if app.staged_count > 0 {
+                        lines.push(Line::from(vec![
                             Span::styled(" [y] / Enter ", Style::default().fg(Color::Rgb(40, 42, 54)).bg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)),
-                            Span::styled("  ", Style::default()),
-                            Span::styled(
-                                if is_vi { "TIẾN HÀNH" } else { "PROCEED" },
-                                Style::default().fg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)
-                            ),
-                            Span::styled("           ", Style::default()),
+                            Span::styled(" TIẾN HÀNH          ", Style::default().fg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)),
                             Span::styled(" [n] / Esc ", Style::default().fg(Color::Rgb(248, 248, 242)).bg(Color::Rgb(255, 85, 85)).add_modifier(Modifier::BOLD)),
-                            Span::styled("  ", Style::default()),
-                            Span::styled(
-                                if is_vi { "HỦY" } else { "CANCEL" },
-                                Style::default().fg(Color::Rgb(255, 85, 85)).add_modifier(Modifier::BOLD)
-                            ),
-                        ]),
-                        Line::from(""),
-                    ]
+                            Span::styled(" HỦY ", Style::default().fg(Color::Rgb(255, 85, 85)).add_modifier(Modifier::BOLD)),
+                        ]));
+                    } else {
+                        lines.push(Line::from(vec![
+                            Span::styled(" [Esc] ", Style::default().fg(Color::Rgb(248, 248, 242)).bg(Color::Rgb(255, 85, 85)).add_modifier(Modifier::BOLD)),
+                            Span::styled(" QUAY LẠI CHỌN FILE ", Style::default().fg(Color::Rgb(255, 85, 85)).add_modifier(Modifier::BOLD)),
+                        ]));
+                    }
+                    lines.push(Line::from(""));
+                    lines
                 }
                 GoStep::Pushing => {
                     vec![
@@ -2477,8 +2472,8 @@ fn ui(f: &mut Frame, app: &App) {
                         Line::from(""),
                         Line::from(vec![
                             Span::styled(
-                                if is_vi { "  🔄 Đang chạy: git add . → git commit → git push" }
-                                else { "  🔄 Running: git add . → git commit → git push" },
+                                if is_vi { "  🔄 Đang chạy: git commit → git push" }
+                                else { "  🔄 Running: git commit → git push" },
                                 Style::default().fg(Color::Rgb(139, 233, 253))
                             )
                         ]),
@@ -2493,34 +2488,23 @@ fn ui(f: &mut Frame, app: &App) {
                     ]
                 }
                 GoStep::Done(result) => {
-                    let result_color = if result.starts_with("✅") {
-                        Color::Rgb(80, 250, 123)
-                    } else {
-                        Color::Rgb(255, 85, 85)
-                    };
+                    let result_color = if result.starts_with("✅") { Color::Rgb(80, 250, 123) } else { Color::Rgb(255, 85, 85) };
                     let mut lines = vec![
                         Line::from(""),
                         Line::from(vec![
-                            Span::styled(
-                                if is_vi { "📋 KẾT QUẢ" } else { "📋 RESULT" },
-                                Style::default().fg(Color::Rgb(189, 147, 249)).add_modifier(Modifier::BOLD)
-                            )
+                            Span::styled(if is_vi { "📋 KẾT QUẢ" } else { "📋 RESULT" }, Style::default().fg(Color::Rgb(189, 147, 249)).add_modifier(Modifier::BOLD))
                         ]),
                         Line::from(""),
                     ];
                     for l in result.lines() {
                         lines.push(Line::from(vec![
-                            Span::styled(
-                                format!("  {}", l),
-                                Style::default().fg(result_color).add_modifier(Modifier::BOLD)
-                            )
+                            Span::styled(format!("  {}", l), Style::default().fg(result_color).add_modifier(Modifier::BOLD))
                         ]));
                     }
                     lines.push(Line::from(""));
                     lines.push(Line::from(vec![
                         Span::styled(
-                            if is_vi { "  Nhấn [Enter] hoặc [Esc] để đóng và làm mới." }
-                            else { "  Press [Enter] or [Esc] to close and refresh." },
+                            if is_vi { "  Nhấn [Enter] hoặc [Esc] để đóng và làm mới." } else { "  Press [Enter] or [Esc] to close and refresh." },
                             Style::default().fg(Color::Rgb(98, 114, 164))
                         )
                     ]));
@@ -2529,20 +2513,11 @@ fn ui(f: &mut Frame, app: &App) {
             };
 
             let (title, border_color) = match &app.go_step {
-                GoStep::Confirm => (
-                    if is_vi { " 🚀 COMMIT & PUSH " } else { " 🚀 COMMIT & PUSH " },
-                    Color::Rgb(80, 250, 123)
-                ),
-                GoStep::Pushing => (
-                    if is_vi { " ⚡ ĐANG TIẾN HÀNH " } else { " ⚡ PROCESSING " },
-                    Color::Rgb(241, 250, 140)
-                ),
+                GoStep::Confirm => (if is_vi { " 🚀 COMMIT & PUSH " } else { " 🚀 COMMIT & PUSH " }, Color::Rgb(80, 250, 123)),
+                GoStep::Pushing => (if is_vi { " ⚡ ĐANG TIẾN HÀNH " } else { " ⚡ PROCESSING " }, Color::Rgb(241, 250, 140)),
                 GoStep::Done(r) => (
-                    if r.starts_with("✅") {
-                        if is_vi { " ✅ THÀNH CÔNG " } else { " ✅ SUCCESS " }
-                    } else {
-                        if is_vi { " ❌ THẤT BẠI " } else { " ❌ FAILED " }
-                    },
+                    if r.starts_with("✅") { if is_vi { " ✅ THÀNH CÔNG " } else { " ✅ SUCCESS " } }
+                    else { if is_vi { " ❌ THẤT BẠI " } else { " ❌ FAILED " } },
                     if r.starts_with("✅") { Color::Rgb(80, 250, 123) } else { Color::Rgb(255, 85, 85) }
                 ),
             };
@@ -2554,7 +2529,7 @@ fn ui(f: &mut Frame, app: &App) {
                 .border_type(BorderType::Double);
 
             let paragraph = Paragraph::new(content)
-                .alignment(ratatui::layout::Alignment::Center)
+                .alignment(ratatui::layout::Alignment::Left)
                 .block(block);
 
             f.render_widget(paragraph, area);

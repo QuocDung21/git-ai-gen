@@ -1,7 +1,9 @@
 mod constant;
 mod dashboard;
+mod helper;
 mod ui;
 
+use crate::helper::Helper;
 use crate::ui::logger;
 use crate::ui::spinner::with_spinner;
 use anyhow::{Context, Result};
@@ -13,7 +15,6 @@ use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use sys_locale::get_locale;
 
 const MARKERS: &[&str] = &[
     "# ULTIMATE GIT-AI WORKFLOW",
@@ -77,11 +78,6 @@ impl Locales {
     }
 }
 
-pub fn get_locales() -> Locales {
-    let lang = get_ai_language();
-    Locales::new(&lang)
-}
-
 // =========================================================================
 // CLAP CLI CONFIGURATION
 // =========================================================================
@@ -127,7 +123,7 @@ enum Commands {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let locales = get_locales();
+    let locales = Helper::get_locales();
 
     if let Err(e) = run(&cli, &locales) {
         logger::error(&format!("{} {}", locales.error_prefix, e));
@@ -174,7 +170,7 @@ pub fn handle_lang(lang: &str, locales: &Locales) -> Result<String> {
             let _ = Command::new("git")
                 .args(["config", "--global", "--unset", "git-ai.lang"])
                 .status();
-            let resolved_lang = get_ai_language();
+            let resolved_lang = Helper::get_ai_language();
             let new_locales = Locales::new(&resolved_lang);
             Ok(new_locales.lang_auto)
         }
@@ -246,9 +242,9 @@ fn handle_install() -> Result<()> {
         }
 
         let alias_lines = format!(
-            "\n# ULTIMATE GIT-AI WORKFLOW\nalias git-copydiff=\"'{}' diff\"\nalias git-go=\"'{}' go\"\nalias git-ai-uninstall=\"'{}' uninstall\"\nalias git-ai=\"'{}'\"\n",
-            exe_str, exe_str, exe_str, exe_str
-        );
+                "\n# ULTIMATE GIT-AI WORKFLOW\nalias git-copydiff=\"'{}' diff\"\nalias git-go=\"'{}' go\"\nalias git-ai-uninstall=\"'{}' uninstall\"\nalias git-ai=\"'{}'\"\n",
+                exe_str, exe_str, exe_str, exe_str
+            );
 
         append_to_file(&target_profile, &alias_lines)?;
 
@@ -289,9 +285,9 @@ fn handle_install() -> Result<()> {
         }
 
         let func_lines = format!(
-            "\n# ULTIMATE GIT-AI WORKFLOW\nfunction git-copydiff {{ & \"{}\" diff }}\nfunction git-go {{ & \"{}\" go }}\nfunction git-ai-uninstall {{ & \"{}\" uninstall }}\nfunction git-ai {{ & \"{}\" }}\n",
-            exe_str, exe_str, exe_str, exe_str
-        );
+                "\n# ULTIMATE GIT-AI WORKFLOW\nfunction git-copydiff {{ & \"{}\" diff }}\nfunction git-go {{ & \"{}\" go }}\nfunction git-ai-uninstall {{ & \"{}\" uninstall }}\nfunction git-ai {{ & \"{}\" }}\n",
+                exe_str, exe_str, exe_str, exe_str
+            );
 
         append_to_file(&profile_path, &func_lines)?;
 
@@ -317,7 +313,7 @@ pub fn handle_diff(locales: &Locales) -> Result<String> {
         return Ok(locales.no_changes.clone());
     }
 
-    let ai_lang = get_ai_language();
+    let ai_lang = Helper::get_ai_language();
 
     let prompt = format!(
         "{} {}.\n\nDiff:\n\n{}",
@@ -407,25 +403,25 @@ pub fn handle_restore(locales: &Locales) -> Result<()> {
 // HELPER FUNCTIONS
 // =========================================================================
 
-pub fn get_ai_language() -> String {
-    if let Ok(output) = Command::new("git")
-        .args(["config", "--global", "--get", "git-ai.lang"])
-        .output()
-    {
-        let stdout = String::from_utf8_lossy(&output.stdout)
-            .trim()
-            .to_lowercase();
-        if stdout == "vi" || stdout == "en" {
-            return stdout;
-        }
-    }
-    let locale = get_locale().unwrap_or_else(|| String::from("en-US"));
-    if locale.starts_with("vi") {
-        "vi".to_string()
-    } else {
-        "en".to_string()
-    }
-}
+// pub fn get_ai_language() -> String {
+//     if let Ok(output) = Command::new("git")
+//         .args(["config", "--global", "--get", "git-ai.lang"])
+//         .output()
+//     {
+//         let stdout = String::from_utf8_lossy(&output.stdout)
+//             .trim()
+//             .to_lowercase();
+//         if stdout == "vi" || stdout == "en" {
+//             return stdout;
+//         }
+//     }
+//     let locale = get_locale().unwrap_or_else(|| String::from("en-US"));
+//     if locale.starts_with("vi") {
+//         "vi".to_string()
+//     } else {
+//         "en".to_string()
+//     }
+// }
 
 #[allow(dead_code)]
 fn call_external_app(cmd: &str, args: &[&str], input: &str) -> Result<String> {
