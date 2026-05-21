@@ -13,7 +13,7 @@ use std::{io, time::Duration};
 
 use crate::app::models::{ActiveModal, AmendStep, GoStep, StashAction, StashStep};
 use crate::app::App;
-use crate::git::branch::checkout_branch;
+use crate::git::branch::{checkout_branch, git_merge};
 use crate::git::commit::{amend_commit, commit};
 use crate::git::remote::{git_fetch, git_pull, git_push};
 use crate::git::stash::{stash_apply, stash_drop, stash_pop, stash_push};
@@ -304,6 +304,23 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     }
                                 }
                             }
+                            KeyCode::Char('m') | KeyCode::Char('M') => {
+                                if !app.branches.is_empty()
+                                    && app.selected_branch_index < app.branches.len()
+                                {
+                                    let branch_name =
+                                        app.branches[app.selected_branch_index].clone();
+                                    if branch_name != app.current_branch {
+                                        app.active_modal = ActiveModal::MergeConfirm(branch_name);
+                                    } else {
+                                        app.status_message = if app.current_lang == "vi" {
+                                            "❌ Không thể merge chi nhánh hiện tại vào chính nó!".to_string()
+                                        } else {
+                                            "❌ Cannot merge current branch into itself!".to_string()
+                                        };
+                                    }
+                                }
+                            }
                             KeyCode::Enter => {
                                 if !app.branches.is_empty()
                                     && app.selected_branch_index < app.branches.len()
@@ -333,6 +350,45 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     app.active_modal = ActiveModal::None;
                                     app.refresh_git_status();
                                 }
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::MergeConfirm(branch_name) => {
+                        let branch_name = branch_name.clone();
+                        match key.code {
+                            KeyCode::Esc
+                            | KeyCode::Char('n')
+                            | KeyCode::Char('N') => {
+                                app.active_modal = ActiveModal::BranchSelect;
+                            }
+                            KeyCode::Enter
+                            | KeyCode::Char('y')
+                            | KeyCode::Char('Y') => {
+                                app.status_message = if app.current_lang == "vi" {
+                                    format!("⚡ Đang merge chi nhánh {}...", branch_name)
+                                } else {
+                                    format!("⚡ Merging branch {}...", branch_name)
+                                };
+                                match git_merge(&branch_name) {
+                                    Ok(out) => {
+                                        app.status_message = if app.current_lang == "vi" {
+                                            format!("✅ Đã merge thành công: {}", out)
+                                        } else {
+                                            format!("✅ Merge successful: {}", out)
+                                        };
+                                    }
+                                    Err(err) => {
+                                        app.status_message = if app.current_lang == "vi" {
+                                            format!("❌ Lỗi merge: {}", err)
+                                        } else {
+                                            format!("❌ Merge failed: {}", err)
+                                        };
+                                    }
+                                }
+                                app.active_modal = ActiveModal::None;
+                                app.refresh_git_status();
                             }
                             _ => {}
                         }
@@ -690,11 +746,12 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         diff_str.lines().take(40).collect::<Vec<_>>().join("\n");
                                     app.diff_snapshot = preview;
 
-                                    let locales = crate::cli::Locales::new(&app.current_lang);
                                     let ai_lang = Helper::get_ai_language();
                                     let prompt = format!(
                                         "{} {}.\n\nDiff:\n\n{}",
-                                        locales.prompt_expert, ai_lang, diff_str
+                                        crate::constant::Constant::PROMPT_EXPERT,
+                                        ai_lang,
+                                        diff_str
                                     );
                                     if let Ok(mut cb) = arboard::Clipboard::new() {
                                         let _ = cb.set_text(prompt);

@@ -3,6 +3,8 @@ pub struct Constant;
 
 #[allow(dead_code)]
 impl Constant {
+    pub const PROMPT_MINIMAL: &str = r#"Act as an expert developer. Output ONLY the raw commit message for the diff below. Rules: 1. Subject line: Conventional Commits, < 50 chars. 2. Blank line. 3. Body: 1-2 extremely short sentences explaining WHAT and WHY. Be direct, no fluff. STRICTLY NO markdown formatting (no ```), NO preamble, NO greetings. Write the commit message in"#;
+
     pub const PROMPT_EXPERT: &str = r#"Act as a Senior Software Engineer. Your task is to analyze the provided Git diff and generate a professional Git commit message.
     Strict Requirements:
     1. Output ONLY the raw commit message text. STRICTLY NO Markdown formatting (do not use ``` blocks), NO greetings, NO preambles, and NO concluding remarks.

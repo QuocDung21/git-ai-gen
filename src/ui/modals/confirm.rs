@@ -476,6 +476,16 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
     )]));
     content.push(Line::from(vec![Span::styled(
         if is_vi {
+            "Nhấn [m] để merge chi nhánh được chọn vào chi nhánh hiện tại."
+        } else {
+            "Press [m] to merge selected branch into current branch."
+        },
+        Style::default()
+            .fg(Color::Rgb(80, 250, 123))
+            .add_modifier(Modifier::BOLD),
+    )]));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
             "Nhấn [Esc] hoặc [q] để HỦY."
         } else {
             "Press [Esc] or [q] to CANCEL."
@@ -1427,3 +1437,116 @@ pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
         .block(block);
     f.render_widget(paragraph, area);
 }
+
+pub fn render_merge_confirm(f: &mut Frame, app: &App, branch_to_merge: &str, area: Rect) {
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let content = if is_vi {
+        vec![
+            Line::from(""),
+            Line::from(vec![Span::styled(
+                "🔀  XÁC NHẬN MERGE CHI NHÁNH  🔀",
+                Style::default()
+                    .fg(Color::Rgb(255, 184, 108))
+                    .add_modifier(Modifier::BOLD),
+            )]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled("Trộn chi nhánh ", Style::default().fg(Color::Rgb(248, 248, 242))),
+                Span::styled(format!("\"{}\"", branch_to_merge), Style::default().fg(Color::Rgb(139, 233, 253)).add_modifier(Modifier::BOLD)),
+                Span::styled(" vào ", Style::default().fg(Color::Rgb(248, 248, 242))),
+                Span::styled(format!("\"{}\"", app.current_branch), Style::default().fg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)),
+            ]),
+            Line::from(""),
+            Line::from(vec![Span::styled(
+                "⚠️ Lưu ý: Nếu xảy ra xung đột (conflict), git-ai sẽ báo lỗi",
+                Style::default().fg(Color::Rgb(255, 85, 85)),
+            )]),
+            Line::from(vec![Span::styled(
+                "và hiển thị danh sách file xung đột ngoài màn hình Workspace.",
+                Style::default().fg(Color::Rgb(255, 85, 85)),
+            )]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(
+                    " [y] / Enter ĐỒNG Ý ",
+                    Style::default()
+                        .fg(Color::Rgb(248, 248, 242))
+                        .bg(Color::Rgb(80, 250, 123))
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled("      ", Style::default()),
+                Span::styled(
+                    " [n] / Esc HỦY BỎ ",
+                    Style::default()
+                        .fg(Color::Rgb(248, 248, 242))
+                        .bg(Color::Rgb(255, 85, 85))
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+        ]
+    } else {
+        vec![
+            Line::from(""),
+            Line::from(vec![Span::styled(
+                "🔀  CONFIRM MERGE BRANCH  🔀",
+                Style::default()
+                    .fg(Color::Rgb(255, 184, 108))
+                    .add_modifier(Modifier::BOLD),
+            )]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled("Merge branch ", Style::default().fg(Color::Rgb(248, 248, 242))),
+                Span::styled(format!("\"{}\"", branch_to_merge), Style::default().fg(Color::Rgb(139, 233, 253)).add_modifier(Modifier::BOLD)),
+                Span::styled(" into ", Style::default().fg(Color::Rgb(248, 248, 242))),
+                Span::styled(format!("\"{}\"", app.current_branch), Style::default().fg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)),
+            ]),
+            Line::from(""),
+            Line::from(vec![Span::styled(
+                "⚠️ Note: If conflicts occur, git-ai will report error",
+                Style::default().fg(Color::Rgb(255, 85, 85)),
+            )]),
+            Line::from(vec![Span::styled(
+                "and conflict files will be listed on Workspace changes panel.",
+                Style::default().fg(Color::Rgb(255, 85, 85)),
+            )]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(
+                    " [y] / Enter CONFIRM ",
+                    Style::default()
+                        .fg(Color::Rgb(248, 248, 242))
+                        .bg(Color::Rgb(80, 250, 123))
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled("      ", Style::default()),
+                Span::styled(
+                    " [n] / Esc CANCEL ",
+                    Style::default()
+                        .fg(Color::Rgb(248, 248, 242))
+                        .bg(Color::Rgb(255, 85, 85))
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+        ]
+    };
+
+    let block = Block::default()
+        .title(Span::styled(
+            if is_vi { " 🔀 XÁC NHẬN MERGE " } else { " 🔀 CONFIRM MERGE " },
+            Style::default()
+                .fg(Color::Rgb(255, 184, 108))
+                .add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Rgb(255, 184, 108)))
+        .border_type(BorderType::Double);
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Center)
+        .block(block);
+
+    f.render_widget(paragraph, area);
+}
+

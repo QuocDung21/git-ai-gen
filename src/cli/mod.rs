@@ -19,7 +19,6 @@ pub struct Locales {
     pub error_prefix: String,
     pub press_enter: String,
     pub no_changes: String,
-    pub prompt_expert: String,
     pub status_clean: String,
     pub status_pending: String,
     pub status_fail: String,

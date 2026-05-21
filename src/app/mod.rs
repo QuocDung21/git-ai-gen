@@ -1,6 +1,6 @@
 use std::env;
-pub mod models;
 pub mod events;
+pub mod models;
 
 use models::*;
 
@@ -334,7 +334,8 @@ impl App {
         self.remote_url = crate::git::remote::get_remote_url();
         let remote_name = crate::git::remote::get_remote_name(&self.current_branch);
         self.remote_tracking = format!("{}/{}", remote_name, self.current_branch);
-        let (ahead, behind) = crate::git::remote::get_ahead_behind(&self.current_branch, &self.remote_tracking);
+        let (ahead, behind) =
+            crate::git::remote::get_ahead_behind(&self.current_branch, &self.remote_tracking);
         self.ahead_count = ahead;
         self.behind_count = behind;
     }

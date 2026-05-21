@@ -1,8 +1,8 @@
+use crate::cli::logger;
+use crate::cli::spinner::with_spinner;
 use crate::cli::{
     append_to_file, ask_confirm_default_no, clean_profile_file, print_commands_help, Locales,
 };
-use crate::cli::logger;
-use crate::cli::spinner::with_spinner;
 use anyhow::Result;
 use std::env;
 

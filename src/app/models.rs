@@ -60,4 +60,5 @@ pub enum ActiveModal {
     RemoteInfo,
     AmendCommit,
     CommitDiff(String), // commit hash
+    MergeConfirm(String), // Branch name to merge into current branch
 }

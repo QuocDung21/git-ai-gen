@@ -72,9 +72,9 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                 (
                     "B",
                     if is_vi {
-                        "Đổi chi nhánh"
+                        "Đổi / Trộn nhánh (Merge)"
                     } else {
-                        "Select branch"
+                        "Switch / Merge branch"
                     },
                     Color::Rgb(139, 233, 253),
                 ),

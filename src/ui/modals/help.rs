@@ -84,9 +84,9 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
                 (
                     "b",
                     if is_vi {
-                        "Xem & Chuyển đổi chi nhánh Git"
+                        "Xem & Chuyển chi nhánh Git (nhấn [m] để merge)"
                     } else {
-                        "View & Select active git branch"
+                        "View & Switch active git branch (press [m] to merge)"
                     },
                 ),
                 (

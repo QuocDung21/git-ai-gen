@@ -13,6 +13,7 @@ pub use confirm::{
     render_remote_info,
     render_amend_commit,
     render_commit_diff,
+    render_merge_confirm,
 };
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};

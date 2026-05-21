@@ -150,6 +150,10 @@ pub fn ui(f: &mut Frame, app: &App) {
             let area = modals::centered_rect(88, 88, f.size());
             modals::render_commit_diff(f, app, hash, area);
         }
+        ActiveModal::MergeConfirm(selected_branch) => {
+            let area = modals::centered_rect(55, 30, f.size());
+            modals::render_merge_confirm(f, app, selected_branch, area);
+        }
         ActiveModal::None => {}
     }
 }

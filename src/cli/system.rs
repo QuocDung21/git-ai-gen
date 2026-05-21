@@ -1,9 +1,9 @@
+use crate::cli::logger;
+use crate::cli::{ask_confirm, ask_confirm_default_no, uninstall, Locales};
+use crate::helper::Helper;
 use anyhow::Result;
 use arboard::Clipboard;
 use std::process::Command;
-use crate::helper::Helper;
-use crate::cli::logger;
-use crate::cli::{Locales, ask_confirm, ask_confirm_default_no, uninstall};
 
 pub fn handle_lang(lang: &str, locales: &Locales) -> Result<String> {
     match lang {
@@ -62,7 +62,9 @@ pub fn handle_diff(locales: &Locales) -> Result<String> {
 
     let prompt = format!(
         "{} {}.\n\nDiff:\n\n{}",
-        locales.prompt_expert, ai_lang, diff_str
+        crate::constant::Constant::PROMPT_EXPERT,
+        ai_lang,
+        diff_str
     );
 
     let mut clipboard = Clipboard::new()?;
@@ -100,7 +102,12 @@ pub fn handle_go(locales: &Locales) -> Result<()> {
     if ask_confirm(&locales.confirm_deploy)? {
         logger::heading(&locales.pushing);
 
-        if !Command::new("git").args(["add", "."]).output()?.status.success() {
+        if !Command::new("git")
+            .args(["add", "."])
+            .output()?
+            .status
+            .success()
+        {
             return Ok(());
         }
         if !Command::new("git")
@@ -112,7 +119,12 @@ pub fn handle_go(locales: &Locales) -> Result<()> {
             return Ok(());
         }
 
-        if Command::new("git").args(["push"]).output()?.status.success() {
+        if Command::new("git")
+            .args(["push"])
+            .output()?
+            .status
+            .success()
+        {
             logger::success(&locales.push_success);
         }
     } else {
