@@ -24,7 +24,7 @@ pub struct App {
     pub commit_logs: Vec<CommitLogEntry>,
     pub selected_log_index: usize,
     // Branch switcher state
-    pub branches: Vec<String>,
+    pub branches: Vec<BranchEntry>,
     pub selected_branch_index: usize,
     // Diff result modal
     pub diff_snapshot: String,
@@ -281,7 +281,7 @@ impl App {
 
     pub fn fetch_branches(&mut self) {
         self.branches = crate::git::branch::get_branches();
-        if let Some(idx) = self.branches.iter().position(|b| b == &self.current_branch) {
+        if let Some(idx) = self.branches.iter().position(|b| b.name == self.current_branch && !b.is_remote) {
             self.selected_branch_index = idx;
         } else {
             self.selected_branch_index = 0;

@@ -1,16 +1,31 @@
+use crate::app::models::BranchEntry;
 use std::process::Command;
 
-pub fn get_branches() -> Vec<String> {
+pub fn get_branches() -> Vec<BranchEntry> {
     let mut branches = Vec::new();
     if let Ok(output) = Command::new("git")
-        .args(["branch", "--format=%(refname:short)"])
+        .args(["branch", "-a", "--format=%(refname)"])
         .output()
     {
-        let branches_text = String::from_utf8_lossy(&output.stdout);
-        for line in branches_text.lines() {
-            let trimmed = line.trim();
-            if !trimmed.is_empty() {
-                branches.push(trimmed.to_string());
+        let text = String::from_utf8_lossy(&output.stdout);
+        for line in text.lines() {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+            if line.ends_with("/HEAD") {
+                continue;
+            }
+            if let Some(local_name) = line.strip_prefix("refs/heads/") {
+                branches.push(BranchEntry {
+                    name: local_name.to_string(),
+                    is_remote: false,
+                });
+            } else if let Some(remote_name) = line.strip_prefix("refs/remotes/") {
+                branches.push(BranchEntry {
+                    name: remote_name.to_string(),
+                    is_remote: true,
+                });
             }
         }
     }

@@ -404,7 +404,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
     } else {
         for (i, branch) in app.branches.iter().enumerate() {
             let is_selected = i == app.selected_branch_index;
-            let is_active = branch == &app.current_branch;
+            let is_active = !branch.is_remote && branch.name == app.current_branch;
             let cursor = if is_selected {
                 Span::styled(
                     " ▶ ",
@@ -425,6 +425,8 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
                 Style::default()
                     .fg(Color::Rgb(80, 250, 123))
                     .add_modifier(Modifier::BOLD)
+            } else if branch.is_remote {
+                Style::default().fg(Color::Rgb(255, 184, 108))
             } else {
                 Style::default().fg(Color::Rgb(248, 248, 242))
             };
@@ -440,14 +442,30 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
                         .fg(Color::Rgb(80, 250, 123))
                         .add_modifier(Modifier::ITALIC),
                 )
+            } else if branch.is_remote {
+                Span::styled(
+                    " (Remote) ",
+                    Style::default()
+                        .fg(Color::Rgb(255, 184, 108))
+                        .add_modifier(Modifier::ITALIC),
+                )
             } else {
                 Span::styled("", Style::default())
             };
 
-            let prefix = if is_active { "★ " } else { "☆ " };
+            let prefix = if branch.is_remote {
+                "🌍 "
+            } else if is_active {
+                "★ "
+            } else {
+                "☆ "
+            };
+
             let prefix_span = Span::styled(
                 prefix,
-                if is_active {
+                if branch.is_remote {
+                    Style::default().fg(Color::Rgb(255, 184, 108))
+                } else if is_active {
                     Style::default().fg(Color::Rgb(80, 250, 123))
                 } else {
                     Style::default().fg(Color::Rgb(98, 114, 164))
@@ -457,7 +475,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
             content.push(Line::from(vec![
                 cursor,
                 prefix_span,
-                Span::styled(branch.clone(), branch_style),
+                Span::styled(branch.name.clone(), branch_style),
                 active_badge,
             ]));
         }

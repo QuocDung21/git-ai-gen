@@ -1,4 +1,10 @@
 #[derive(Clone, Debug, PartialEq)]
+pub struct BranchEntry {
+    pub name: String,
+    pub is_remote: bool,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ChangedFile {
     pub status: String,
     pub path: String,

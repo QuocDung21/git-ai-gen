@@ -309,7 +309,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     && app.selected_branch_index < app.branches.len()
                                 {
                                     let branch_name =
-                                        app.branches[app.selected_branch_index].clone();
+                                        app.branches[app.selected_branch_index].name.clone();
                                     if branch_name != app.current_branch {
                                         app.active_modal = ActiveModal::MergeConfirm(branch_name);
                                     } else {
@@ -326,7 +326,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     && app.selected_branch_index < app.branches.len()
                                 {
                                     let branch_name =
-                                        app.branches[app.selected_branch_index].clone();
+                                        app.branches[app.selected_branch_index].name.clone();
 
                                     match checkout_branch(&branch_name) {
                                         Ok(_) => {
