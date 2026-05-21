@@ -14,6 +14,9 @@ pub use confirm::{
     render_amend_commit,
     render_commit_diff,
     render_merge_confirm,
+    render_new_branch_input,
+    render_theme_select,
+    render_workspace_history,
 };
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};

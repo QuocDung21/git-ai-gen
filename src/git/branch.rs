@@ -52,3 +52,14 @@ pub fn git_merge(branch: &str) -> Result<String, std::io::Error> {
     }
 }
 
+pub fn create_and_checkout_branch(branch: &str) -> Result<String, std::io::Error> {
+    let output = Command::new("git")
+        .args(["checkout", "-b", branch])
+        .output()?;
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    } else {
+        let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+    }
+}

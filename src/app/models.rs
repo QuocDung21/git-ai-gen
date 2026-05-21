@@ -1,3 +1,20 @@
+use ratatui::style::Color;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct AppTheme {
+    pub fg: Color,
+    pub border: Color,
+    pub purple: Color,
+    pub green: Color,
+    pub red: Color,
+    pub yellow: Color,
+    pub cyan: Color,
+    pub orange: Color,
+    pub select_bg: Color,
+    pub select_fg: Color,
+    pub bg: Color,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct BranchEntry {
     pub name: String,
@@ -67,4 +84,7 @@ pub enum ActiveModal {
     AmendCommit,
     CommitDiff(String), // commit hash
     MergeConfirm(String), // Branch name to merge into current branch
+    NewBranchInput, // Text input modal to create and checkout a new branch
+    ThemeSelect, // Interactive theme selection modal
+    WorkspaceHistory, // Workspace history selector modal
 }

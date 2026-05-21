@@ -13,7 +13,7 @@ use std::{io, time::Duration};
 
 use crate::app::models::{ActiveModal, AmendStep, GoStep, StashAction, StashStep};
 use crate::app::App;
-use crate::git::branch::{checkout_branch, git_merge};
+use crate::git::branch::{checkout_branch, create_and_checkout_branch, git_merge};
 use crate::git::commit::{amend_commit, commit};
 use crate::git::remote::{git_fetch, git_pull, git_push};
 use crate::git::stash::{stash_apply, stash_drop, stash_pop, stash_push};
@@ -186,6 +186,166 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         }
                         continue;
                     }
+                    ActiveModal::ThemeSelect => {
+                        match key.code {
+                            KeyCode::Esc | KeyCode::Char('q') => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Char('d') | KeyCode::Char('D') => {
+                                app.is_light_theme = false;
+                                let _ = Command::new("git")
+                                    .args(["config", "--global", "git-ai.theme", "dark"])
+                                    .output();
+                                app.refresh_git_status();
+                                app.status_message = if app.current_lang == "vi" {
+                                    "🎨 Đã chuyển sang giao diện Tối (Dracula)".to_string()
+                                } else {
+                                    "🎨 Switched to Dracula (Dark) theme".to_string()
+                                };
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Char('l') | KeyCode::Char('L') => {
+                                app.is_light_theme = true;
+                                let _ = Command::new("git")
+                                    .args(["config", "--global", "git-ai.theme", "light"])
+                                    .output();
+                                app.refresh_git_status();
+                                app.status_message = if app.current_lang == "vi" {
+                                    "🎨 Đã chuyển sang giao diện Sáng (Premium Light)".to_string()
+                                } else {
+                                    "🎨 Switched to Premium Light theme".to_string()
+                                };
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Up | KeyCode::Char('k') | KeyCode::Down | KeyCode::Char('j') => {
+                                app.selected_theme_index = 1 - app.selected_theme_index;
+                            }
+                            KeyCode::Enter => {
+                                let selection = match app.selected_theme_index {
+                                    0 => "dark",
+                                    _ => "light",
+                                };
+                                app.is_light_theme = selection == "light";
+                                let _ = Command::new("git")
+                                    .args(["config", "--global", "git-ai.theme", selection])
+                                    .output();
+                                app.refresh_git_status();
+                                app.status_message = if app.current_lang == "vi" {
+                                    format!(
+                                        "🎨 Đã chuyển sang giao diện {}",
+                                        if app.is_light_theme { "Sáng (Premium Light)" } else { "Tối (Dracula)" }
+                                    )
+                                } else {
+                                    format!(
+                                        "🎨 Switched to {} theme",
+                                        if app.is_light_theme { "Premium Light" } else { "Dracula (Dark)" }
+                                    )
+                                };
+                                app.active_modal = ActiveModal::None;
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::WorkspaceHistory => {
+                        let is_vi = app.current_lang == "vi";
+                        match key.code {
+                            KeyCode::Esc | KeyCode::Char('q') => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                if !app.workspace_history.is_empty() && app.selected_workspace_index > 0 {
+                                    app.selected_workspace_index -= 1;
+                                }
+                            }
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                if !app.workspace_history.is_empty()
+                                    && app.selected_workspace_index < app.workspace_history.len() - 1
+                                {
+                                    app.selected_workspace_index += 1;
+                                }
+                            }
+                            KeyCode::Enter => {
+                                if !app.workspace_history.is_empty() {
+                                    let selected_path = app.workspace_history[app.selected_workspace_index].clone();
+                                    if std::env::set_current_dir(&selected_path).is_ok() {
+                                        app.current_dir = selected_path.clone();
+                                        app.add_to_workspace_history(&selected_path);
+                                        app.refresh_git_status();
+                                        app.status_message = if is_vi {
+                                            format!("🔄 Đã chuyển sang Project: {}", selected_path)
+                                        } else {
+                                            format!("🔄 Switched to project: {}", selected_path)
+                                        };
+                                        app.active_modal = ActiveModal::None;
+                                    } else {
+                                        app.status_message = if is_vi {
+                                            "❌ Lỗi: Không thể truy cập thư mục này.".to_string()
+                                        } else {
+                                            "❌ Error: Cannot access this folder.".to_string()
+                                        };
+                                    }
+                                }
+                            }
+                            KeyCode::Char('n') | KeyCode::Char('N') => {
+                                let dialog_title = if is_vi {
+                                    "Chọn thư mục Project mới"
+                                } else {
+                                    "Select New Project Folder"
+                                };
+                                if let Some(folder) =
+                                    rfd::FileDialog::new().set_title(dialog_title).pick_folder()
+                                {
+                                    if std::env::set_current_dir(&folder).is_ok() {
+                                        let folder_str = folder.display().to_string();
+                                        app.current_dir = folder_str.clone();
+                                        app.add_to_workspace_history(&folder_str);
+                                        app.refresh_git_status();
+                                        app.status_message = if is_vi {
+                                            "🔄 Đã tải Project mới thành công!".to_string()
+                                        } else {
+                                            "🔄 Loaded new Project successfully!".to_string()
+                                        };
+                                        app.active_modal = ActiveModal::None;
+                                    } else {
+                                        app.status_message = if is_vi {
+                                            "❌ Lỗi: Không thể truy cập thư mục này.".to_string()
+                                        } else {
+                                            "❌ Error: Cannot access this folder.".to_string()
+                                        };
+                                    }
+                                } else {
+                                    app.status_message = if is_vi {
+                                        "ℹ️ Đã hủy chọn Project.".to_string()
+                                    } else {
+                                        "ℹ️ Project selection cancelled.".to_string()
+                                    };
+                                }
+                            }
+                            KeyCode::Char('x') | KeyCode::Char('X') => {
+                                if !app.workspace_history.is_empty() {
+                                    let removed_path = app.workspace_history[app.selected_workspace_index].clone();
+                                    // Don't allow removing the currently active workspace
+                                    if removed_path == app.current_dir {
+                                        app.status_message = if is_vi {
+                                            "⚠️ Không thể xóa workspace đang hoạt động!".to_string()
+                                        } else {
+                                            "⚠️ Cannot remove the currently active workspace!".to_string()
+                                        };
+                                    } else {
+                                        app.remove_from_workspace_history(app.selected_workspace_index);
+                                        app.status_message = if is_vi {
+                                            format!("🗑️ Đã xóa khỏi lịch sử: {}", removed_path)
+                                        } else {
+                                            format!("🗑️ Removed from history: {}", removed_path)
+                                        };
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
                     ActiveModal::RevertConfirm(path) => {
                         match key.code {
                             KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
@@ -304,6 +464,10 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     }
                                 }
                             }
+                            KeyCode::Char('c') | KeyCode::Char('C') => {
+                                app.new_branch_name.clear();
+                                app.active_modal = ActiveModal::NewBranchInput;
+                            }
                             KeyCode::Char('m') | KeyCode::Char('M') => {
                                 if !app.branches.is_empty()
                                     && app.selected_branch_index < app.branches.len()
@@ -389,6 +553,56 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 }
                                 app.active_modal = ActiveModal::None;
                                 app.refresh_git_status();
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::NewBranchInput => {
+                        match key.code {
+                            KeyCode::Esc => {
+                                app.active_modal = ActiveModal::BranchSelect;
+                            }
+                            KeyCode::Enter => {
+                                let branch_name = app.new_branch_name.trim().to_string();
+                                if !branch_name.is_empty() {
+                                    app.status_message = if app.current_lang == "vi" {
+                                        format!("⚡ Đang tạo chi nhánh {}...", branch_name)
+                                    } else {
+                                        format!("⚡ Creating branch {}...", branch_name)
+                                    };
+                                    match create_and_checkout_branch(&branch_name) {
+                                        Ok(_) => {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                format!("🌿 Đã tạo và chuyển sang chi nhánh mới: {}", branch_name)
+                                            } else {
+                                                format!("🌿 Created and checked out new branch: {}", branch_name)
+                                            };
+                                            app.active_modal = ActiveModal::None;
+                                        }
+                                        Err(err) => {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                format!("❌ Lỗi tạo chi nhánh: {}", err)
+                                            } else {
+                                                format!("❌ Failed to create branch: {}", err)
+                                            };
+                                            app.active_modal = ActiveModal::BranchSelect;
+                                        }
+                                    }
+                                    app.refresh_git_status();
+                                } else {
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "❌ Tên chi nhánh không được để trống!".to_string()
+                                    } else {
+                                        "❌ Branch name cannot be empty!".to_string()
+                                    };
+                                }
+                            }
+                            KeyCode::Backspace => {
+                                app.new_branch_name.pop();
+                            }
+                            KeyCode::Char(c) => {
+                                app.new_branch_name.push(c);
                             }
                             _ => {}
                         }
@@ -653,7 +867,64 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         }
                         continue;
                     }
-                    ActiveModal::None => {}
+                    ActiveModal::None => {
+                        if app.focus_diff {
+                            match key.code {
+                                KeyCode::Char('q') => return Ok(()),
+                                KeyCode::Down | KeyCode::Char('j') => {
+                                    app.diff_scroll_offset = app.diff_scroll_offset.saturating_add(1);
+                                }
+                                KeyCode::Up | KeyCode::Char('k') => {
+                                    if app.diff_scroll_offset > 0 {
+                                        app.diff_scroll_offset = app.diff_scroll_offset.saturating_sub(1);
+                                    }
+                                }
+                                KeyCode::PageDown | KeyCode::Char('d') => {
+                                    app.diff_scroll_offset = app.diff_scroll_offset.saturating_add(10);
+                                }
+                                KeyCode::PageUp | KeyCode::Char('u') => {
+                                    if app.diff_scroll_offset > 0 {
+                                        app.diff_scroll_offset = app.diff_scroll_offset.saturating_sub(10);
+                                    }
+                                }
+                                KeyCode::Char(' ') => {
+                                    if !app.files.is_empty() && app.selected_index < app.files.len() {
+                                        let file = &app.files[app.selected_index];
+                                        let is_staged =
+                                            !file.status.starts_with(' ') && !file.status.starts_with('?');
+                                        let path = file.path.clone();
+
+                                        if is_staged {
+                                            let _ = unstage_file(&path);
+                                            app.status_message = if app.current_lang == "vi" {
+                                                format!("➖ Đã unstage: {}", path)
+                                            } else {
+                                                format!("➖ Unstaged: {}", path)
+                                            };
+                                        } else {
+                                            let _ = stage_file(&path);
+                                            app.status_message = if app.current_lang == "vi" {
+                                                format!("➕ Đã stage: {}", path)
+                                            } else {
+                                                format!("➕ Staged: {}", path)
+                                            };
+                                        }
+                                        app.refresh_git_status();
+                                    }
+                                }
+                                KeyCode::Tab | KeyCode::Esc | KeyCode::Left => {
+                                    app.focus_diff = false;
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "📂 Đã quay lại Danh sách tập tin".to_string()
+                                    } else {
+                                        "📂 Returned to Files list".to_string()
+                                    };
+                                }
+                                _ => {}
+                            }
+                            continue;
+                        }
+                    }
                 }
 
                 // Standard controls
@@ -718,6 +989,24 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         }
                     }
                     KeyCode::PageDown => {
+                        app.diff_scroll_offset = app.diff_scroll_offset.saturating_add(5);
+                    }
+                    KeyCode::Tab | KeyCode::Right => {
+                        if !app.files.is_empty() {
+                            app.focus_diff = true;
+                            app.status_message = if app.current_lang == "vi" {
+                                "📄 Đã chuyển focus sang Diff. Nhấn j/k để cuộn dòng, d/u để cuộn trang, Tab/Esc để quay lại.".to_string()
+                            } else {
+                                "📄 Focused Diff view. Press j/k to line scroll, d/u to page scroll, Tab/Esc to return.".to_string()
+                            };
+                        }
+                    }
+                    KeyCode::Char('[') => {
+                        if app.diff_scroll_offset > 0 {
+                            app.diff_scroll_offset = app.diff_scroll_offset.saturating_sub(5);
+                        }
+                    }
+                    KeyCode::Char(']') => {
                         app.diff_scroll_offset = app.diff_scroll_offset.saturating_add(5);
                     }
                     KeyCode::Char('d') => {
@@ -942,38 +1231,13 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         app.active_modal = ActiveModal::AmendCommit;
                     }
                     KeyCode::Char('w') => {
-                        let is_vi = app.current_lang == "vi";
-                        let dialog_title = if is_vi {
-                            "Chọn thư mục Project mới"
-                        } else {
-                            "Select New Project Folder"
-                        };
-
-                        if let Some(folder) =
-                            rfd::FileDialog::new().set_title(dialog_title).pick_folder()
-                        {
-                            if std::env::set_current_dir(&folder).is_ok() {
-                                app.current_dir = folder.display().to_string();
-                                app.refresh_git_status();
-                                app.status_message = if is_vi {
-                                    "🔄 Đã tải Project mới thành công!".to_string()
-                                } else {
-                                    "🔄 Loaded new Project successfully!".to_string()
-                                };
-                            } else {
-                                app.status_message = if is_vi {
-                                    "❌ Lỗi: Không thể truy cập thư mục này.".to_string()
-                                } else {
-                                    "❌ Error: Cannot access this folder.".to_string()
-                                };
-                            }
-                        } else {
-                            app.status_message = if is_vi {
-                                "ℹ️ Đã hủy chọn Project.".to_string()
-                            } else {
-                                "ℹ️ Project selection cancelled.".to_string()
-                            };
-                        }
+                        app.load_workspace_history();
+                        app.selected_workspace_index = 0;
+                        app.active_modal = ActiveModal::WorkspaceHistory;
+                    }
+                    KeyCode::Char('t') | KeyCode::Char('T') => {
+                        app.selected_theme_index = if app.is_light_theme { 1 } else { 0 };
+                        app.active_modal = ActiveModal::ThemeSelect;
                     }
                     _ => {}
                 }

@@ -134,6 +134,6 @@ pub fn handle_go(locales: &Locales) -> Result<()> {
 }
 
 pub fn handle_test() -> Result<()> {
-    print!("Testing...");
+    println!("{:?}", Helper::get_os_theme());
     Ok(())
 }

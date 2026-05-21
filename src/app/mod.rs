@@ -1,4 +1,5 @@
 use std::env;
+use ratatui::style::Color;
 pub mod events;
 pub mod models;
 
@@ -55,6 +56,13 @@ pub struct App {
     // Conflict detection
     pub has_conflicts: bool,
     pub conflict_count: usize,
+    pub new_branch_name: String,
+    pub is_light_theme: bool,
+    pub selected_theme_index: usize,
+    pub focus_diff: bool,
+    // Workspace history
+    pub workspace_history: Vec<String>,
+    pub selected_workspace_index: usize,
 }
 
 impl App {
@@ -69,6 +77,26 @@ impl App {
         } else {
             "Ready to generate Commit Message! Press Space to stage, Backspace to revert."
         };
+
+        let is_light_theme = {
+            if let Ok(output) = std::process::Command::new("git")
+                .args(["config", "--global", "--get", "git-ai.theme"])
+                .output()
+            {
+                let text = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+                if text == "light" {
+                    true
+                } else if text == "dark" {
+                    false
+                } else {
+                    crate::helper::Helper::get_os_theme() == dark_light::Mode::Light
+                }
+            } else {
+                crate::helper::Helper::get_os_theme() == dark_light::Mode::Light
+            }
+        };
+
+        let selected_theme_index = if is_light_theme { 1 } else { 0 };
 
         let mut app = App {
             status_message: init_msg.to_string(),
@@ -110,7 +138,15 @@ impl App {
             commit_diff_scroll: 0,
             has_conflicts: false,
             conflict_count: 0,
+            new_branch_name: String::new(),
+            is_light_theme,
+            selected_theme_index,
+            focus_diff: false,
+            workspace_history: Vec::new(),
+            selected_workspace_index: 0,
         };
+        app.load_workspace_history();
+        app.add_to_workspace_history(&app.current_dir.clone());
         app.refresh_git_status();
         app
     }
@@ -348,5 +384,82 @@ impl App {
     pub fn fetch_commit_diff(&mut self, hash: &str) {
         self.commit_diff_content = crate::git::commit::get_commit_diff(hash);
         self.commit_diff_scroll = 0;
+    }
+
+    pub fn load_workspace_history(&mut self) {
+        self.workspace_history.clear();
+        if let Ok(output) = std::process::Command::new("git")
+            .args(["config", "--global", "--get", "git-ai.workspace-history"])
+            .output()
+        {
+            let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !text.is_empty() {
+                for entry in text.split('|') {
+                    let trimmed = entry.trim().to_string();
+                    if !trimmed.is_empty() {
+                        self.workspace_history.push(trimmed);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn save_workspace_history(&self) {
+        let value = self.workspace_history.join("|");
+        let _ = std::process::Command::new("git")
+            .args(["config", "--global", "git-ai.workspace-history", &value])
+            .output();
+    }
+
+    pub fn add_to_workspace_history(&mut self, path: &str) {
+        // Remove duplicate if exists
+        self.workspace_history.retain(|p| p != path);
+        // Insert at top (MRU)
+        self.workspace_history.insert(0, path.to_string());
+        // Keep max 10
+        self.workspace_history.truncate(10);
+        self.save_workspace_history();
+    }
+
+    pub fn remove_from_workspace_history(&mut self, index: usize) {
+        if index < self.workspace_history.len() {
+            self.workspace_history.remove(index);
+            self.save_workspace_history();
+            if self.selected_workspace_index >= self.workspace_history.len() && !self.workspace_history.is_empty() {
+                self.selected_workspace_index = self.workspace_history.len() - 1;
+            }
+        }
+    }
+
+    pub fn theme(&self) -> AppTheme {
+        if self.is_light_theme {
+            AppTheme {
+                fg: Color::Rgb(40, 42, 54),        // Dark charcoal
+                border: Color::Rgb(140, 140, 140),  // Mid gray
+                purple: Color::Rgb(109, 40, 217),  // Deep purple
+                green: Color::Rgb(21, 128, 61),     // Deep green
+                red: Color::Rgb(185, 28, 28),       // Deep red
+                yellow: Color::Rgb(161, 98, 7),     // Amber/gold
+                cyan: Color::Rgb(3, 105, 161),      // Deep sky blue
+                orange: Color::Rgb(194, 65, 12),    // Rust orange
+                select_bg: Color::Rgb(220, 224, 232), // Light slate gray background
+                select_fg: Color::Rgb(17, 24, 39),   // Very dark gray/black text
+                bg: Color::Rgb(248, 249, 250),      // Soft off-white
+            }
+        } else {
+            AppTheme {
+                fg: Color::Rgb(248, 248, 242),      // Dracula White
+                border: Color::Rgb(98, 114, 164),   // Dracula Gray/Comment
+                purple: Color::Rgb(189, 147, 249),  // Dracula Purple
+                green: Color::Rgb(80, 250, 123),    // Dracula Green
+                red: Color::Rgb(255, 85, 85),       // Dracula Red
+                yellow: Color::Rgb(241, 250, 140),   // Dracula Yellow
+                cyan: Color::Rgb(139, 233, 253),    // Dracula Cyan
+                orange: Color::Rgb(255, 184, 108),  // Dracula Orange
+                select_bg: Color::Rgb(68, 71, 90),  // Dracula Selection Background
+                select_fg: Color::Rgb(248, 248, 242), // Dracula White
+                bg: Color::Rgb(40, 42, 54),         // Dracula Background
+            }
+        }
     }
 }

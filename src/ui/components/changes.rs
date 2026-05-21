@@ -1,18 +1,19 @@
+use crate::app::App;
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use crate::app::App;
 
 pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
     let is_vi = app.current_lang == "vi";
+    let theme = app.theme();
     let mut change_lines = vec![Line::from("")];
     if app.files.is_empty() {
         change_lines.push(Line::from(vec![
-            Span::styled("   ✨ ", Style::default().fg(Color::Rgb(80, 250, 123))),
+            Span::styled("   ✨ ", Style::default().fg(theme.green)),
             Span::styled(
                 if is_vi {
                     "Không có thay đổi!"
@@ -20,7 +21,7 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
                     "No changes detected!"
                 },
                 Style::default()
-                    .fg(Color::Rgb(80, 250, 123))
+                    .fg(theme.green)
                     .add_modifier(Modifier::BOLD),
             ),
         ]));
@@ -40,28 +41,26 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
                 (
                     " [S] ",
                     Style::default()
-                        .fg(Color::Rgb(80, 250, 123))
+                        .fg(theme.green)
                         .add_modifier(Modifier::BOLD),
                 ) // Green Staged
             } else if is_untracked {
                 (
                     " [?] ",
                     Style::default()
-                        .fg(Color::Rgb(189, 147, 249))
+                        .fg(theme.purple)
                         .add_modifier(Modifier::BOLD),
                 ) // Purple Untracked
             } else if is_deleted {
                 (
                     " [D] ",
-                    Style::default()
-                        .fg(Color::Rgb(255, 85, 85))
-                        .add_modifier(Modifier::BOLD),
+                    Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
                 ) // Red Deleted
             } else {
                 (
                     " [U] ",
                     Style::default()
-                        .fg(Color::Rgb(241, 250, 140))
+                        .fg(theme.yellow)
                         .add_modifier(Modifier::BOLD),
                 ) // Yellow Unstaged
             };
@@ -70,20 +69,20 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
                 Span::styled(
                     " ▶ ",
                     Style::default()
-                        .fg(Color::Rgb(189, 147, 249))
+                        .fg(theme.purple)
                         .add_modifier(Modifier::BOLD),
                 )
             } else {
-                Span::styled("   ", Style::default().fg(Color::Rgb(98, 114, 164)))
+                Span::styled("   ", Style::default().fg(theme.border))
             };
 
             let file_style = if is_selected {
                 Style::default()
-                    .fg(Color::Rgb(248, 248, 242))
-                    .bg(Color::Rgb(68, 71, 90))
+                    .fg(theme.select_fg)
+                    .bg(theme.select_bg)
                     .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(Color::Rgb(248, 248, 242))
+                Style::default().fg(theme.fg)
             };
 
             change_lines.push(Line::from(vec![
@@ -99,16 +98,22 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
     } else {
         " 📂 WORKSPACE CHANGES "
     };
+    let changes_border_color = if app.focus_diff {
+        theme.border
+    } else {
+        theme.purple
+    };
+
     let changes_widget = Paragraph::new(change_lines).block(
         Block::default()
             .title(Span::styled(
                 left_title,
                 Style::default()
-                    .fg(Color::Rgb(189, 147, 249))
+                    .fg(changes_border_color)
                     .add_modifier(Modifier::BOLD),
             ))
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Rgb(189, 147, 249)))
+            .border_style(Style::default().fg(changes_border_color))
             .border_type(ratatui::widgets::BorderType::Rounded),
     );
     f.render_widget(changes_widget, area);

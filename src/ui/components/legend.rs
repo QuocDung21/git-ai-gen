@@ -1,34 +1,82 @@
+use crate::app::App;
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
 };
-use crate::app::App;
 
 pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
     let is_vi = app.current_lang == "vi";
+    let theme = app.theme();
     let mut legend_lines = vec![Line::from("")];
+    let nav_items = if app.focus_diff {
+        vec![
+            (
+                "↑/↓ / j/k",
+                if is_vi {
+                    "Cuộn dòng diff"
+                } else {
+                    "Line scroll diff"
+                },
+                theme.yellow,
+            ),
+            (
+                "d / u",
+                if is_vi {
+                    "Cuộn trang diff"
+                } else {
+                    "Page scroll diff"
+                },
+                theme.yellow,
+            ),
+            (
+                "Tab / Esc",
+                if is_vi {
+                    "Quay lại thay đổi"
+                } else {
+                    "Return to changes"
+                },
+                theme.purple,
+            ),
+        ]
+    } else {
+        vec![
+            (
+                "↑/↓ / j/k",
+                if is_vi {
+                    "Chọn tập tin"
+                } else {
+                    "Select file"
+                },
+                theme.purple,
+            ),
+            (
+                "Tab / l / →",
+                if is_vi {
+                    "Cuộn chi tiết diff"
+                } else {
+                    "Focus Diff scroll"
+                },
+                theme.yellow,
+            ),
+            (
+                "[ / ]",
+                if is_vi {
+                    "Cuộn nhanh diff"
+                } else {
+                    "Quick scroll diff"
+                },
+                theme.cyan,
+            ),
+        ]
+    };
+
     let groups = vec![
         (
             "Navigation",
-            vec![
-                (
-                    "↑/↓ / j/k",
-                    if is_vi {
-                        "Chọn tập tin"
-                    } else {
-                        "Select file"
-                    },
-                    Color::Rgb(189, 147, 249),
-                ),
-                (
-                    "PgUp/Dn",
-                    if is_vi { "Cuộn diff" } else { "Scroll diff" },
-                    Color::Rgb(189, 147, 249),
-                ),
-            ],
+            nav_items,
         ),
         (
             "Git Operations",
@@ -40,7 +88,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Stage/Unstage"
                     },
-                    Color::Rgb(80, 250, 123),
+                    theme.green,
                 ),
                 (
                     "Backspace",
@@ -49,7 +97,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Revert / Delete"
                     },
-                    Color::Rgb(255, 85, 85),
+                    theme.red,
                 ),
                 (
                     "A",
@@ -58,7 +106,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Stage all"
                     },
-                    Color::Rgb(80, 250, 123),
+                    theme.green,
                 ),
                 (
                     "U",
@@ -67,16 +115,16 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Unstage all"
                     },
-                    Color::Rgb(255, 85, 85),
+                    theme.red,
                 ),
                 (
                     "B",
                     if is_vi {
-                        "Đổi / Trộn nhánh (Merge)"
+                        "Quản lý nhánh (Đổi/Trộn/Tạo)"
                     } else {
-                        "Switch / Merge branch"
+                        "Manage branch (Switch/Merge/New)"
                     },
-                    Color::Rgb(139, 233, 253),
+                    theme.cyan,
                 ),
                 (
                     "V",
@@ -85,7 +133,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Commit history"
                     },
-                    Color::Rgb(241, 250, 140),
+                    theme.yellow,
                 ),
                 (
                     "F",
@@ -94,7 +142,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Git Fetch"
                     },
-                    Color::Rgb(139, 233, 253),
+                    theme.cyan,
                 ),
                 (
                     "P",
@@ -103,7 +151,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Git Pull"
                     },
-                    Color::Rgb(139, 233, 253),
+                    theme.cyan,
                 ),
                 (
                     "D",
@@ -112,7 +160,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Copy diff -> AI"
                     },
-                    Color::Rgb(241, 250, 140),
+                    theme.yellow,
                 ),
                 (
                     "G",
@@ -121,7 +169,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Commit & Push (Go)"
                     },
-                    Color::Rgb(80, 250, 123),
+                    theme.green,
                 ),
             ],
         ),
@@ -135,7 +183,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Open VS Code"
                     },
-                    Color::Rgb(255, 121, 198),
+                    theme.purple,
                 ),
                 (
                     "W",
@@ -144,7 +192,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Select Project"
                     },
-                    Color::Rgb(139, 233, 253),
+                    theme.cyan,
                 ),
                 (
                     "L",
@@ -153,7 +201,16 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Toggle lang"
                     },
-                    Color::Rgb(189, 147, 249),
+                    theme.purple,
+                ),
+                (
+                    "T",
+                    if is_vi {
+                        "Chọn giao diện"
+                    } else {
+                        "Select theme"
+                    },
+                    theme.purple,
                 ),
                 (
                     "R",
@@ -162,7 +219,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Reset settings"
                     },
-                    Color::Rgb(255, 85, 85),
+                    theme.red,
                 ),
                 (
                     "? / H",
@@ -171,7 +228,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Open manual"
                     },
-                    Color::Rgb(139, 233, 253),
+                    theme.cyan,
                 ),
                 (
                     "Q",
@@ -180,7 +237,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "Exit TUI panel"
                     },
-                    Color::Rgb(98, 114, 164),
+                    theme.border,
                 ),
             ],
         ),
@@ -189,19 +246,14 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
     for (group_title, items) in groups {
         legend_lines.push(Line::from(vec![Span::styled(
             format!("  ■ {}", group_title),
-            Style::default()
-                .fg(Color::Rgb(139, 233, 253))
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]));
         for (key, desc, color) in items {
             legend_lines.push(Line::from(vec![
-                Span::styled("   ⚡ [", Style::default().fg(Color::Rgb(98, 114, 164))),
+                Span::styled("   ⚡ [", Style::default().fg(theme.border)),
                 Span::styled(key, Style::default().fg(color).add_modifier(Modifier::BOLD)),
-                Span::styled("]  ", Style::default().fg(Color::Rgb(98, 114, 164))),
-                Span::styled(
-                    desc.to_string(),
-                    Style::default().fg(Color::Rgb(248, 248, 242)),
-                ),
+                Span::styled("]  ", Style::default().fg(theme.border)),
+                Span::styled(desc.to_string(), Style::default().fg(theme.fg)),
             ]));
         }
         legend_lines.push(Line::from(""));
@@ -215,12 +267,10 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                 } else {
                     " ⚡ CONTROL LEGEND "
                 },
-                Style::default()
-                    .fg(Color::Rgb(139, 233, 253))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
             ))
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Rgb(139, 233, 253)))
+            .border_style(Style::default().fg(theme.cyan))
             .border_type(BorderType::Rounded),
     );
     f.render_widget(legend_widget, area);

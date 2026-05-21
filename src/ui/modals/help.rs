@@ -1,6 +1,6 @@
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
@@ -9,6 +9,7 @@ use crate::app::App;
 
 pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
     let is_vi = app.current_lang == "vi";
+    let theme = app.theme();
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
@@ -18,7 +19,7 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
                 "🤖 SYSTEM MANUAL & KEYBOARD LEGEND 🤖"
             },
             Style::default()
-                .fg(Color::Rgb(139, 233, 253))
+                .fg(theme.cyan)
                 .add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -84,9 +85,9 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
                 (
                     "b",
                     if is_vi {
-                        "Xem & Chuyển chi nhánh Git (nhấn [m] để merge)"
+                        "Quản lý chi nhánh ([m] merge, [c] tạo chi nhánh mới)"
                     } else {
-                        "View & Switch active git branch (press [m] to merge)"
+                        "Manage branches ([m] merge, [c] create new branch)"
                     },
                 ),
                 (
@@ -159,6 +160,14 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
                     },
                 ),
                 (
+                    "t",
+                    if is_vi {
+                        "Mở bảng cấu hình giao diện Sáng/Tối (Theme)"
+                    } else {
+                        "Open light/dark theme selection panel"
+                    },
+                ),
+                (
                     "r",
                     if is_vi {
                         "Khôi phục cài đặt gốc của git-ai"
@@ -182,20 +191,20 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
         content.push(Line::from(vec![Span::styled(
             format!("  ■ {}", group_title),
             Style::default()
-                .fg(Color::Rgb(189, 147, 249))
+                .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
         )]));
         for (key, desc) in items {
             content.push(Line::from(vec![
-                Span::styled("   ⚡ [", Style::default().fg(Color::Rgb(98, 114, 164))),
+                Span::styled("   ⚡ [", Style::default().fg(theme.border)),
                 Span::styled(
                     key,
                     Style::default()
-                        .fg(Color::Rgb(80, 250, 123))
+                        .fg(theme.green)
                         .add_modifier(Modifier::BOLD),
                 ),
-                Span::styled("] : ", Style::default().fg(Color::Rgb(98, 114, 164))),
-                Span::styled(desc, Style::default().fg(Color::Rgb(248, 248, 242))),
+                Span::styled("] : ", Style::default().fg(theme.border)),
+                Span::styled(desc, Style::default().fg(theme.fg)),
             ]));
         }
         content.push(Line::from(""));
@@ -208,7 +217,7 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
             "Press [Esc], [Space], or [Enter] to CLOSE."
         },
         Style::default()
-            .fg(Color::Rgb(255, 184, 108))
+            .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
     )]));
 
@@ -216,12 +225,13 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
         .title(Span::styled(
             " SYSTEM MANUAL ",
             Style::default()
-                .fg(Color::Rgb(139, 233, 253))
+                .fg(theme.cyan)
                 .add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(139, 233, 253)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Center)

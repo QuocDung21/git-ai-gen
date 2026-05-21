@@ -18,3 +18,4 @@ ratatui = "0.26"
 rfd = "0.17.2"
 serde_yaml = "0.9.34"
 serde = { version = "1.0.228", features = ["derive"] }
+dark-light = "2.0.0"

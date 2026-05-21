@@ -1,6 +1,6 @@
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
     Frame,
@@ -9,6 +9,7 @@ use crate::app::App;
 
 pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
     let is_vi = app.current_lang == "vi";
+    let theme = app.theme();
     let mut diff_lines = Vec::new();
 
     if app.selected_file_diff.is_empty() {
@@ -20,7 +21,7 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
                 "   (Select a file to preview changes)"
             },
             Style::default()
-                .fg(Color::Rgb(98, 114, 164))
+                .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
         )]));
     } else {
@@ -28,31 +29,31 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
             let styled_line = if line.starts_with('+') && !line.starts_with("+++") {
                 Line::from(vec![Span::styled(
                     line.to_string(),
-                    Style::default().fg(Color::Rgb(80, 250, 123)),
+                    Style::default().fg(theme.green),
                 )])
             } else if line.starts_with('-') && !line.starts_with("---") {
                 Line::from(vec![Span::styled(
                     line.to_string(),
-                    Style::default().fg(Color::Rgb(255, 85, 85)),
+                    Style::default().fg(theme.red),
                 )])
             } else if line.starts_with("@@") {
                 Line::from(vec![Span::styled(
                     line.to_string(),
                     Style::default()
-                        .fg(Color::Rgb(189, 147, 249))
+                        .fg(theme.purple)
                         .add_modifier(Modifier::BOLD),
                 )])
             } else if line.starts_with("diff --git") || line.starts_with("index") {
                 Line::from(vec![Span::styled(
                     line.to_string(),
                     Style::default()
-                        .fg(Color::Rgb(98, 114, 164))
+                        .fg(theme.border)
                         .add_modifier(Modifier::BOLD),
                 )])
             } else {
                 Line::from(vec![Span::styled(
                     line.to_string(),
-                    Style::default().fg(Color::Rgb(248, 248, 242)),
+                    Style::default().fg(theme.fg),
                 )])
             };
             diff_lines.push(styled_line);
@@ -78,7 +79,22 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
     } else {
         "".to_string()
     };
-    let diff_title = format!(" 📄 LIVE DIFF VIEW{} ", scroll_info);
+    let diff_border_color = if app.focus_diff { theme.yellow } else { theme.border };
+
+    let diff_base_title = if app.focus_diff {
+        if is_vi {
+            " 📄 XEM THAY ĐỔI LIVE [CHẾ ĐỘ CUỘN - Tab/Esc thoát]"
+        } else {
+            " 📄 LIVE DIFF VIEW [SCROLL MODE - Tab/Esc to exit]"
+        }
+    } else {
+        if is_vi {
+            " 📄 XEM THAY ĐỔI LIVE"
+        } else {
+            " 📄 LIVE DIFF VIEW"
+        }
+    };
+    let diff_title = format!("{}{} ", diff_base_title, scroll_info);
 
     let diff_widget = Paragraph::new(diff_lines)
         .scroll((scroll_offset as u16, 0))
@@ -87,11 +103,11 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
                 .title(Span::styled(
                     diff_title,
                     Style::default()
-                        .fg(Color::Rgb(241, 250, 140))
+                        .fg(diff_border_color)
                         .add_modifier(Modifier::BOLD),
                 ))
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Rgb(241, 250, 140)))
+                .border_style(Style::default().fg(diff_border_color))
                 .border_type(BorderType::Rounded),
         );
     f.render_widget(diff_widget, area);

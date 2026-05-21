@@ -1,15 +1,17 @@
-use std::process::Command;
+use crate::app::models::{AmendStep, GoStep, StashAction, StashStep};
+use crate::app::App;
+
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Paragraph, Clear},
+    widgets::{Block, BorderType, Borders, Clear, Paragraph},
     Frame,
 };
-use crate::app::App;
-use crate::app::models::{GoStep, AmendStep, StashStep, StashAction};
+use std::process::Command;
 
 pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -21,9 +23,7 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "Select language / Chọn ngôn ngữ:"
             },
-            Style::default()
-                .fg(Color::Rgb(248, 248, 242))
-                .add_modifier(Modifier::ITALIC),
+            Style::default().fg(theme.fg).add_modifier(Modifier::ITALIC),
         )]),
         Line::from(""),
     ];
@@ -59,7 +59,7 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
             Span::styled(
                 " ▶ ",
                 Style::default()
-                    .fg(Color::Rgb(189, 147, 249))
+                    .fg(theme.purple)
                     .add_modifier(Modifier::BOLD),
             )
         } else {
@@ -70,7 +70,7 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
             Span::styled(
                 " (Active) ",
                 Style::default()
-                    .fg(Color::Rgb(80, 250, 123))
+                    .fg(theme.green)
                     .add_modifier(Modifier::ITALIC),
             )
         } else {
@@ -79,20 +79,18 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
 
         let item_style = if is_hovered {
             Style::default()
-                .fg(Color::Rgb(248, 248, 242))
-                .bg(Color::Rgb(68, 71, 90))
+                .fg(theme.fg)
+                .bg(theme.select_bg)
                 .add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::Rgb(248, 248, 242))
+            Style::default().fg(theme.fg)
         };
 
         content.push(Line::from(vec![
             cursor,
             Span::styled(
                 format!("{} ", shortcut),
-                Style::default()
-                    .fg(Color::Rgb(139, 233, 253))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
             ),
             Span::styled(label, item_style),
             active_badge,
@@ -106,7 +104,7 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
         } else {
             "Use ↑/↓ or j/k to navigate, Enter to select."
         },
-        Style::default().fg(Color::Rgb(98, 114, 164)),
+        Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
@@ -117,12 +115,118 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
                 " 🌎 LANGUAGE CONFIGURATION "
             },
             Style::default()
-                .fg(Color::Rgb(189, 147, 249))
+                .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(189, 147, 249)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.purple))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Center)
+        .block(block);
+
+    f.render_widget(paragraph, area);
+}
+
+pub fn render_theme_select(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let mut content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "Select application theme:"
+            } else {
+                "Chọn giao diện:"
+            },
+            Style::default().fg(theme.fg).add_modifier(Modifier::ITALIC),
+        )]),
+        Line::from(""),
+    ];
+
+    let items = vec![
+        ("dark", "Dracula (Tối / Dark) 🌌", "[d]"),
+        ("light", "Premium Light (Sáng / Light) ☀️", "[l]"),
+        ("auto", "Auto (Light/Dark) 🌍", "[a]"),
+    ];
+
+    let active_theme = if app.is_light_theme { "light" } else { "dark" };
+
+    for (i, (theme_code, label, shortcut)) in items.into_iter().enumerate() {
+        let is_hovered = i == app.selected_theme_index;
+        let is_currently_active = active_theme == theme_code;
+
+        let cursor = if is_hovered {
+            Span::styled(
+                " ▶ ",
+                Style::default()
+                    .fg(theme.purple)
+                    .add_modifier(Modifier::BOLD),
+            )
+        } else {
+            Span::styled("   ", Style::default())
+        };
+
+        let active_badge = if is_currently_active {
+            Span::styled(
+                " (Active) ",
+                Style::default()
+                    .fg(theme.green)
+                    .add_modifier(Modifier::ITALIC),
+            )
+        } else {
+            Span::styled("", Style::default())
+        };
+
+        let item_style = if is_hovered {
+            Style::default()
+                .fg(theme.fg)
+                .bg(theme.select_bg)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(theme.fg)
+        };
+
+        content.push(Line::from(vec![
+            cursor,
+            Span::styled(
+                format!("{} ", shortcut),
+                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(label, item_style),
+            active_badge,
+        ]));
+    }
+
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "Dùng ↑/↓ hoặc j/k để di chuyển, Enter để chọn."
+        } else {
+            "Use ↑/↓ or j/k to navigate, Enter to select."
+        },
+        Style::default().fg(theme.border),
+    )]));
+
+    let block = Block::default()
+        .title(Span::styled(
+            if is_vi {
+                " 🎨 THIẾT LẬP GIAO DIỆN "
+            } else {
+                " 🎨 THEME CONFIGURATION "
+            },
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.purple))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Center)
@@ -132,6 +236,7 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_revert_confirm(f: &mut Frame, app: &App, path: &str, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -140,43 +245,37 @@ pub fn render_revert_confirm(f: &mut Frame, app: &App, path: &str, area: Rect) {
             Line::from(""),
             Line::from(vec![Span::styled(
                 "⚠️  CẢNH BÁO KHÔI PHỤC HỆ THỐNG  ⚠️",
-                Style::default()
-                    .fg(Color::Rgb(255, 85, 85))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![Span::styled(
                 "Bạn có chắc chắn muốn khôi phục/xóa các thay đổi trong:",
-                Style::default().fg(Color::Rgb(248, 248, 242)),
+                Style::default().fg(theme.fg),
             )]),
             Line::from(vec![Span::styled(
                 format!("👉 {} ", path),
-                Style::default()
-                    .fg(Color::Rgb(139, 233, 253))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![Span::styled(
                 "⚠️ HÀNH ĐỘNG NÀY KHÔNG THỂ HOÀN TÁC!",
-                Style::default()
-                    .fg(Color::Rgb(255, 85, 85))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![
                 Span::styled(
                     " [y] ĐỒNG Ý ",
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(80, 250, 123))
+                        .fg(theme.fg)
+                        .bg(theme.green)
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled("      ", Style::default()),
                 Span::styled(
                     " [n] HỦY BỎ ",
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(255, 85, 85))
+                        .fg(theme.fg)
+                        .bg(theme.red)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]),
@@ -186,43 +285,37 @@ pub fn render_revert_confirm(f: &mut Frame, app: &App, path: &str, area: Rect) {
             Line::from(""),
             Line::from(vec![Span::styled(
                 "⚠️  SYSTEM REVERT WARNING  ⚠️",
-                Style::default()
-                    .fg(Color::Rgb(255, 85, 85))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![Span::styled(
                 "Are you sure you want to revert/delete changes in:",
-                Style::default().fg(Color::Rgb(248, 248, 242)),
+                Style::default().fg(theme.fg),
             )]),
             Line::from(vec![Span::styled(
                 format!("👉 {} ", path),
-                Style::default()
-                    .fg(Color::Rgb(139, 233, 253))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![Span::styled(
                 "⚠️ THIS ACTION CANNOT BE UNDONE!",
-                Style::default()
-                    .fg(Color::Rgb(255, 85, 85))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![
                 Span::styled(
                     " [y] CONFIRM ",
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(80, 250, 123))
+                        .fg(theme.fg)
+                        .bg(theme.green)
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled("      ", Style::default()),
                 Span::styled(
                     " [n] CANCEL ",
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(255, 85, 85))
+                        .fg(theme.fg)
+                        .bg(theme.red)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]),
@@ -232,13 +325,12 @@ pub fn render_revert_confirm(f: &mut Frame, app: &App, path: &str, area: Rect) {
     let block = Block::default()
         .title(Span::styled(
             " WARNING CONFIRMATION ",
-            Style::default()
-                .fg(Color::Rgb(255, 85, 85))
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(255, 85, 85)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.red))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Center)
@@ -248,6 +340,7 @@ pub fn render_revert_confirm(f: &mut Frame, app: &App, path: &str, area: Rect) {
 }
 
 pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -260,7 +353,7 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
                 "🌿 WORKSPACE COMMIT HISTORY 🌿"
             },
             Style::default()
-                .fg(Color::Rgb(80, 250, 123))
+                .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -274,7 +367,7 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
                 "No commits found."
             },
             Style::default()
-                .fg(Color::Rgb(98, 114, 164))
+                .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
         )]));
     } else {
@@ -284,39 +377,39 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
                 Span::styled(
                     "  ▶ ● ",
                     Style::default()
-                        .fg(Color::Rgb(189, 147, 249))
+                        .fg(theme.purple)
                         .add_modifier(Modifier::BOLD),
                 )
             } else {
-                Span::styled("    ● ", Style::default().fg(Color::Rgb(98, 114, 164)))
+                Span::styled("    ● ", Style::default().fg(theme.border))
             };
 
             let hash_span = Span::styled(
                 format!("[{}]", entry.hash),
                 Style::default()
-                    .fg(Color::Rgb(241, 250, 140))
+                    .fg(theme.yellow)
                     .add_modifier(Modifier::BOLD),
             );
 
             let author_span = Span::styled(
                 format!(" ({})", entry.author),
-                Style::default().fg(Color::Rgb(255, 121, 198)),
+                Style::default().fg(theme.purple),
             );
 
             let time_span = Span::styled(
                 format!(" - {}", entry.time),
                 Style::default()
-                    .fg(Color::Rgb(139, 233, 253))
+                    .fg(theme.cyan)
                     .add_modifier(Modifier::ITALIC),
             );
 
             let subject_style = if is_selected {
                 Style::default()
-                    .fg(Color::Rgb(248, 248, 242))
-                    .bg(Color::Rgb(68, 71, 90))
+                    .fg(theme.fg)
+                    .bg(theme.select_bg)
                     .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(Color::Rgb(248, 248, 242))
+                Style::default().fg(theme.fg)
             };
             let subject_span = Span::styled(format!(" : {}", entry.subject), subject_style);
 
@@ -331,7 +424,7 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
             if i < app.commit_logs.len() - 1 {
                 content.push(Line::from(vec![Span::styled(
                     "    │",
-                    Style::default().fg(Color::Rgb(98, 114, 164)),
+                    Style::default().fg(theme.border),
                 )]));
             }
         }
@@ -345,7 +438,7 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
             "   Use ↑/↓ or j/k to navigate, press [Esc] or [q] to CLOSE."
         },
         Style::default()
-            .fg(Color::Rgb(255, 184, 108))
+            .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
     )]));
 
@@ -357,12 +450,13 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
                 " 🌿 COMMIT LOGS "
             },
             Style::default()
-                .fg(Color::Rgb(80, 250, 123))
+                .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(80, 250, 123)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.green))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
@@ -372,6 +466,7 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -383,9 +478,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "🌿 GIT BRANCH SELECTOR 🌿"
             },
-            Style::default()
-                .fg(Color::Rgb(139, 233, 253))
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
     ];
@@ -398,7 +491,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
                 "No branches found."
             },
             Style::default()
-                .fg(Color::Rgb(98, 114, 164))
+                .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
         )]));
     } else {
@@ -409,7 +502,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
                 Span::styled(
                     " ▶ ",
                     Style::default()
-                        .fg(Color::Rgb(189, 147, 249))
+                        .fg(theme.purple)
                         .add_modifier(Modifier::BOLD),
                 )
             } else {
@@ -418,17 +511,17 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
 
             let branch_style = if is_selected {
                 Style::default()
-                    .fg(Color::Rgb(248, 248, 242))
-                    .bg(Color::Rgb(68, 71, 90))
+                    .fg(theme.fg)
+                    .bg(theme.select_bg)
                     .add_modifier(Modifier::BOLD)
             } else if is_active {
                 Style::default()
-                    .fg(Color::Rgb(80, 250, 123))
+                    .fg(theme.green)
                     .add_modifier(Modifier::BOLD)
             } else if branch.is_remote {
-                Style::default().fg(Color::Rgb(255, 184, 108))
+                Style::default().fg(theme.orange)
             } else {
-                Style::default().fg(Color::Rgb(248, 248, 242))
+                Style::default().fg(theme.fg)
             };
 
             let active_badge = if is_active {
@@ -439,14 +532,14 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
                         " (Active) "
                     },
                     Style::default()
-                        .fg(Color::Rgb(80, 250, 123))
+                        .fg(theme.green)
                         .add_modifier(Modifier::ITALIC),
                 )
             } else if branch.is_remote {
                 Span::styled(
                     " (Remote) ",
                     Style::default()
-                        .fg(Color::Rgb(255, 184, 108))
+                        .fg(theme.orange)
                         .add_modifier(Modifier::ITALIC),
                 )
             } else {
@@ -464,11 +557,11 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
             let prefix_span = Span::styled(
                 prefix,
                 if branch.is_remote {
-                    Style::default().fg(Color::Rgb(255, 184, 108))
+                    Style::default().fg(theme.orange)
                 } else if is_active {
-                    Style::default().fg(Color::Rgb(80, 250, 123))
+                    Style::default().fg(theme.green)
                 } else {
-                    Style::default().fg(Color::Rgb(98, 114, 164))
+                    Style::default().fg(theme.border)
                 },
             );
 
@@ -489,7 +582,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
             "Use ↑/↓ or j/k to navigate, [Enter] to checkout branch."
         },
         Style::default()
-            .fg(Color::Rgb(255, 184, 108))
+            .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
     )]));
     content.push(Line::from(vec![Span::styled(
@@ -499,7 +592,17 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
             "Press [m] to merge selected branch into current branch."
         },
         Style::default()
-            .fg(Color::Rgb(80, 250, 123))
+            .fg(theme.green)
+            .add_modifier(Modifier::BOLD),
+    )]));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "Nhấn [c] để tạo và chuyển sang chi nhánh mới (checkout -b)."
+        } else {
+            "Press [c] to create and checkout a new branch (checkout -b)."
+        },
+        Style::default()
+            .fg(theme.purple)
             .add_modifier(Modifier::BOLD),
     )]));
     content.push(Line::from(vec![Span::styled(
@@ -508,7 +611,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
         } else {
             "Press [Esc] or [q] to CANCEL."
         },
-        Style::default().fg(Color::Rgb(98, 114, 164)),
+        Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
@@ -518,13 +621,12 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 " 🌿 SELECT BRANCH "
             },
-            Style::default()
-                .fg(Color::Rgb(139, 233, 253))
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(139, 233, 253)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Center)
@@ -534,6 +636,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -545,35 +648,29 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "🤖 DIFF SNAPSHOT COPIED TO CLIPBOARD 🤖"
             },
-            Style::default()
-                .fg(Color::Rgb(139, 233, 253))
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
         Line::from(vec![
             Span::styled(
                 "  ➕ ",
                 Style::default()
-                    .fg(Color::Rgb(80, 250, 123))
+                    .fg(theme.green)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 format!("{} lines added", app.diff_added_lines),
                 Style::default()
-                    .fg(Color::Rgb(80, 250, 123))
+                    .fg(theme.green)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 "     ➖ ",
-                Style::default()
-                    .fg(Color::Rgb(255, 85, 85))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 format!("{} lines removed", app.diff_removed_lines),
-                Style::default()
-                    .fg(Color::Rgb(255, 85, 85))
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
             ),
         ]),
         Line::from(""),
@@ -584,7 +681,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
                 "  ── DIFF PREVIEW (first 40 lines) ──"
             },
             Style::default()
-                .fg(Color::Rgb(98, 114, 164))
+                .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
         )]),
         Line::from(""),
@@ -592,15 +689,15 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
 
     for line in app.diff_snapshot.lines().take(30) {
         let (styled_line, color) = if line.starts_with('+') && !line.starts_with("+++") {
-            (line, Color::Rgb(80, 250, 123))
+            (line, theme.green)
         } else if line.starts_with('-') && !line.starts_with("---") {
-            (line, Color::Rgb(255, 85, 85))
+            (line, theme.red)
         } else if line.starts_with("@@") {
-            (line, Color::Rgb(139, 233, 253))
+            (line, theme.cyan)
         } else if line.starts_with("diff ") || line.starts_with("index ") {
-            (line, Color::Rgb(189, 147, 249))
+            (line, theme.purple)
         } else {
-            (line, Color::Rgb(98, 114, 164))
+            (line, theme.fg)
         };
         content.push(Line::from(vec![Span::styled(
             format!("  {}", styled_line),
@@ -616,7 +713,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
                 "  ... (more in AI clipboard)"
             },
             Style::default()
-                .fg(Color::Rgb(255, 184, 108))
+                .fg(theme.orange)
                 .add_modifier(Modifier::ITALIC),
         )]));
     }
@@ -626,7 +723,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         Span::styled(
             "  ✅ ",
             Style::default()
-                .fg(Color::Rgb(80, 250, 123))
+                .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
@@ -636,7 +733,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
                 "Prompt + Diff copied! Paste into your AI now. 🚀"
             },
             Style::default()
-                .fg(Color::Rgb(241, 250, 140))
+                .fg(theme.yellow)
                 .add_modifier(Modifier::BOLD),
         ),
     ]));
@@ -647,7 +744,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         } else {
             "  Press [Enter] or [Esc] to close."
         },
-        Style::default().fg(Color::Rgb(98, 114, 164)),
+        Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
@@ -657,13 +754,12 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 " 🤖 AI DIFF SNAPSHOT "
             },
-            Style::default()
-                .fg(Color::Rgb(139, 233, 253))
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(139, 233, 253)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
@@ -673,6 +769,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -695,7 +792,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                         "🚀 CONFIRM COMMIT & PUSH 🚀"
                     },
                     Style::default()
-                        .fg(Color::Rgb(80, 250, 123))
+                        .fg(theme.green)
                         .add_modifier(Modifier::BOLD),
                 )]),
                 Line::from(""),
@@ -708,22 +805,14 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "📂 Selected files to commit:"
                     },
-                    Style::default()
-                        .fg(Color::Rgb(139, 233, 253))
-                        .add_modifier(Modifier::BOLD),
+                    Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
                 )]));
                 for file in &app.files {
                     let first_char = file.status.chars().next().unwrap_or(' ');
                     if first_char != ' ' && first_char != '?' {
                         lines.push(Line::from(vec![
-                            Span::styled(
-                                "   🟢 ",
-                                Style::default().fg(Color::Rgb(80, 250, 123)),
-                            ),
-                            Span::styled(
-                                file.path.clone(),
-                                Style::default().fg(Color::Rgb(248, 248, 242)),
-                            ),
+                            Span::styled("   🟢 ", Style::default().fg(theme.green)),
+                            Span::styled(file.path.clone(), Style::default().fg(theme.fg)),
                         ]));
                     }
                 }
@@ -732,7 +821,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                     Span::styled(
                         if is_vi { "⚠️ CẢNH BÁO: Chưa chọn file nào! Vui lòng thoát ra nhấn phím [Space] để chọn." }
                         else { "⚠️ WARNING: No files selected! Please exit and press [Space] to select." },
-                        Style::default().fg(Color::Rgb(255, 85, 85)).add_modifier(Modifier::BOLD)
+                        Style::default().fg(theme.red).add_modifier(Modifier::BOLD)
                     )
                 ]));
             }
@@ -746,14 +835,14 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                         "📋 Commit message from Clipboard:"
                     },
                     Style::default()
-                        .fg(Color::Rgb(98, 114, 164))
+                        .fg(theme.border)
                         .add_modifier(Modifier::ITALIC),
                 )]),
                 Line::from(vec![Span::styled(
                     format!("  💬 {}", msg_truncated),
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(40, 42, 54))
+                        .fg(theme.fg)
+                        .bg(theme.bg)
                         .add_modifier(Modifier::BOLD),
                 )]),
                 Line::from(""),
@@ -763,7 +852,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "  ⚡ Execution: git commit -> git push"
                     },
-                    Style::default().fg(Color::Rgb(255, 184, 108)),
+                    Style::default().fg(theme.orange),
                 )]),
                 Line::from(""),
             ]);
@@ -773,28 +862,26 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                     Span::styled(
                         " [y] / Enter ",
                         Style::default()
-                            .fg(Color::Rgb(40, 42, 54))
-                            .bg(Color::Rgb(80, 250, 123))
+                            .fg(theme.bg)
+                            .bg(theme.green)
                             .add_modifier(Modifier::BOLD),
                     ),
                     Span::styled(
                         " TIẾN HÀNH          ",
                         Style::default()
-                            .fg(Color::Rgb(80, 250, 123))
+                            .fg(theme.green)
                             .add_modifier(Modifier::BOLD),
                     ),
                     Span::styled(
                         " [n] / Esc ",
                         Style::default()
-                            .fg(Color::Rgb(248, 248, 242))
-                            .bg(Color::Rgb(255, 85, 85))
+                            .fg(theme.fg)
+                            .bg(theme.red)
                             .add_modifier(Modifier::BOLD),
                     ),
                     Span::styled(
                         " HỦY ",
-                        Style::default()
-                            .fg(Color::Rgb(255, 85, 85))
-                            .add_modifier(Modifier::BOLD),
+                        Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
                     ),
                 ]));
             } else {
@@ -802,15 +889,13 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                     Span::styled(
                         " [Esc] ",
                         Style::default()
-                            .fg(Color::Rgb(248, 248, 242))
-                            .bg(Color::Rgb(255, 85, 85))
+                            .fg(theme.fg)
+                            .bg(theme.red)
                             .add_modifier(Modifier::BOLD),
                     ),
                     Span::styled(
                         " QUAY LẠI CHỌN FILE ",
-                        Style::default()
-                            .fg(Color::Rgb(255, 85, 85))
-                            .add_modifier(Modifier::BOLD),
+                        Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
                     ),
                 ]));
             }
@@ -827,7 +912,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                         "⚡ PROCESSING... ⚡"
                     },
                     Style::default()
-                        .fg(Color::Rgb(241, 250, 140))
+                        .fg(theme.yellow)
                         .add_modifier(Modifier::BOLD | Modifier::SLOW_BLINK),
                 )]),
                 Line::from(""),
@@ -837,7 +922,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "  🔄 Running: git commit → git push"
                     },
-                    Style::default().fg(Color::Rgb(139, 233, 253)),
+                    Style::default().fg(theme.cyan),
                 )]),
                 Line::from(""),
                 Line::from(vec![Span::styled(
@@ -847,7 +932,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                         "  Please wait..."
                     },
                     Style::default()
-                        .fg(Color::Rgb(98, 114, 164))
+                        .fg(theme.border)
                         .add_modifier(Modifier::ITALIC),
                 )]),
                 Line::from(""),
@@ -855,9 +940,9 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
         }
         GoStep::Done(result) => {
             let result_color = if result.starts_with("✅") {
-                Color::Rgb(80, 250, 123)
+                theme.green
             } else {
-                Color::Rgb(255, 85, 85)
+                theme.red
             };
             let mut lines = vec![
                 Line::from(""),
@@ -868,7 +953,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                         "📋 RESULT"
                     },
                     Style::default()
-                        .fg(Color::Rgb(189, 147, 249))
+                        .fg(theme.purple)
                         .add_modifier(Modifier::BOLD),
                 )]),
                 Line::from(""),
@@ -888,7 +973,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                 } else {
                     "  Press [Enter] or [Esc] to close and refresh."
                 },
-                Style::default().fg(Color::Rgb(98, 114, 164)),
+                Style::default().fg(theme.border),
             )]));
             lines
         }
@@ -901,7 +986,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 " 🚀 COMMIT & PUSH "
             },
-            Color::Rgb(80, 250, 123),
+            theme.green,
         ),
         GoStep::Pushing => (
             if is_vi {
@@ -909,7 +994,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 " ⚡ PROCESSING "
             },
-            Color::Rgb(241, 250, 140),
+            theme.yellow,
         ),
         GoStep::Done(r) => (
             if r.starts_with("✅") {
@@ -926,9 +1011,9 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                 }
             },
             if r.starts_with("✅") {
-                Color::Rgb(80, 250, 123)
+                theme.green
             } else {
-                Color::Rgb(255, 85, 85)
+                theme.red
             },
         ),
     };
@@ -942,7 +1027,8 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
         ))
         .borders(Borders::ALL)
         .border_style(Style::default().fg(border_color))
-        .border_type(BorderType::Double);
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
@@ -952,6 +1038,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -964,7 +1051,7 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                 "📦 GIT STASH MANAGER"
             },
             Style::default()
-                .fg(Color::Rgb(255, 184, 108))
+                .fg(theme.orange)
                 .add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -980,7 +1067,7 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                         "  (No stashes found)"
                     },
                     Style::default()
-                        .fg(Color::Rgb(98, 114, 164))
+                        .fg(theme.border)
                         .add_modifier(Modifier::ITALIC),
                 )]));
                 content.push(Line::from(""));
@@ -990,7 +1077,7 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "  Press [n] to stash current changes"
                     },
-                    Style::default().fg(Color::Rgb(139, 233, 253)),
+                    Style::default().fg(theme.cyan),
                 )]));
             } else {
                 for (i, entry) in app.stash_entries.iter().enumerate() {
@@ -998,28 +1085,28 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                     let cursor = if is_sel { " ▶ " } else { "   " };
                     let row_style = if is_sel {
                         Style::default()
-                            .fg(Color::Rgb(248, 248, 242))
-                            .bg(Color::Rgb(68, 71, 90))
+                            .fg(theme.fg)
+                            .bg(theme.select_bg)
                             .add_modifier(Modifier::BOLD)
                     } else {
-                        Style::default().fg(Color::Rgb(248, 248, 242))
+                        Style::default().fg(theme.fg)
                     };
                     content.push(Line::from(vec![
                         Span::styled(
                             cursor,
                             Style::default()
-                                .fg(Color::Rgb(255, 184, 108))
+                                .fg(theme.orange)
                                 .add_modifier(Modifier::BOLD),
                         ),
                         Span::styled(
                             format!("[{}] ", entry.index),
                             Style::default()
-                                .fg(Color::Rgb(189, 147, 249))
+                                .fg(theme.purple)
                                 .add_modifier(Modifier::BOLD),
                         ),
                         Span::styled(
                             format!("({}) ", entry.branch),
-                            Style::default().fg(Color::Rgb(139, 233, 253)),
+                            Style::default().fg(theme.cyan),
                         ),
                         Span::styled(entry.message.clone(), row_style),
                     ]));
@@ -1032,7 +1119,7 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                         "  [n] New Stash  [Enter/p] Pop  [a] Apply  [x] Drop  [Esc] Close"
                     },
                     Style::default()
-                        .fg(Color::Rgb(255, 184, 108))
+                        .fg(theme.orange)
                         .add_modifier(Modifier::BOLD),
                 )]));
             }
@@ -1062,8 +1149,8 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                 }
             };
             let action_color = match action {
-                StashAction::Drop => Color::Rgb(255, 85, 85),
-                _ => Color::Rgb(80, 250, 123),
+                StashAction::Drop => theme.red,
+                _ => theme.green,
             };
             content.push(Line::from(vec![Span::styled(
                 format!("  ⚠️  Xác nhận {} stash@{{{}}}?", action_str, idx),
@@ -1076,7 +1163,7 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                 Span::styled(
                     " [y] XÁC NHẬN ",
                     Style::default()
-                        .fg(Color::Rgb(40, 42, 54))
+                        .fg(theme.bg)
                         .bg(action_color)
                         .add_modifier(Modifier::BOLD),
                 ),
@@ -1084,8 +1171,8 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                 Span::styled(
                     " [n/Esc] HỦY ",
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(68, 71, 90))
+                        .fg(theme.fg)
+                        .bg(theme.select_bg)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]));
@@ -1100,12 +1187,13 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                 " 📦 STASH MANAGER "
             },
             Style::default()
-                .fg(Color::Rgb(255, 184, 108))
+                .fg(theme.orange)
                 .add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(255, 184, 108)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.orange))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
@@ -1114,18 +1202,19 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let ahead_color = if app.ahead_count > 0 {
-        Color::Rgb(80, 250, 123)
+        theme.green
     } else {
-        Color::Rgb(98, 114, 164)
+        theme.border
     };
     let behind_color = if app.behind_count > 0 {
-        Color::Rgb(255, 85, 85)
+        theme.red
     } else {
-        Color::Rgb(98, 114, 164)
+        theme.border
     };
 
     let content = vec![
@@ -1136,51 +1225,34 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "🌐 REMOTE & UPSTREAM INFO"
             },
-            Style::default()
-                .fg(Color::Rgb(139, 233, 253))
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
         Line::from(vec![
-            Span::styled(
-                "  🌿 Branch:   ",
-                Style::default().fg(Color::Rgb(98, 114, 164)),
-            ),
+            Span::styled("  🌿 Branch:   ", Style::default().fg(theme.border)),
             Span::styled(
                 app.current_branch.clone(),
                 Style::default()
-                    .fg(Color::Rgb(80, 250, 123))
+                    .fg(theme.green)
                     .add_modifier(Modifier::BOLD),
             ),
         ]),
         Line::from(vec![
-            Span::styled(
-                "  🔗 Tracking: ",
-                Style::default().fg(Color::Rgb(98, 114, 164)),
-            ),
+            Span::styled("  🔗 Tracking: ", Style::default().fg(theme.border)),
             Span::styled(
                 app.remote_tracking.clone(),
                 Style::default()
-                    .fg(Color::Rgb(255, 184, 108))
+                    .fg(theme.orange)
                     .add_modifier(Modifier::BOLD),
             ),
         ]),
         Line::from(vec![
-            Span::styled(
-                "  📡 Remote:   ",
-                Style::default().fg(Color::Rgb(98, 114, 164)),
-            ),
-            Span::styled(
-                app.remote_url.clone(),
-                Style::default().fg(Color::Rgb(189, 147, 249)),
-            ),
+            Span::styled("  📡 Remote:   ", Style::default().fg(theme.border)),
+            Span::styled(app.remote_url.clone(), Style::default().fg(theme.purple)),
         ]),
         Line::from(""),
         Line::from(vec![
-            Span::styled(
-                "  ↑ Ahead:  ",
-                Style::default().fg(Color::Rgb(98, 114, 164)),
-            ),
+            Span::styled("  ↑ Ahead:  ", Style::default().fg(theme.border)),
             Span::styled(
                 format!("{} commit(s) ahead of remote", app.ahead_count),
                 Style::default()
@@ -1189,10 +1261,7 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
             ),
         ]),
         Line::from(vec![
-            Span::styled(
-                "  ↓ Behind: ",
-                Style::default().fg(Color::Rgb(98, 114, 164)),
-            ),
+            Span::styled("  ↓ Behind: ", Style::default().fg(theme.border)),
             Span::styled(
                 format!("{} commit(s) behind remote", app.behind_count),
                 Style::default()
@@ -1222,7 +1291,7 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
                 }
             },
             Style::default()
-                .fg(Color::Rgb(241, 250, 140))
+                .fg(theme.yellow)
                 .add_modifier(Modifier::ITALIC),
         )]),
         Line::from(""),
@@ -1232,20 +1301,19 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "  [Esc] or [Enter] to close"
             },
-            Style::default().fg(Color::Rgb(98, 114, 164)),
+            Style::default().fg(theme.border),
         )]),
     ];
 
     let block = Block::default()
         .title(Span::styled(
             " REMOTE INFO ",
-            Style::default()
-                .fg(Color::Rgb(139, 233, 253))
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(139, 233, 253)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
@@ -1254,6 +1322,7 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -1273,7 +1342,7 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
                         "✏️  AMEND LAST COMMIT"
                     },
                     Style::default()
-                        .fg(Color::Rgb(255, 184, 108))
+                        .fg(theme.orange)
                         .add_modifier(Modifier::BOLD),
                 )]),
                 Line::from(""),
@@ -1284,7 +1353,7 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
                         "  ⚠️  Note: If already pushed, you'll need to force push after amend!"
                     },
                     Style::default()
-                        .fg(Color::Rgb(255, 85, 85))
+                        .fg(theme.red)
                         .add_modifier(Modifier::ITALIC),
                 )]),
                 Line::from(""),
@@ -1294,15 +1363,15 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "  New commit message (edit below):"
                     },
-                    Style::default().fg(Color::Rgb(98, 114, 164)),
+                    Style::default().fg(theme.border),
                 )]),
                 Line::from(vec![
-                    Span::styled("  ┌─── ", Style::default().fg(Color::Rgb(255, 184, 108))),
+                    Span::styled("  ┌─── ", Style::default().fg(theme.orange)),
                     Span::styled(
                         format!("{}_", display_msg),
                         Style::default()
-                            .fg(Color::Rgb(248, 248, 242))
-                            .bg(Color::Rgb(40, 42, 54))
+                            .fg(theme.fg)
+                            .bg(theme.bg)
                             .add_modifier(Modifier::BOLD),
                     ),
                 ]),
@@ -1313,7 +1382,7 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "  Type to edit, [Enter] to confirm, [Esc] to cancel"
                     },
-                    Style::default().fg(Color::Rgb(98, 114, 164)),
+                    Style::default().fg(theme.border),
                 )]),
             ]
         }
@@ -1327,7 +1396,7 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
                         "⚡ AMENDING..."
                     },
                     Style::default()
-                        .fg(Color::Rgb(241, 250, 140))
+                        .fg(theme.yellow)
                         .add_modifier(Modifier::BOLD | Modifier::SLOW_BLINK),
                 )]),
                 Line::from(""),
@@ -1335,9 +1404,9 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
         }
         AmendStep::Done(result) => {
             let color = if result.starts_with("✅") {
-                Color::Rgb(80, 250, 123)
+                theme.green
             } else {
-                Color::Rgb(255, 85, 85)
+                theme.red
             };
             vec![
                 Line::from(""),
@@ -1352,7 +1421,7 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
                     } else {
                         "  [Enter/Esc] to close"
                     },
-                    Style::default().fg(Color::Rgb(98, 114, 164)),
+                    Style::default().fg(theme.border),
                 )]),
             ]
         }
@@ -1362,12 +1431,13 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
         .title(Span::styled(
             " ✏️  AMEND COMMIT ",
             Style::default()
-                .fg(Color::Rgb(255, 184, 108))
+                .fg(theme.orange)
                 .add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(255, 184, 108)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.orange))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
@@ -1376,6 +1446,7 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -1389,12 +1460,12 @@ pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
             Span::styled(
                 format!("  🔍 Commit: {}", hash),
                 Style::default()
-                    .fg(Color::Rgb(241, 250, 140))
+                    .fg(theme.yellow)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 format!("  [{}/{}]", scroll + 1, lines.len().max(1)),
-                Style::default().fg(Color::Rgb(98, 114, 164)),
+                Style::default().fg(theme.border),
             ),
         ]),
         Line::from(""),
@@ -1402,24 +1473,24 @@ pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
 
     for line in visible_lines {
         let color = if line.starts_with('+') && !line.starts_with("+++") {
-            Color::Rgb(80, 250, 123)
+            theme.green
         } else if line.starts_with('-') && !line.starts_with("---") {
-            Color::Rgb(255, 85, 85)
+            theme.red
         } else if line.starts_with("@@") {
-            Color::Rgb(139, 233, 253)
+            theme.cyan
         } else if line.starts_with("commit ")
             || line.starts_with("Author:")
             || line.starts_with("Date:")
         {
-            Color::Rgb(189, 147, 249)
+            theme.purple
         } else if line.starts_with("diff ")
             || line.starts_with("index ")
             || line.starts_with("---")
             || line.starts_with("+++")
         {
-            Color::Rgb(98, 114, 164)
+            theme.border
         } else {
-            Color::Rgb(248, 248, 242)
+            theme.fg
         };
         content.push(Line::from(vec![Span::styled(
             line.to_string(),
@@ -1435,7 +1506,7 @@ pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
             "  ↑/↓ j/k scroll  PgUp/PgDn  [Esc/q] Back to history"
         },
         Style::default()
-            .fg(Color::Rgb(255, 184, 108))
+            .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
     )]));
 
@@ -1443,12 +1514,13 @@ pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
         .title(Span::styled(
             format!(" 🔍 COMMIT DIFF — {} ", hash),
             Style::default()
-                .fg(Color::Rgb(241, 250, 140))
+                .fg(theme.yellow)
                 .add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(241, 250, 140)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.yellow))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
@@ -1457,6 +1529,7 @@ pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
 }
 
 pub fn render_merge_confirm(f: &mut Frame, app: &App, branch_to_merge: &str, area: Rect) {
+    let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
@@ -1466,40 +1539,48 @@ pub fn render_merge_confirm(f: &mut Frame, app: &App, branch_to_merge: &str, are
             Line::from(vec![Span::styled(
                 "🔀  XÁC NHẬN MERGE CHI NHÁNH  🔀",
                 Style::default()
-                    .fg(Color::Rgb(255, 184, 108))
+                    .fg(theme.orange)
                     .add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![
-                Span::styled("Trộn chi nhánh ", Style::default().fg(Color::Rgb(248, 248, 242))),
-                Span::styled(format!("\"{}\"", branch_to_merge), Style::default().fg(Color::Rgb(139, 233, 253)).add_modifier(Modifier::BOLD)),
-                Span::styled(" vào ", Style::default().fg(Color::Rgb(248, 248, 242))),
-                Span::styled(format!("\"{}\"", app.current_branch), Style::default().fg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)),
+                Span::styled("Trộn chi nhánh ", Style::default().fg(theme.fg)),
+                Span::styled(
+                    format!("\"{}\"", branch_to_merge),
+                    Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(" vào ", Style::default().fg(theme.fg)),
+                Span::styled(
+                    format!("\"{}\"", app.current_branch),
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::BOLD),
+                ),
             ]),
             Line::from(""),
             Line::from(vec![Span::styled(
                 "⚠️ Lưu ý: Nếu xảy ra xung đột (conflict), git-ai sẽ báo lỗi",
-                Style::default().fg(Color::Rgb(255, 85, 85)),
+                Style::default().fg(theme.red),
             )]),
             Line::from(vec![Span::styled(
                 "và hiển thị danh sách file xung đột ngoài màn hình Workspace.",
-                Style::default().fg(Color::Rgb(255, 85, 85)),
+                Style::default().fg(theme.red),
             )]),
             Line::from(""),
             Line::from(vec![
                 Span::styled(
                     " [y] / Enter ĐỒNG Ý ",
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(80, 250, 123))
+                        .fg(theme.fg)
+                        .bg(theme.green)
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled("      ", Style::default()),
                 Span::styled(
                     " [n] / Esc HỦY BỎ ",
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(255, 85, 85))
+                        .fg(theme.fg)
+                        .bg(theme.red)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]),
@@ -1510,40 +1591,48 @@ pub fn render_merge_confirm(f: &mut Frame, app: &App, branch_to_merge: &str, are
             Line::from(vec![Span::styled(
                 "🔀  CONFIRM MERGE BRANCH  🔀",
                 Style::default()
-                    .fg(Color::Rgb(255, 184, 108))
+                    .fg(theme.orange)
                     .add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![
-                Span::styled("Merge branch ", Style::default().fg(Color::Rgb(248, 248, 242))),
-                Span::styled(format!("\"{}\"", branch_to_merge), Style::default().fg(Color::Rgb(139, 233, 253)).add_modifier(Modifier::BOLD)),
-                Span::styled(" into ", Style::default().fg(Color::Rgb(248, 248, 242))),
-                Span::styled(format!("\"{}\"", app.current_branch), Style::default().fg(Color::Rgb(80, 250, 123)).add_modifier(Modifier::BOLD)),
+                Span::styled("Merge branch ", Style::default().fg(theme.fg)),
+                Span::styled(
+                    format!("\"{}\"", branch_to_merge),
+                    Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(" into ", Style::default().fg(theme.fg)),
+                Span::styled(
+                    format!("\"{}\"", app.current_branch),
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::BOLD),
+                ),
             ]),
             Line::from(""),
             Line::from(vec![Span::styled(
                 "⚠️ Note: If conflicts occur, git-ai will report error",
-                Style::default().fg(Color::Rgb(255, 85, 85)),
+                Style::default().fg(theme.red),
             )]),
             Line::from(vec![Span::styled(
                 "and conflict files will be listed on Workspace changes panel.",
-                Style::default().fg(Color::Rgb(255, 85, 85)),
+                Style::default().fg(theme.red),
             )]),
             Line::from(""),
             Line::from(vec![
                 Span::styled(
                     " [y] / Enter CONFIRM ",
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(80, 250, 123))
+                        .fg(theme.fg)
+                        .bg(theme.green)
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::styled("      ", Style::default()),
                 Span::styled(
                     " [n] / Esc CANCEL ",
                     Style::default()
-                        .fg(Color::Rgb(248, 248, 242))
-                        .bg(Color::Rgb(255, 85, 85))
+                        .fg(theme.fg)
+                        .bg(theme.red)
                         .add_modifier(Modifier::BOLD),
                 ),
             ]),
@@ -1552,14 +1641,19 @@ pub fn render_merge_confirm(f: &mut Frame, app: &App, branch_to_merge: &str, are
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi { " 🔀 XÁC NHẬN MERGE " } else { " 🔀 CONFIRM MERGE " },
+            if is_vi {
+                " 🔀 XÁC NHẬN MERGE "
+            } else {
+                " 🔀 CONFIRM MERGE "
+            },
             Style::default()
-                .fg(Color::Rgb(255, 184, 108))
+                .fg(theme.orange)
                 .add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(255, 184, 108)))
-        .border_type(BorderType::Double);
+        .border_style(Style::default().fg(theme.orange))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
 
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Center)
@@ -1568,3 +1662,215 @@ pub fn render_merge_confirm(f: &mut Frame, app: &App, branch_to_merge: &str, are
     f.render_widget(paragraph, area);
 }
 
+pub fn render_new_branch_input(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let display_msg = if app.new_branch_name.len() > 70 {
+        format!("{}...", &app.new_branch_name[..67])
+    } else {
+        app.new_branch_name.clone()
+    };
+
+    let content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "🌿 TẠO CHI NHÁNH MỚI (CHECKOUT -B)"
+            } else {
+                "🌿 CREATE & CHECKOUT NEW BRANCH"
+            },
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "  Nhập tên chi nhánh mới bên dưới:"
+            } else {
+                "  Enter new branch name below:"
+            },
+            Style::default().fg(theme.border),
+        )]),
+        Line::from(vec![
+            Span::styled("  ┌─── ", Style::default().fg(theme.purple)),
+            Span::styled(
+                format!("{}_", display_msg),
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.bg)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "  Nhập tên, [Enter] để xác nhận, [Esc] để hủy"
+            } else {
+                "  Type name, [Enter] to confirm, [Esc] to cancel"
+            },
+            Style::default().fg(theme.border),
+        )]),
+    ];
+
+    let block = Block::default()
+        .title(Span::styled(
+            if is_vi {
+                " 🌿 CHI NHÁNH MỚI "
+            } else {
+                " 🌿 NEW BRANCH "
+            },
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.purple))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .block(block);
+    f.render_widget(paragraph, area);
+}
+
+pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let mut content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "📂 LỊCH SỬ WORKSPACE — CHỌN NHANH PROJECT"
+            } else {
+                "📂 WORKSPACE HISTORY — QUICK PROJECT SWITCH"
+            },
+            Style::default()
+                .fg(theme.cyan)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+    ];
+
+    if app.workspace_history.is_empty() {
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "  (Chưa có project nào trong lịch sử)"
+            } else {
+                "  (No projects in history yet)"
+            },
+            Style::default()
+                .fg(theme.border)
+                .add_modifier(Modifier::ITALIC),
+        )]));
+    } else {
+        for (i, path) in app.workspace_history.iter().enumerate() {
+            let is_selected = i == app.selected_workspace_index;
+            let is_active = *path == app.current_dir;
+
+            let cursor = if is_selected {
+                Span::styled(
+                    " ▶ ",
+                    Style::default()
+                        .fg(theme.purple)
+                        .add_modifier(Modifier::BOLD),
+                )
+            } else {
+                Span::styled("   ", Style::default())
+            };
+
+            let icon = if is_active { "★ " } else { "☆ " };
+            let icon_span = Span::styled(
+                icon,
+                if is_active {
+                    Style::default().fg(theme.green)
+                } else {
+                    Style::default().fg(theme.border)
+                },
+            );
+
+            // Display shortened path: show last 2 components for readability
+            let display_path = {
+                let parts: Vec<&str> = path.rsplitn(3, '/').collect();
+                if parts.len() >= 2 {
+                    format!(".../{}", parts.iter().rev().skip(1).cloned().collect::<Vec<&str>>().join("/"))
+                } else {
+                    path.clone()
+                }
+            };
+
+            let path_style = if is_selected {
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.select_bg)
+                    .add_modifier(Modifier::BOLD)
+            } else if is_active {
+                Style::default()
+                    .fg(theme.green)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(theme.fg)
+            };
+
+            let active_badge = if is_active {
+                Span::styled(
+                    if is_vi {
+                        " (Đang mở) "
+                    } else {
+                        " (Active) "
+                    },
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::ITALIC),
+                )
+            } else {
+                Span::styled("", Style::default())
+            };
+
+            content.push(Line::from(vec![
+                cursor,
+                icon_span,
+                Span::styled(display_path, path_style),
+                active_badge,
+            ]));
+        }
+    }
+
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "  [Enter] Mở  [n] Folder mới  [x] Xóa  [Esc] Đóng"
+        } else {
+            "  [Enter] Open  [n] New Folder  [x] Remove  [Esc] Close"
+        },
+        Style::default()
+            .fg(theme.orange)
+            .add_modifier(Modifier::BOLD),
+    )]));
+
+    let block = Block::default()
+        .title(Span::styled(
+            if is_vi {
+                " 📂 LỊCH SỬ WORKSPACE "
+            } else {
+                " 📂 WORKSPACE HISTORY "
+            },
+            Style::default()
+                .fg(theme.cyan)
+                .add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .block(block);
+    f.render_widget(paragraph, area);
+}

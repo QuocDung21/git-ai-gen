@@ -1,17 +1,21 @@
 pub mod components;
 pub mod modals;
 
+use crate::app::models::ActiveModal;
+use crate::app::App;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Clear},
     Frame,
 };
-use crate::app::App;
-use crate::app::models::ActiveModal;
 
 pub fn ui(f: &mut Frame, app: &App) {
+    let theme = app.theme();
+    let root_bg = Block::default().style(Style::default().bg(theme.bg));
+    f.render_widget(root_bg, f.size());
+
     let is_vi = app.current_lang == "vi";
 
     let chunks = Layout::default()
@@ -54,6 +58,7 @@ pub fn ui(f: &mut Frame, app: &App) {
     components::render_legend(f, app, main_chunks[2]);
 
     // 6. STATUS MESSAGE BAR
+    let theme = app.theme();
     let is_warning = app.status_message.starts_with("⚠️")
         || app.status_message.contains("CONFIRM")
         || app.status_message.contains("XÁC NHẬN");
@@ -66,13 +71,13 @@ pub fn ui(f: &mut Frame, app: &App) {
         || app.status_message.starts_with("✨");
 
     let status_color = if is_warning {
-        Color::Rgb(241, 250, 140) // Yellow Warning
+        theme.yellow
     } else if is_error {
-        Color::Rgb(255, 85, 85) // Red Error
+        theme.red
     } else if is_success {
-        Color::Rgb(80, 250, 123) // Green Success
+        theme.green
     } else {
-        Color::Rgb(139, 233, 253) // Cyan Info
+        theme.cyan
     };
 
     let status_text = Line::from(vec![
@@ -83,7 +88,7 @@ pub fn ui(f: &mut Frame, app: &App) {
                 "  🔔  SYSTEM NOTIFICATION  "
             },
             Style::default()
-                .fg(Color::Rgb(248, 248, 242))
+                .fg(theme.bg)
                 .bg(status_color)
                 .add_modifier(Modifier::BOLD),
         ),
@@ -105,55 +110,46 @@ pub fn ui(f: &mut Frame, app: &App) {
     f.render_widget(status_widget, chunks[3]);
 
     // 7. RENDER FLOATING MODAL OVERLAYS (LAST IN CANVAS LAYERS)
-    match &app.active_modal {
-        ActiveModal::Help => {
-            let area = modals::centered_rect(65, 75, f.size());
-            modals::render_help_modal(f, app, area);
+    if app.active_modal != ActiveModal::None {
+        let area = match &app.active_modal {
+            ActiveModal::Help => modals::centered_rect(65, 75, f.size()),
+            ActiveModal::LanguageSelect => modals::centered_rect(40, 25, f.size()),
+            ActiveModal::RevertConfirm(_) => modals::centered_rect(50, 30, f.size()),
+            ActiveModal::GitLog => modals::centered_rect(75, 70, f.size()),
+            ActiveModal::BranchSelect => modals::centered_rect(50, 45, f.size()),
+            ActiveModal::DiffResult => modals::centered_rect(72, 72, f.size()),
+            ActiveModal::GoConfirm => modals::centered_rect(70, 70, f.size()),
+            ActiveModal::StashList => modals::centered_rect(70, 65, f.size()),
+            ActiveModal::RemoteInfo => modals::centered_rect(65, 55, f.size()),
+            ActiveModal::AmendCommit => modals::centered_rect(68, 50, f.size()),
+            ActiveModal::CommitDiff(_) => modals::centered_rect(88, 88, f.size()),
+            ActiveModal::MergeConfirm(_) => modals::centered_rect(55, 30, f.size()),
+            ActiveModal::NewBranchInput => modals::centered_rect(55, 30, f.size()),
+            ActiveModal::ThemeSelect => modals::centered_rect(42, 23, f.size()),
+            ActiveModal::WorkspaceHistory => modals::centered_rect(60, 50, f.size()),
+            ActiveModal::None => f.size(),
+        };
+
+        f.render_widget(Clear, area);
+        f.render_widget(Block::default().style(Style::default().bg(theme.bg)), area);
+
+        match &app.active_modal {
+            ActiveModal::Help => modals::render_help_modal(f, app, area),
+            ActiveModal::LanguageSelect => modals::render_language_select(f, app, area),
+            ActiveModal::RevertConfirm(path) => modals::render_revert_confirm(f, app, path, area),
+            ActiveModal::GitLog => modals::render_git_log(f, app, area),
+            ActiveModal::BranchSelect => modals::render_branch_select(f, app, area),
+            ActiveModal::DiffResult => modals::render_diff_result(f, app, area),
+            ActiveModal::GoConfirm => modals::render_go_confirm(f, app, area),
+            ActiveModal::StashList => modals::render_stash_list(f, app, area),
+            ActiveModal::RemoteInfo => modals::render_remote_info(f, app, area),
+            ActiveModal::AmendCommit => modals::render_amend_commit(f, app, area),
+            ActiveModal::CommitDiff(hash) => modals::render_commit_diff(f, app, hash, area),
+            ActiveModal::MergeConfirm(selected_branch) => modals::render_merge_confirm(f, app, selected_branch, area),
+            ActiveModal::NewBranchInput => modals::render_new_branch_input(f, app, area),
+            ActiveModal::ThemeSelect => modals::render_theme_select(f, app, area),
+            ActiveModal::WorkspaceHistory => modals::render_workspace_history(f, app, area),
+            ActiveModal::None => {}
         }
-        ActiveModal::LanguageSelect => {
-            let area = modals::centered_rect(40, 25, f.size());
-            modals::render_language_select(f, app, area);
-        }
-        ActiveModal::RevertConfirm(path) => {
-            let area = modals::centered_rect(50, 30, f.size());
-            modals::render_revert_confirm(f, app, path, area);
-        }
-        ActiveModal::GitLog => {
-            let area = modals::centered_rect(75, 70, f.size());
-            modals::render_git_log(f, app, area);
-        }
-        ActiveModal::BranchSelect => {
-            let area = modals::centered_rect(50, 45, f.size());
-            modals::render_branch_select(f, app, area);
-        }
-        ActiveModal::DiffResult => {
-            let area = modals::centered_rect(72, 72, f.size());
-            modals::render_diff_result(f, app, area);
-        }
-        ActiveModal::GoConfirm => {
-            let area = modals::centered_rect(70, 70, f.size());
-            modals::render_go_confirm(f, app, area);
-        }
-        ActiveModal::StashList => {
-            let area = modals::centered_rect(70, 65, f.size());
-            modals::render_stash_list(f, app, area);
-        }
-        ActiveModal::RemoteInfo => {
-            let area = modals::centered_rect(65, 55, f.size());
-            modals::render_remote_info(f, app, area);
-        }
-        ActiveModal::AmendCommit => {
-            let area = modals::centered_rect(68, 50, f.size());
-            modals::render_amend_commit(f, app, area);
-        }
-        ActiveModal::CommitDiff(hash) => {
-            let area = modals::centered_rect(88, 88, f.size());
-            modals::render_commit_diff(f, app, hash, area);
-        }
-        ActiveModal::MergeConfirm(selected_branch) => {
-            let area = modals::centered_rect(55, 30, f.size());
-            modals::render_merge_confirm(f, app, selected_branch, area);
-        }
-        ActiveModal::None => {}
     }
 }

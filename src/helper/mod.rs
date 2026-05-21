@@ -4,6 +4,13 @@ use std::process::Command;
 pub struct Helper;
 
 impl Helper {
+    pub fn get_os_theme() -> dark_light::Mode {
+        match dark_light::detect() {
+            Ok(mode) => mode,
+            Err(_) => dark_light::Mode::Unspecified,
+        }
+    }
+
     pub fn get_ai_language() -> String {
         if let Ok(output) = Command::new("git")
             .args(["config", "--global", "--get", "git-ai.lang"])
