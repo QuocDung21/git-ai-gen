@@ -1,3 +1,6 @@
 help_title: "🤖 ULTIMATE GIT-AI CLI"
 help_desc: "Công cụ hỗ trợ viết Git Commit bằng AI nhanh chóng."
 diff_success: "✨ [HỆ THỐNG]: Đã chụp snapshot. Hãy dán vào AI..."
+error_prefix: "❌ Đã xảy ra lỗi:"
+press_enter: "👉 Nhấn Enter để quay lại Dashboard..."
+error_occurred: "Đã xảy ra lỗi: {}"

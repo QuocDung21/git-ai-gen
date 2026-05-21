@@ -27,15 +27,125 @@ const MARKERS: &[&str] = &[
 ];
 
 // =========================================================================
-// CẤU HÌNH CLAP CLI
+// LOCALIZATION (I18N)
+// =========================================================================
+
+pub struct Locales {
+    pub help_title: &'static str,
+    pub help_desc: &'static str,
+    pub diff_success: &'static str,
+    pub error_prefix: &'static str,
+    pub press_enter: &'static str,
+    pub no_changes: &'static str,
+    pub prompt_expert: &'static str,
+    pub status_clean: &'static str,
+    pub status_pending: &'static str,
+    pub status_fail: &'static str,
+    pub preview_heading: &'static str,
+    pub commit_content: &'static str,
+    pub confirm_deploy: &'static str,
+    pub pushing: &'static str,
+    pub push_success: &'static str,
+    pub deploy_cancel: &'static str,
+    pub reset_heading: &'static str,
+    pub reset_success: &'static str,
+    pub reset_info: &'static str,
+    pub reset_clean: &'static str,
+    pub confirm_remove_alias: &'static str,
+    pub keep_alias: &'static str,
+    pub lang_set: &'static str,
+    pub lang_auto: &'static str,
+    pub lang_invalid: &'static str,
+    pub cmd_help_diff: &'static str,
+    pub cmd_help_go: &'static str,
+    pub cmd_help_un: &'static str,
+    pub cmd_help_base: &'static str,
+}
+
+impl Locales {
+    pub fn new(lang: &str) -> Self {
+        if lang == "Vietnamese" || lang == "vi" {
+            Self {
+                help_title: "🤖 ULTIMATE GIT-AI CLI",
+                help_desc: "Công cụ hỗ trợ viết Git Commit bằng AI nhanh chóng.",
+                diff_success: "✨ [HỆ THỐNG]: Đã chụp snapshot. Hãy dán vào AI...",
+                error_prefix: "❌ Đã xảy ra lỗi:",
+                press_enter: "👉 Nhấn Enter để quay lại Dashboard...",
+                no_changes: "⚠️ [HỆ THỐNG]: Không phát hiện thay đổi nào. Đã hủy chụp snapshot!",
+                prompt_expert: "Act as an expert developer. Output ONLY the raw commit message for the diff below. Rules: 1. Subject line: Conventional Commits, < 50 chars. 2. Blank line. 3. Body: 1-2 extremely short sentences explaining WHAT and WHY. Be direct, no fluff. STRICTLY NO markdown formatting (no ```), NO preamble, NO greetings. Write the commit message in",
+                status_clean: "✅ Thư mục hiện tại đang sạch (không có thay đổi).",
+                status_pending: "📂 Các thay đổi đang chờ:",
+                status_fail: "❌ Không thể đọc trạng thái Git.",
+                preview_heading: "📂 [XEM TRƯỚC THAY ĐỔI]",
+                commit_content: "💬 [NỘI DUNG COMMIT TỪ AI]",
+                confirm_deploy: "🚀 Xác nhận deploy (commit & push)? (Y/n): ",
+                pushing: "⚡ Đang tiến hành đẩy code...",
+                push_success: "Hoàn tất. Code đã được đẩy lên mây thành công! ☁️",
+                deploy_cancel: "Đã hủy quá trình deploy.",
+                reset_heading: "🔄 Đang khôi phục cài đặt gốc...",
+                reset_success: "Đã xóa toàn bộ cấu hình của git-ai khỏi hệ thống Git.",
+                reset_info: "👉 Công cụ đã được đưa về trạng thái mặc định ban đầu.",
+                reset_clean: "Máy tính của bạn rất sạch sẽ. Không có cấu hình git-ai nào cần xóa!",
+                confirm_remove_alias: "🗑️  Bạn có muốn gỡ bỏ luôn các phím tắt (alias) khỏi Terminal không? (y/N): ",
+                keep_alias: "Đã bỏ qua. Giữ lại các phím tắt trong Terminal.",
+                lang_set: "✅ Đã thiết lập ngôn ngữ:",
+                lang_auto: "✅ Đã về chế độ tự động.",
+                lang_invalid: "❌ Lệnh không hợp lệ. Dùng: vi, en, hoặc auto",
+                cmd_help_diff: "  -> git-copydiff     : Chụp snapshot code diff",
+                cmd_help_go: "  -> git-go           : Đóng gói và đẩy code lên git",
+                cmd_help_un: "  -> git-ai-uninstall : Gỡ cài đặt bộ tool này",
+                cmd_help_base: "  -> git-ai           : Lệnh gốc (ví dụ: git-ai help)",
+            }
+        } else {
+            Self {
+                help_title: "🤖 ULTIMATE GIT-AI CLI",
+                help_desc: "A tool to help you write Git Commits using AI rapidly.",
+                diff_success: "✨ [SYSTEM]: Snapshot captured. Paste it to AI...",
+                error_prefix: "❌ An error occurred:",
+                press_enter: "👉 Press Enter to return to Dashboard...",
+                no_changes: "⚠️ [SYSTEM]: No changes detected. Snapshot cancelled!",
+                prompt_expert: "Act as an expert developer. Output ONLY the raw commit message for the diff below. Rules: 1. Subject line: Conventional Commits, < 50 chars. 2. Blank line. 3. Body: 1-2 extremely short sentences explaining WHAT and WHY. Be direct, no fluff. STRICTLY NO markdown formatting (no ```), NO preamble, NO greetings. Write the commit message in",
+                status_clean: "✅ Working tree clean (No changes).",
+                status_pending: "📂 Pending changes:",
+                status_fail: "❌ Failed to read Git status.",
+                preview_heading: "📂 [PREVIEW CHANGES]",
+                commit_content: "💬 [COMMIT CONTENT FROM AI]",
+                confirm_deploy: "🚀 Confirm deploy (commit & push)? (Y/n): ",
+                pushing: "⚡ Pushing code...",
+                push_success: "Done. Code pushed to cloud successfully! ☁️",
+                deploy_cancel: "Deploy cancelled.",
+                reset_heading: "🔄 Restoring factory settings...",
+                reset_success: "All git-ai configurations removed from Git system.",
+                reset_info: "👉 Tool restored to initial default state.",
+                reset_clean: "System clean. No git-ai configurations to remove!",
+                confirm_remove_alias: "🗑️  Remove aliases from Terminal? (y/N): ",
+                keep_alias: "Skipped. Aliases kept in Terminal.",
+                lang_set: "✅ Language set to:",
+                lang_auto: "✅ Reverted to auto mode.",
+                lang_invalid: "❌ Invalid command. Use: vi, en, or auto",
+                cmd_help_diff: "  -> git-copydiff     : Capture code diff snapshot",
+                cmd_help_go: "  -> git-go           : Package and push code to git",
+                cmd_help_un: "  -> git-ai-uninstall : Uninstall this toolset",
+                cmd_help_base: "  -> git-ai           : Base command (e.g., git-ai help)",
+            }
+        }
+    }
+}
+
+pub fn get_locales() -> Locales {
+    let lang = get_ai_language();
+    Locales::new(&lang)
+}
+
+// =========================================================================
+// CLAP CLI CONFIGURATION
 // =========================================================================
 
 #[derive(Parser)]
 #[command(
     name = "git-ai",
     version,
-    about = "🤖 ULTIMATE GIT-AI CLI\nCông cụ hỗ trợ viết Git Commit bằng AI nhanh chóng.",
-    after_help = "💡 QUY TRÌNH SỬ DỤNG CHUẨN:\n  1. Sửa code xong, gõ `git-ai diff` để quét thay đổi.\n  2. Dán (Ctrl+V) nội dung vào ChatGPT/Claude/Gemini.\n  3. Copy lại câu trả lời (commit message) của AI.\n  4. Gõ `git-ai go` để tool tự động đóng gói và đẩy code lên git.\n"
+    about = "🤖 ULTIMATE GIT-AI CLI\nA tool to help you write Git Commits using AI rapidly."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -68,33 +178,34 @@ enum Commands {
 }
 
 // =========================================================================
-// HÀM MAIN VÀ ĐIỀU HƯỚNG
+// MAIN & ROUTING
 // =========================================================================
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+    let locales = get_locales();
 
-    if let Err(e) = run(&cli) {
-        logger::error(&format!("Đã xảy ra lỗi: {}", e));
+    if let Err(e) = run(&cli, &locales) {
+        logger::error(&format!("{} {}", locales.error_prefix, e));
     }
     Ok(())
 }
 
-fn run(cli: &Cli) -> Result<()> {
+fn run(cli: &Cli, locales: &Locales) -> Result<()> {
     match &cli.command {
         Some(Commands::Diff) => {
-            let msg = handle_diff()?;
+            let msg = handle_diff(locales)?;
             logger::system(&msg);
         }
-        Some(Commands::Go) => handle_go()?,
+        Some(Commands::Go) => handle_go(locales)?,
         Some(Commands::Lang { lang }) => {
-            let msg = handle_lang(lang)?;
+            let msg = handle_lang(lang, locales)?;
             println!("{}", msg);
         }
-        Some(Commands::Install) => handle_install()?,
+        Some(Commands::Install) => handle_install()?, // Install is generally system level, keeping minimal localization
         Some(Commands::Uninstall) => handle_uninstall()?,
-        Some(Commands::Reset) => handle_restore()?,
-        Some(Commands::Test) => handle_test()?,
+        Some(Commands::Reset) => handle_restore(locales)?,
+        Some(Commands::Test) => handle_test(locales)?,
         None => {
             dashboard::run_dashboard()?;
         }
@@ -103,40 +214,43 @@ fn run(cli: &Cli) -> Result<()> {
 }
 
 // =========================================================================
-// CÁC HÀM XỬ LÝ LỆNH TƯƠNG ỨNG
+// COMMAND HANDLERS
 // =========================================================================
 
-fn handle_lang(lang: &str) -> Result<String> {
+pub fn handle_lang(lang: &str, locales: &Locales) -> Result<String> {
     match lang {
         "vi" | "en" => {
             Command::new("git")
                 .args(["config", "--global", "git-ai.lang", lang])
                 .status()?;
-            Ok(format!("✅ Đã thiết lập ngôn ngữ: {}", lang))
+            let new_locales = Locales::new(lang);
+            Ok(format!("{} {}", new_locales.lang_set, lang))
         }
         "auto" => {
             let _ = Command::new("git")
                 .args(["config", "--global", "--unset", "git-ai.lang"])
                 .status();
-            Ok("✅ Đã về chế độ tự động.".to_string())
+            let resolved_lang = get_ai_language();
+            let new_locales = Locales::new(&resolved_lang);
+            Ok(new_locales.lang_auto.to_string())
         }
-        _ => Ok("❌ Lệnh không hợp lệ.".to_string()),
+        _ => Ok(locales.lang_invalid.to_string()),
     }
 }
 fn handle_uninstall() -> Result<()> {
-    logger::warn("🗑️  Đang tiến hành gỡ bỏ cấu hình khỏi hệ thống...");
+    logger::warn("🗑️  Uninstalling configuration from system...");
 
     #[cfg(target_family = "unix")]
     {
         let profile = get_active_unix_profile();
         if clean_profile_file(&profile)? {
-            logger::success(&format!("Đã gỡ bỏ thành công khỏi: {}", profile.display()));
+            logger::success(&format!("Successfully removed from: {}", profile.display()));
             logger::note(&format!(
-                "👉 Vui lòng khởi động lại Terminal hoặc chạy 'source {}' để áp dụng.",
+                "👉 Please restart Terminal or run 'source {}' to apply.",
                 profile.display()
             ));
         } else {
-            logger::info("Không tìm thấy cấu hình git-ai nào để gỡ.");
+            logger::info("No git-ai configuration found to remove.");
         }
     }
 
@@ -144,10 +258,10 @@ fn handle_uninstall() -> Result<()> {
     {
         let profile = get_windows_profile()?;
         if clean_profile_file(&profile)? {
-            logger::success("Đã gỡ bỏ các chức năng khỏi PowerShell Profile!");
-            logger::note("👉 Vui lòng khởi động lại PowerShell để áp dụng thay đổi.");
+            logger::success("Removed functions from PowerShell Profile!");
+            logger::note("👉 Please restart PowerShell to apply changes.");
         } else {
-            logger::info("Không tìm thấy cấu hình PowerShell Profile để gỡ.");
+            logger::info("No PowerShell Profile configuration found to remove.");
         }
     }
     Ok(())
@@ -163,7 +277,7 @@ fn handle_install() -> Result<()> {
 
         if target_profile.exists() {
             let content = with_spinner(
-                "Đang tiến hành tự động cấu hình hệ thống...".to_string(),
+                "Auto-configuring system...".to_string(),
                 || -> anyhow::Result<String> {
                     let raw = fs::read_to_string(&target_profile)?;
                     Ok(raw)
@@ -171,16 +285,16 @@ fn handle_install() -> Result<()> {
             )?;
             if content.contains("# ULTIMATE GIT-AI WORKFLOW") {
                 logger::path(
-                    "⚠️  Cấu hình đã tồn tại sẵn trong:",
+                    "⚠️  Configuration already exists in:",
                     &target_profile.display().to_string(),
                 );
 
-                let prompt = "🔄 Bạn có muốn ghi đè (xóa cũ, cài mới) cấu hình này không? (y/N): ";
+                let prompt = "🔄 Overwrite existing configuration? (y/N): ";
                 if ask_confirm_default_no(prompt)? {
                     clean_profile_file(&target_profile)?;
-                    logger::info("🧹 Đã dọn dẹp cấu hình cũ.");
+                    logger::info("🧹 Cleaned old configuration.");
                 } else {
-                    logger::success("Đã hủy quá trình cài đặt. Giữ nguyên cấu hình hiện tại.");
+                    logger::success("Install cancelled. Kept existing config.");
                     return Ok(());
                 }
             }
@@ -193,10 +307,11 @@ fn handle_install() -> Result<()> {
 
         append_to_file(&target_profile, &alias_lines)?;
 
-        logger::success("Cấu hình thành công! Đã thêm các phím tắt:");
-        print_commands_help();
+        logger::success("Configuration successful! Added aliases:");
+        let dummy_locales = Locales::new("English"); // Fallback for install log
+        print_commands_help(&dummy_locales);
         logger::note(&format!(
-            "\n👉 Vui lòng chạy lệnh: source {}",
+            "\n👉 Please run command: source {}",
             target_profile.display()
         ));
     }
@@ -209,16 +324,16 @@ fn handle_install() -> Result<()> {
             let content = fs::read_to_string(&profile_path)?;
             if content.contains("# ULTIMATE GIT-AI WORKFLOW") {
                 logger::path(
-                    "⚠️  Cấu hình đã tồn tại sẵn trong:",
+                    "⚠️  Configuration already exists in:",
                     &profile_path.display().to_string(),
                 );
 
-                let prompt = "🔄 Bạn có muốn ghi đè (xóa cũ, cài mới) cấu hình này không? (y/N): ";
+                let prompt = "🔄 Overwrite existing configuration? (y/N): ";
                 if ask_confirm_default_no(prompt)? {
                     clean_profile_file(&profile_path)?;
-                    logger::info("🧹 Đã dọn dẹp cấu hình cũ.");
+                    logger::info("🧹 Cleaned old configuration.");
                 } else {
-                    logger::success("Đã hủy quá trình cài đặt. Giữ nguyên cấu hình hiện tại.");
+                    logger::success("Install cancelled. Kept existing config.");
                     return Ok(());
                 }
             }
@@ -235,73 +350,69 @@ fn handle_install() -> Result<()> {
 
         append_to_file(&profile_path, &func_lines)?;
 
-        logger::success("Cấu hình thành công! Đã thêm các phím tắt:");
-        print_commands_help();
-        logger::note("\n👉 Vui lòng khởi động lại PowerShell để kích hoạt các lệnh mới.");
+        logger::success("Configuration successful! Added aliases:");
+        let dummy_locales = Locales::new("English"); // Fallback for install log
+        print_commands_help(&dummy_locales);
+        logger::note("\n👉 Please restart PowerShell to apply new commands.");
     }
     Ok(())
 }
 
 #[allow(dead_code)]
-fn handle_test() -> Result<()> {
-    handle_check_status()?;
+fn handle_test(locales: &Locales) -> Result<()> {
+    handle_check_status(locales)?;
     Ok(())
 }
 
-pub fn handle_diff() -> Result<String> {
+pub fn handle_diff(locales: &Locales) -> Result<String> {
     let output = Command::new("git").args(["diff"]).output()?;
     let diff_str = String::from_utf8_lossy(&output.stdout);
 
     if diff_str.trim().is_empty() {
-        return Ok(
-            "⚠️ [HỆ THỐNG]: Không phát hiện thay đổi nào. Đã hủy chụp snapshot!".to_string(),
-        );
+        return Ok(locales.no_changes.to_string());
     }
 
     let ai_lang = get_ai_language();
 
     let prompt = format!(
-        "Act as an expert developer. Output ONLY the raw commit message for the diff below. Rules: 1. Subject line: Conventional Commits, < 50 chars. 2. Blank line. 3. Body: 1-2 extremely short sentences explaining WHAT and WHY. Be direct, no fluff. STRICTLY NO markdown formatting (no ```), NO preamble, NO greetings. Write the commit message in {}.\n\nDiff:\n\n{}",
-        ai_lang, diff_str
+        "{} {}.\n\nDiff:\n\n{}",
+        locales.prompt_expert, ai_lang, diff_str
     );
 
     let mut clipboard = Clipboard::new()?;
     clipboard.set_text(prompt)?;
 
-    Ok(format!(
-        "✨ Đã chụp snapshot (Yêu cầu AI viết bằng {}). Dán vào AI ngay! 🤖",
-        ai_lang
-    ))
+    Ok(locales.diff_success.to_string())
 }
 
-pub fn handle_check_status() -> Result<bool> {
+pub fn handle_check_status(locales: &Locales) -> Result<bool> {
     let output = Command::new("git").args(["status", "-s"]).output()?;
     let status_text = String::from_utf8_lossy(&output.stdout);
     if status_text.trim().is_empty() {
-        logger::info("✅ Thư mục hiện tại đang sạch (không có thay đổi).");
+        logger::info(locales.status_clean);
         return Ok(false);
     }
-    logger::info("📂 Các thay đổi đang chờ:");
+    logger::info(locales.status_pending);
     logger::text(&status_text);
     Ok(true)
 }
 
-pub fn handle_go() -> Result<()> {
-    logger::heading("📂 [XEM TRƯỚC THAY ĐỔI]");
+pub fn handle_go(locales: &Locales) -> Result<()> {
+    logger::heading(locales.preview_heading);
 
-    if !handle_check_status()? {
+    if !handle_check_status(locales)? {
         return Ok(());
     }
 
     let mut clipboard = Clipboard::new()?;
     let commit_msg = clipboard.get_text().unwrap_or_default();
 
-    logger::system("💬 [NỘI DUNG COMMIT TỪ AI]");
+    logger::system(locales.commit_content);
     logger::green_text(&commit_msg);
     logger::text("");
 
-    if ask_confirm("🚀 Xác nhận deploy (commit & push)? (Y/n): ")? {
-        logger::heading("⚡ Đang tiến hành đẩy code...");
+    if ask_confirm(locales.confirm_deploy)? {
+        logger::heading(locales.pushing);
 
         if !Command::new("git").args(["add", "."]).status()?.success() {
             return Ok(());
@@ -315,73 +426,59 @@ pub fn handle_go() -> Result<()> {
         }
 
         if Command::new("git").args(["push"]).status()?.success() {
-            logger::success("Hoàn tất. Code đã được đẩy lên mây thành công! ☁️");
+            logger::success(locales.push_success);
         }
     } else {
-        logger::error("Đã hủy quá trình deploy.");
+        logger::error(locales.deploy_cancel);
     }
     Ok(())
 }
 
-fn handle_restore() -> Result<()> {
-    logger::heading("🔄 Đang khôi phục cài đặt gốc...");
+pub fn handle_restore(locales: &Locales) -> Result<()> {
+    logger::heading(locales.reset_heading);
     let status = Command::new("git")
         .args(["config", "--global", "--remove-section", "git-ai"])
         .status();
 
     match status {
         Ok(s) if s.success() => {
-            logger::success("Đã xóa toàn bộ cấu hình của git-ai khỏi hệ thống Git.");
-            logger::info("👉 Công cụ đã được đưa về trạng thái mặc định ban đầu.");
+            logger::success(locales.reset_success);
+            logger::info(locales.reset_info);
         }
         _ => {
-            logger::info("Máy tính của bạn rất sạch sẽ. Không có cấu hình git-ai nào cần xóa!");
+            logger::info(locales.reset_clean);
         }
     }
 
-    let prompt = "🗑️  Bạn có muốn gỡ bỏ luôn các phím tắt (alias) khỏi Terminal không? (y/N): ";
-    if ask_confirm_default_no(prompt)? {
+    if ask_confirm_default_no(locales.confirm_remove_alias)? {
         handle_uninstall()?;
     } else {
-        logger::success("Đã bỏ qua. Giữ lại các phím tắt trong Terminal.");
+        logger::success(locales.keep_alias);
     }
     Ok(())
 }
 
 // =========================================================================
-// CÁC HÀM TIỆN ÍCH (HELPER FUNCTIONS)
+// HELPER FUNCTIONS
 // =========================================================================
 
-fn get_ai_language() -> String {
+pub fn get_ai_language() -> String {
     if let Ok(output) = Command::new("git")
         .args(["config", "--global", "--get", "git-ai.lang"])
         .output()
     {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        match stdout.trim().to_lowercase().as_str() {
-            "vi" => return "Vietnamese".to_string(),
-            "en" => return "English".to_string(),
-            _ => {}
+        let stdout = String::from_utf8_lossy(&output.stdout)
+            .trim()
+            .to_lowercase();
+        if stdout == "vi" || stdout == "en" {
+            return stdout;
         }
     }
-
     let locale = get_locale().unwrap_or_else(|| String::from("en-US"));
     if locale.starts_with("vi") {
-        "Vietnamese".to_string()
-    } else if locale.starts_with("ja") {
-        "Japanese".to_string()
-    } else if locale.starts_with("zh") {
-        "Chinese".to_string()
-    } else if locale.starts_with("fr") {
-        "French".to_string()
-    } else if locale.starts_with("es") {
-        "Spanish".to_string()
-    } else if locale.starts_with("de") {
-        "German".to_string()
-    } else if locale.starts_with("ko") {
-        "Korean".to_string()
+        "vi".to_string()
     } else {
-        "English".to_string()
+        "en".to_string()
     }
 }
 
@@ -393,10 +490,10 @@ fn call_external_app(cmd: &str, args: &[&str], input: &str) -> Result<String> {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .with_context(|| format!("Không tìm thấy ứng dụng: {}", cmd))?;
+        .with_context(|| format!("Application not found: {}", cmd))?;
 
     {
-        let mut stdin = child.stdin.take().context("Không thể lấy stdin")?;
+        let mut stdin = child.stdin.take().context("Could not capture stdin")?;
         stdin.write_all(input.as_bytes())?;
     }
 
@@ -406,7 +503,7 @@ fn call_external_app(cmd: &str, args: &[&str], input: &str) -> Result<String> {
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr);
-        anyhow::bail!("Ứng dụng {} báo lỗi: {}", cmd, err);
+        anyhow::bail!("Application {} reported error: {}", cmd, err);
     }
 }
 
@@ -517,9 +614,9 @@ fn append_to_file(path: &PathBuf, content: &str) -> Result<()> {
     Ok(())
 }
 
-fn print_commands_help() {
-    logger::info("  -> git-copydiff     : Chụp snapshot code diff");
-    logger::info("  -> git-go           : Đóng gói và đẩy code lên git");
-    logger::info("  -> git-ai-uninstall : Gỡ cài đặt bộ tool này");
-    logger::info("  -> git-ai           : Lệnh gốc (ví dụ: git-ai help)");
+fn print_commands_help(locales: &Locales) {
+    logger::info(locales.cmd_help_diff);
+    logger::info(locales.cmd_help_go);
+    logger::info(locales.cmd_help_un);
+    logger::info(locales.cmd_help_base);
 }
