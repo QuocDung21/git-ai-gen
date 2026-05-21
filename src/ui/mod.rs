@@ -7,7 +7,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph, Clear},
+    widgets::{Block, Borders, Clear, Paragraph},
     Frame,
 };
 
@@ -117,16 +117,18 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::RevertConfirm(_) => modals::centered_rect(50, 30, f.size()),
             ActiveModal::GitLog => modals::centered_rect(75, 70, f.size()),
             ActiveModal::BranchSelect => modals::centered_rect(50, 45, f.size()),
-            ActiveModal::DiffResult => modals::centered_rect(72, 72, f.size()),
+            ActiveModal::DiffResult => modals::centered_rect(75, 85, f.size()),
             ActiveModal::GoConfirm => modals::centered_rect(70, 70, f.size()),
             ActiveModal::StashList => modals::centered_rect(70, 65, f.size()),
-            ActiveModal::RemoteInfo => modals::centered_rect(65, 55, f.size()),
+            ActiveModal::RemoteInfo => modals::centered_rect(65, 62, f.size()),
             ActiveModal::AmendCommit => modals::centered_rect(68, 50, f.size()),
             ActiveModal::CommitDiff(_) => modals::centered_rect(88, 88, f.size()),
             ActiveModal::MergeConfirm(_) => modals::centered_rect(55, 30, f.size()),
             ActiveModal::NewBranchInput => modals::centered_rect(55, 30, f.size()),
             ActiveModal::ThemeSelect => modals::centered_rect(42, 23, f.size()),
             ActiveModal::WorkspaceHistory => modals::centered_rect(60, 50, f.size()),
+            ActiveModal::ViewPrompt => modals::centered_rect(80, 80, f.size()),
+            ActiveModal::KiloModelSelect => modals::centered_rect(70, 70, f.size()),
             ActiveModal::None => f.size(),
         };
 
@@ -145,10 +147,14 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::RemoteInfo => modals::render_remote_info(f, app, area),
             ActiveModal::AmendCommit => modals::render_amend_commit(f, app, area),
             ActiveModal::CommitDiff(hash) => modals::render_commit_diff(f, app, hash, area),
-            ActiveModal::MergeConfirm(selected_branch) => modals::render_merge_confirm(f, app, selected_branch, area),
+            ActiveModal::MergeConfirm(selected_branch) => {
+                modals::render_merge_confirm(f, app, selected_branch, area)
+            }
             ActiveModal::NewBranchInput => modals::render_new_branch_input(f, app, area),
             ActiveModal::ThemeSelect => modals::render_theme_select(f, app, area),
             ActiveModal::WorkspaceHistory => modals::render_workspace_history(f, app, area),
+            ActiveModal::ViewPrompt => modals::render_view_prompt(f, app, area),
+            ActiveModal::KiloModelSelect => modals::render_kilo_model_select(f, app, area),
             ActiveModal::None => {}
         }
     }

@@ -106,6 +106,35 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
             }
         }
 
+        // Handle KILO commit generation (long-running CLI call)
+        if app.active_modal == ActiveModal::DiffResult && app.kilo_generating {
+            let diff = app.last_staged_diff.clone();
+            if diff.trim().is_empty() {
+                app.kilo_generation_status = if app.current_lang == "vi" {
+                    "❌ Không có diff staged.".to_string()
+                } else {
+                    "❌ No staged diff.".to_string()
+                };
+                app.kilo_generating = false;
+            } else {
+                match app.try_generate_with_kilo(&diff) {
+                    Ok(msg) => {
+                        app.diff_kilo_generated = msg;
+                        app.kilo_generation_status = if app.current_lang == "vi" {
+                            "✅ KILO đã sinh message xong!".to_string()
+                        } else {
+                            "✅ KILO finished generating!".to_string()
+                        };
+                    }
+                    Err(e) => {
+                        app.kilo_generation_status = format!("❌ {}", e);
+                    }
+                }
+                app.kilo_generating = false;
+            }
+            continue;
+        }
+
         if event::poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
                 // Intercept keys if a modal is active
@@ -609,12 +638,137 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         continue;
                     }
                     ActiveModal::DiffResult => {
+                        if !app.diff_kilo_generated.is_empty() {
+                            match key.code {
+                                KeyCode::Char('c') | KeyCode::Char('C') => {
+                                    if let Ok(mut cb) = arboard::Clipboard::new() {
+                                        let _ = cb.set_text(app.diff_kilo_generated.clone());
+                                    }
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "✅ Đã copy commit message từ KILO vào clipboard.".to_string()
+                                    } else {
+                                        "✅ KILO commit message copied to clipboard.".to_string()
+                                    };
+                                }
+                                KeyCode::Enter | KeyCode::Char('g') | KeyCode::Char('G') => {
+                                    app.commit_message_preview = app.diff_kilo_generated.clone();
+                                    app.active_modal = ActiveModal::None;
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "✅ Sử dụng message từ KILO. Nhấn [G] để commit & push.".to_string()
+                                    } else {
+                                        "✅ Using KILO message. Press [G] to commit & push.".to_string()
+                                    };
+                                }
+                                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('d') => {
+                                    app.diff_kilo_generated.clear();
+                                    app.active_modal = ActiveModal::None;
+                                }
+                                _ => {}
+                            }
+                        } else {
+                            match key.code {
+                                KeyCode::Char('k') | KeyCode::Char('K') => {
+                                    if app.last_staged_diff.trim().is_empty() {
+                                        app.kilo_generation_status = if app.current_lang == "vi" {
+                                            "⚠️ Không có diff staged.".to_string()
+                                        } else {
+                                            "⚠️ No staged diff.".to_string()
+                                        };
+                                    } else {
+                                        app.kilo_generating = true;
+                                        app.kilo_generation_status = if app.current_lang == "vi" {
+                                            "⏳ Đang hỏi KILO...".to_string()
+                                        } else {
+                                            "⏳ Asking KILO...".to_string()
+                                        };
+                                        app.diff_kilo_generated.clear();
+                                    }
+                                }
+                                KeyCode::Char('m') | KeyCode::Char('M') => {
+                                    app.fetch_kilo_models();
+                                    app.kilo_model_filter.clear();
+                                    app.kilo_model_search_mode = false;
+                                    app.selected_kilo_model_index = 0;
+                                    if !app.current_kilo_model.is_empty() {
+                                        if let Some(idx) = app.kilo_models.iter().position(|m| m == &app.current_kilo_model) {
+                                            app.selected_kilo_model_index = idx;
+                                        }
+                                    }
+                                    app.active_modal = ActiveModal::KiloModelSelect;
+                                }
+                                KeyCode::Esc
+                                | KeyCode::Enter
+                                | KeyCode::Char('q')
+                                | KeyCode::Char('d') => {
+                                    app.active_modal = ActiveModal::None;
+                                }
+                                _ => {}
+                            }
+                        }
+                        continue;
+                    }
+                    ActiveModal::KiloModelSelect => {
+                        let filtered: Vec<String> = if app.kilo_model_filter.is_empty() {
+                            app.kilo_models.clone()
+                        } else {
+                            let f = app.kilo_model_filter.to_lowercase();
+                            app.kilo_models.iter()
+                                .filter(|m| m.to_lowercase().contains(&f))
+                                .cloned()
+                                .collect()
+                        };
+
+                        // Keep selected index within filtered bounds
+                        if !filtered.is_empty() && app.selected_kilo_model_index >= filtered.len() {
+                            app.selected_kilo_model_index = filtered.len() - 1;
+                        }
+
                         match key.code {
-                            KeyCode::Esc
-                            | KeyCode::Enter
-                            | KeyCode::Char('q')
-                            | KeyCode::Char('d') => {
-                                app.active_modal = ActiveModal::None;
+                            KeyCode::Esc | KeyCode::Char('q') => {
+                                if app.kilo_model_search_mode || !app.kilo_model_filter.is_empty() {
+                                    app.kilo_model_filter.clear();
+                                    app.kilo_model_search_mode = false;
+                                    app.selected_kilo_model_index = 0;
+                                } else {
+                                    app.active_modal = ActiveModal::DiffResult;
+                                }
+                            }
+                            KeyCode::Enter => {
+                                if !filtered.is_empty() {
+                                    let idx = app.selected_kilo_model_index.min(filtered.len() - 1);
+                                    app.current_kilo_model = filtered[idx].clone();
+                                }
+                                app.kilo_model_filter.clear();
+                                app.kilo_model_search_mode = false;
+                                app.active_modal = ActiveModal::DiffResult;
+                            }
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                if app.selected_kilo_model_index > 0 {
+                                    app.selected_kilo_model_index -= 1;
+                                }
+                            }
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                if !filtered.is_empty() && app.selected_kilo_model_index + 1 < filtered.len() {
+                                    app.selected_kilo_model_index += 1;
+                                }
+                            }
+                            KeyCode::Char('/') => {
+                                app.kilo_model_search_mode = true;
+                            }
+                            KeyCode::Backspace => {
+                                if app.kilo_model_search_mode && !app.kilo_model_filter.is_empty() {
+                                    app.kilo_model_filter.pop();
+                                    app.selected_kilo_model_index = 0;
+                                }
+                            }
+                            KeyCode::Char(c) => {
+                                if c.is_ascii_alphanumeric() || c == '-' || c == '.' {
+                                    if !app.kilo_model_search_mode {
+                                        app.kilo_model_search_mode = true;
+                                    }
+                                    app.kilo_model_filter.push(c);
+                                    app.selected_kilo_model_index = 0;
+                                }
                             }
                             _ => {}
                         }
@@ -808,6 +962,19 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             KeyCode::Esc
                             | KeyCode::Char('q')
                             | KeyCode::Char('i')
+                            | KeyCode::Enter => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::ViewPrompt => {
+                        match key.code {
+                            KeyCode::Esc
+                            | KeyCode::Char('q')
+                            | KeyCode::Char('x')
+                            | KeyCode::Char('X')
                             | KeyCode::Enter => {
                                 app.active_modal = ActiveModal::None;
                             }
@@ -1033,9 +1200,11 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
 
                                     let preview: String =
                                         diff_str.lines().take(40).collect::<Vec<_>>().join("\n");
-                                    app.diff_snapshot = preview;
+                                     app.diff_snapshot = preview;
+                                     app.last_staged_diff = diff_str.clone();
+                                     app.diff_kilo_generated.clear();
 
-                                    let ai_lang = Helper::get_ai_language();
+                                     let ai_lang = Helper::get_ai_language();
                                     let prompt = format!(
                                         "{} {}.\n\nDiff:\n\n{}",
                                         crate::constant::Constant::PROMPT_EXPERT,
@@ -1225,6 +1394,10 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     KeyCode::Char('i') | KeyCode::Char('I') => {
                         app.fetch_remote_info();
                         app.active_modal = ActiveModal::RemoteInfo;
+                    }
+                    KeyCode::Char('x') | KeyCode::Char('X') => {
+                        app.fetch_prompt();
+                        app.active_modal = ActiveModal::ViewPrompt;
                     }
                     KeyCode::Char('m') | KeyCode::Char('M') => {
                         app.fetch_amend_msg();

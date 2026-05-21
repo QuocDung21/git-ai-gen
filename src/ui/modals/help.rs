@@ -115,11 +115,27 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
                     },
                 ),
                 (
+                    "i",
+                    if is_vi {
+                        "Hiển thị thông tin tracking & danh sách remote"
+                    } else {
+                        "Show remote tracking info & remotes list"
+                    },
+                ),
+                (
                     "d",
                     if is_vi {
                         "Chụp ảnh Diff chuyển qua AI Clipboard"
                     } else {
                         "Capture & Copy code diff to AI Clipboard"
+                    },
+                ),
+                (
+                    "x",
+                    if is_vi {
+                        "Xem prompt AI đã thiết lập (base prompt)"
+                    } else {
+                        "View the configured AI prompt (base)"
                     },
                 ),
                 (

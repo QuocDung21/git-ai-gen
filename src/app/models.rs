@@ -43,6 +43,12 @@ pub struct StashEntry {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct RemoteEntry {
+    pub name: String,
+    pub url: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum StashAction {
     Pop,
     Apply,
@@ -87,4 +93,6 @@ pub enum ActiveModal {
     NewBranchInput, // Text input modal to create and checkout a new branch
     ThemeSelect, // Interactive theme selection modal
     WorkspaceHistory, // Workspace history selector modal
+    ViewPrompt,
+    KiloModelSelect,
 }

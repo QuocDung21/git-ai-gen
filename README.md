@@ -53,12 +53,12 @@ git-ai install
 
 This adds the following convenient aliases to your shell:
 
-| Alias              | Description                        |
-|--------------------|------------------------------------|
-| `git-copydiff`     | Capture diff snapshot for AI       |
-| `git-go`           | Commit + push using AI message     |
-| `git-ai`           | Launch full TUI dashboard          |
-| `git-ai-uninstall` | Remove git-ai from your system     |
+| Alias              | Description                    |
+| ------------------ | ------------------------------ |
+| `git-copydiff`     | Capture diff snapshot for AI   |
+| `git-go`           | Commit + push using AI message |
+| `git-ai`           | Launch full TUI dashboard      |
+| `git-ai-uninstall` | Remove git-ai from your system |
 
 After install, **reload your shell**:
 
@@ -91,6 +91,7 @@ git-ai
 Inside the TUI you get a live, keyboard-driven Git control center.
 
 **Common keys** (shown in right panel):
+
 - `Space` — stage / unstage file
 - `Enter` — view full diff / confirm
 - `g` — commit & push (Go)
@@ -117,11 +118,11 @@ git-ai reset       # factory reset (removes all git-ai config)
 
 All settings are stored in Git global config (`git config --global`):
 
-| Key                    | Example          | Description                     |
-|------------------------|------------------|---------------------------------|
-| `git-ai.lang`          | `vi` / `en`      | Interface language              |
-| `git-ai.theme`         | `dark` / `light` | UI theme                        |
-| `git-ai.workspace-history` | (auto)       | Recent project folders          |
+| Key                        | Example          | Description            |
+| -------------------------- | ---------------- | ---------------------- |
+| `git-ai.lang`              | `vi` / `en`      | Interface language     |
+| `git-ai.theme`             | `dark` / `light` | UI theme               |
+| `git-ai.workspace-history` | (auto)           | Recent project folders |
 
 Reset everything:
 
@@ -146,6 +147,7 @@ src/
 ```
 
 **Important rules** (see `AGENTS.md` for full details):
+
 - All user strings must be bilingual (`locales/en.yml` + `vi.yml`)
 - Git operations only via `std::process::Command`
 - No comments in source code

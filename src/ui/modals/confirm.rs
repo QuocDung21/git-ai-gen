@@ -5,7 +5,7 @@ use ratatui::{
     layout::Rect,
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Clear, Paragraph},
+    widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap},
     Frame,
 };
 use std::process::Command;
@@ -674,6 +674,19 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
             ),
         ]),
         Line::from(""),
+        Line::from(vec![
+            Span::styled("  🤖 Model: ", Style::default().fg(theme.border)),
+            Span::styled(
+                if app.current_kilo_model.is_empty() {
+                    if is_vi { "Mặc định (Kilo config)" } else { "Default (Kilo config)" }.to_string()
+                } else {
+                    app.current_kilo_model.clone()
+                },
+                Style::default().fg(theme.green).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("   [M] Đổi", Style::default().fg(theme.cyan)),
+        ]),
+        Line::from(""),
         Line::from(vec![Span::styled(
             if is_vi {
                 "  ── PREVIEW (40 dòng đầu) ──"
@@ -687,7 +700,9 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         Line::from(""),
     ];
 
-    for line in app.diff_snapshot.lines().take(30) {
+    let preview_limit = if !app.diff_kilo_generated.is_empty() { 6 } else { 22 };
+
+    for line in app.diff_snapshot.lines().take(preview_limit) {
         let (styled_line, color) = if line.starts_with('+') && !line.starts_with("+++") {
             (line, theme.green)
         } else if line.starts_with('-') && !line.starts_with("---") {
@@ -705,12 +720,12 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         )]));
     }
 
-    if app.diff_snapshot.lines().count() > 30 {
+    if app.diff_snapshot.lines().count() > preview_limit {
         content.push(Line::from(vec![Span::styled(
             if is_vi {
-                "  ... (còn nhiều hơn, xem trong AI)"
+                "  ... (diff dài, xem trong KILO)"
             } else {
-                "  ... (more in AI clipboard)"
+                "  ... (long diff, see in KILO)"
             },
             Style::default()
                 .fg(theme.orange)
@@ -737,6 +752,75 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
                 .add_modifier(Modifier::BOLD),
         ),
     ]));
+
+    if !app.diff_kilo_generated.is_empty() {
+        content.push(Line::from(""));
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "  🤖 KILO ĐÃ SINH COMMIT MESSAGE:"
+            } else {
+                "  🤖 KILO GENERATED COMMIT MESSAGE:"
+            },
+            Style::default()
+                .fg(theme.green)
+                .add_modifier(Modifier::BOLD),
+        )]));
+        for line in app.diff_kilo_generated.lines().take(11) {
+            content.push(Line::from(vec![Span::styled(
+                format!("    {}", line),
+                Style::default().fg(theme.fg),
+            )]));
+        }
+        if app.diff_kilo_generated.lines().count() > 11 {
+            content.push(Line::from(vec![Span::styled(
+                "    ...",
+                Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+            )]));
+        }
+        content.push(Line::from(""));
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "  [C] Copy  [Enter/G] Dùng message này  [Esc] Đóng"
+            } else {
+                "  [C] Copy  [Enter/G] Use this message  [Esc] Close"
+            },
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        )]));
+    } else {
+    content.push(Line::from(""));
+    if app.kilo_generating {
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "  ⏳ ĐANG HỎI KILO..."
+            } else {
+                "  ⏳ ASKING KILO..."
+            },
+            Style::default()
+                .fg(theme.yellow)
+                .add_modifier(Modifier::BOLD),
+        )]));
+        if !app.kilo_generation_status.is_empty() {
+            content.push(Line::from(vec![Span::styled(
+                format!("  {}", app.kilo_generation_status),
+                Style::default().fg(theme.fg),
+            )]));
+        }
+    } else if !app.diff_kilo_generated.is_empty() {
+        // already handled above
+    } else {
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "  Nhấn [K] để KILO sinh commit message trực tiếp!"
+            } else {
+                "  Press [K] to let KILO generate the commit message!"
+            },
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
+        )]));
+    }
+    }
+
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
         if is_vi {
@@ -749,7 +833,13 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
+            if !app.diff_kilo_generated.is_empty() {
+                if is_vi {
+                    " 🤖 KILO AI COMMIT "
+                } else {
+                    " 🤖 KILO AI COMMIT "
+                }
+            } else if is_vi {
                 " 🤖 AI DIFF SNAPSHOT "
             } else {
                 " 🤖 AI DIFF SNAPSHOT "
@@ -1217,7 +1307,7 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
         theme.border
     };
 
-    let content = vec![
+    let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
             if is_vi {
@@ -1250,60 +1340,95 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
             Span::styled("  📡 Remote:   ", Style::default().fg(theme.border)),
             Span::styled(app.remote_url.clone(), Style::default().fg(theme.purple)),
         ]),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("  ↑ Ahead:  ", Style::default().fg(theme.border)),
-            Span::styled(
-                format!("{} commit(s) ahead of remote", app.ahead_count),
-                Style::default()
-                    .fg(ahead_color)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled("  ↓ Behind: ", Style::default().fg(theme.border)),
-            Span::styled(
-                format!("{} commit(s) behind remote", app.behind_count),
-                Style::default()
-                    .fg(behind_color)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]),
-        Line::from(""),
-        Line::from(vec![Span::styled(
-            if app.ahead_count > 0 && app.behind_count == 0 {
-                if is_vi {
-                    "  💡 Bạn có thể push lên remote"
-                } else {
-                    "  💡 You can push to remote"
-                }
-            } else if app.behind_count > 0 {
-                if is_vi {
-                    "  ⚠️  Hãy git pull trước khi push"
-                } else {
-                    "  ⚠️  Run git pull before pushing"
-                }
-            } else {
-                if is_vi {
-                    "  ✅ Đồng bộ với remote"
-                } else {
-                    "  ✅ In sync with remote"
-                }
-            },
-            Style::default()
-                .fg(theme.yellow)
-                .add_modifier(Modifier::ITALIC),
-        )]),
-        Line::from(""),
-        Line::from(vec![Span::styled(
-            if is_vi {
-                "  [Esc] hoặc [Enter] để đóng"
-            } else {
-                "  [Esc] or [Enter] to close"
-            },
-            Style::default().fg(theme.border),
-        )]),
     ];
+
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "  📋 Danh sách Remotes:"
+        } else {
+            "  📋 Remotes List:"
+        },
+        Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+    )]));
+    if app.remotes.is_empty() {
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "    (không có remote nào)"
+            } else {
+                "    (no remotes configured)"
+            },
+            Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+        )]));
+    } else {
+        for remote in &app.remotes {
+            content.push(Line::from(vec![
+                Span::styled("    • ", Style::default().fg(theme.border)),
+                Span::styled(
+                    remote.name.clone(),
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(" → ", Style::default().fg(theme.yellow)),
+                Span::styled(remote.url.clone(), Style::default().fg(theme.purple)),
+            ]));
+        }
+    }
+
+    content.push(Line::from(""));
+    content.push(Line::from(vec![
+        Span::styled("  ↑ Ahead:  ", Style::default().fg(theme.border)),
+        Span::styled(
+            format!("{} commit(s) ahead of remote", app.ahead_count),
+            Style::default()
+                .fg(ahead_color)
+                .add_modifier(Modifier::BOLD),
+        ),
+    ]));
+    content.push(Line::from(vec![
+        Span::styled("  ↓ Behind: ", Style::default().fg(theme.border)),
+        Span::styled(
+            format!("{} commit(s) behind remote", app.behind_count),
+            Style::default()
+                .fg(behind_color)
+                .add_modifier(Modifier::BOLD),
+        ),
+    ]));
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if app.ahead_count > 0 && app.behind_count == 0 {
+            if is_vi {
+                "  💡 Bạn có thể push lên remote"
+            } else {
+                "  💡 You can push to remote"
+            }
+        } else if app.behind_count > 0 {
+            if is_vi {
+                "  ⚠️  Hãy git pull trước khi push"
+            } else {
+                "  ⚠️  Run git pull before pushing"
+            }
+        } else {
+            if is_vi {
+                "  ✅ Đồng bộ với remote"
+            } else {
+                "  ✅ In sync with remote"
+            }
+        },
+        Style::default()
+            .fg(theme.yellow)
+            .add_modifier(Modifier::ITALIC),
+    )]));
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "  [Esc] hoặc [Enter] để đóng"
+        } else {
+            "  [Esc] or [Enter] to close"
+        },
+        Style::default().fg(theme.border),
+    )]));
 
     let block = Block::default()
         .title(Span::styled(
@@ -1863,6 +1988,177 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
             Style::default()
                 .fg(theme.cyan)
                 .add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .block(block);
+    f.render_widget(paragraph, area);
+}
+
+pub fn render_view_prompt(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let mut content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "🤖 PROMPT AI ĐÃ THIẾT LẬP"
+            } else {
+                "🤖 CONFIGURED AI PROMPT"
+            },
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+    ];
+
+    for line_str in app.prompt_text.lines() {
+        content.push(Line::from(Span::styled(
+            line_str.to_string(),
+            Style::default().fg(theme.fg),
+        )));
+    }
+
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "  [Esc] [q] [x] [Enter] để đóng"
+        } else {
+            "  [Esc] [q] [x] [Enter] to close"
+        },
+        Style::default().fg(theme.border),
+    )]));
+
+    let block = Block::default()
+        .title(Span::styled(
+            " AI PROMPT ",
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .wrap(Wrap { trim: true })
+        .block(block);
+    f.render_widget(paragraph, area);
+}
+
+pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let filtered: Vec<&String> = if app.kilo_model_filter.is_empty() {
+        app.kilo_models.iter().collect()
+    } else {
+        let f = app.kilo_model_filter.to_lowercase();
+        app.kilo_models.iter().filter(|m| m.to_lowercase().contains(&f)).collect()
+    };
+
+    let mut content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "🤖 CHỌN MODEL KILO"
+            } else {
+                "🤖 SELECT KILO MODEL"
+            },
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+    ];
+
+    // Search bar
+    if app.kilo_model_search_mode || !app.kilo_model_filter.is_empty() {
+        let search_display = if app.kilo_model_filter.is_empty() {
+            if is_vi { "  Tìm: _".to_string() } else { "  Search: _".to_string() }
+        } else {
+            if is_vi {
+                format!("  Tìm: {}", app.kilo_model_filter)
+            } else {
+                format!("  Search: {}", app.kilo_model_filter)
+            }
+        };
+        content.push(Line::from(vec![Span::styled(
+            search_display,
+            Style::default().fg(theme.yellow).add_modifier(Modifier::BOLD),
+        )]));
+        content.push(Line::from(""));
+    }
+
+    if filtered.is_empty() {
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "  Không tìm thấy model nào khớp."
+            } else {
+                "  No matching models found."
+            },
+            Style::default().fg(theme.red),
+        )]));
+    } else {
+        let start = if app.selected_kilo_model_index > 10 {
+            app.selected_kilo_model_index - 10
+        } else {
+            0
+        };
+        let visible: Vec<_> = filtered.iter().skip(start).take(16).collect();
+
+        for (i, model) in visible.iter().enumerate() {
+            let real_idx = start + i;
+            let is_selected = real_idx == app.selected_kilo_model_index;
+
+            let prefix = if is_selected {
+                Span::styled(" ▶ ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+            } else {
+                Span::styled("   ", Style::default())
+            };
+
+            let style = if is_selected {
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.select_bg)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(theme.fg)
+            };
+
+            content.push(Line::from(vec![
+                prefix,
+                Span::styled((*model).to_string(), style),
+            ]));
+        }
+
+        if filtered.len() > 16 {
+            content.push(Line::from(vec![Span::styled(
+                "  ...",
+                Style::default().fg(theme.border),
+            )]));
+        }
+    }
+
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "  [/] Tìm  [↑/↓] Di chuyển  [Enter] Chọn  [Esc] Hủy"
+        } else {
+            "  [/] Search  [↑/↓] Move  [Enter] Select  [Esc] Cancel"
+        },
+        Style::default().fg(theme.border),
+    )]));
+
+    let block = Block::default()
+        .title(Span::styled(
+            " KILO MODEL ",
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.cyan))

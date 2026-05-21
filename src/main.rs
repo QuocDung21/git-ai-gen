@@ -5,8 +5,8 @@ mod git;
 mod helper;
 mod ui;
 
-use crate::helper::Helper;
 use crate::cli::logger;
+use crate::helper::Helper;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 

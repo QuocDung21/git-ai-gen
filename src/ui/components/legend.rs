@@ -74,10 +74,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
     };
 
     let groups = vec![
-        (
-            "Navigation",
-            nav_items,
-        ),
+        ("Navigation", nav_items),
         (
             "Git Operations",
             vec![
@@ -154,11 +151,29 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     theme.cyan,
                 ),
                 (
+                    "I",
+                    if is_vi {
+                        "Thông tin & danh sách Remote"
+                    } else {
+                        "Remote info & list"
+                    },
+                    theme.cyan,
+                ),
+                (
                     "D",
                     if is_vi {
                         "Copy diff -> AI"
                     } else {
                         "Copy diff -> AI"
+                    },
+                    theme.yellow,
+                ),
+                (
+                    "X",
+                    if is_vi {
+                        "Xem prompt AI đã thiết lập"
+                    } else {
+                        "View configured AI prompt"
                     },
                     theme.yellow,
                 ),
@@ -178,11 +193,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
             vec![
                 (
                     "O",
-                    if is_vi {
-                        "Mở VS Code"
-                    } else {
-                        "Open VS Code"
-                    },
+                    if is_vi { "Mở VS Ide" } else { "Open VS Ide" },
                     theme.purple,
                 ),
                 (

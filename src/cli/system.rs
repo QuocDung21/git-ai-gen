@@ -133,7 +133,6 @@ pub fn handle_go(locales: &Locales) -> Result<()> {
     Ok(())
 }
 
-pub fn handle_test() -> Result<()> {
-    println!("{:?}", Helper::get_os_theme());
+pub fn handle_test() -> anyhow::Result<()> {
     Ok(())
 }

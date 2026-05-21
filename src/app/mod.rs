@@ -1,4 +1,5 @@
 use std::env;
+use std::process::Command;
 use ratatui::style::Color;
 pub mod events;
 pub mod models;
@@ -31,6 +32,15 @@ pub struct App {
     pub diff_snapshot: String,
     pub diff_added_lines: usize,
     pub diff_removed_lines: usize,
+    pub diff_kilo_generated: String,
+    pub last_staged_diff: String,
+    pub current_kilo_model: String,
+    pub kilo_models: Vec<String>,
+    pub selected_kilo_model_index: usize,
+    pub kilo_generating: bool,
+    pub kilo_generation_status: String,
+    pub kilo_model_filter: String,
+    pub kilo_model_search_mode: bool,
     // Go confirm modal
     pub commit_message_preview: String,
     pub go_step: GoStep,
@@ -47,6 +57,7 @@ pub struct App {
     pub remote_tracking: String,
     pub ahead_count: i32,
     pub behind_count: i32,
+    pub remotes: Vec<RemoteEntry>,
     // Amend commit
     pub amend_step: AmendStep,
     pub amend_message: String,
@@ -63,6 +74,7 @@ pub struct App {
     // Workspace history
     pub workspace_history: Vec<String>,
     pub selected_workspace_index: usize,
+    pub prompt_text: String,
 }
 
 impl App {
@@ -120,6 +132,15 @@ impl App {
             diff_snapshot: String::new(),
             diff_added_lines: 0,
             diff_removed_lines: 0,
+            diff_kilo_generated: String::new(),
+            last_staged_diff: String::new(),
+            current_kilo_model: String::new(),
+            kilo_models: Vec::new(),
+            selected_kilo_model_index: 0,
+            kilo_generating: false,
+            kilo_generation_status: String::new(),
+            kilo_model_filter: String::new(),
+            kilo_model_search_mode: false,
             commit_message_preview: String::new(),
             go_step: GoStep::Confirm,
             go_result: String::new(),
@@ -132,6 +153,7 @@ impl App {
             remote_tracking: String::new(),
             ahead_count: 0,
             behind_count: 0,
+            remotes: Vec::new(),
             amend_step: AmendStep::Edit,
             amend_message: String::new(),
             commit_diff_content: String::new(),
@@ -144,6 +166,7 @@ impl App {
             focus_diff: false,
             workspace_history: Vec::new(),
             selected_workspace_index: 0,
+            prompt_text: String::new(),
         };
         app.load_workspace_history();
         app.add_to_workspace_history(&app.current_dir.clone());
@@ -374,6 +397,92 @@ impl App {
             crate::git::remote::get_ahead_behind(&self.current_branch, &self.remote_tracking);
         self.ahead_count = ahead;
         self.behind_count = behind;
+        self.remotes = crate::git::remote::get_remotes();
+    }
+
+    pub fn fetch_prompt(&mut self) {
+        let ai_lang = crate::helper::Helper::get_ai_language();
+        self.prompt_text = format!(
+            "{}{}.",
+            crate::constant::Constant::PROMPT_EXPERT,
+            ai_lang
+        );
+    }
+
+    pub fn try_generate_with_kilo(&mut self, full_diff: &str) -> Result<String, String> {
+        let ai_lang = crate::helper::Helper::get_ai_language();
+        let prompt = format!(
+            "{} {}.\n\nDiff:\n\n{}",
+            crate::constant::Constant::PROMPT_EXPERT,
+            ai_lang,
+            full_diff
+        );
+
+        let mut cmd = Command::new("kilo");
+        cmd.args(["run", "--pure", "--auto"]);
+
+        let model_to_use = if !self.current_kilo_model.is_empty() {
+            self.current_kilo_model.clone()
+        } else if let Ok(env_model) = std::env::var("KILO_MODEL") {
+            env_model
+        } else {
+            String::new()
+        };
+
+        if !model_to_use.trim().is_empty() {
+            cmd.args(["--model", &model_to_use]);
+        }
+
+        cmd.arg(prompt);
+
+        let output = match cmd.output() {
+            Ok(o) => o,
+            Err(e) => {
+                return Err(if self.current_lang == "vi" {
+                    format!("Không tìm thấy lệnh 'kilo'. Hãy cài @kilocode/cli (npm i -g @kilocode/cli) hoặc đảm bảo 'kilo' có trong PATH. Lỗi: {}", e)
+                } else {
+                    format!("'kilo' command not found. Please install @kilocode/cli (npm i -g @kilocode/cli) and ensure it is in PATH. Error: {}", e)
+                });
+            }
+        };
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(if self.current_lang == "vi" {
+                format!("kilo run thất bại: {}", stderr)
+            } else {
+                format!("kilo run failed: {}", stderr)
+            });
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        if stdout.is_empty() {
+            return Err(if self.current_lang == "vi" {
+                "kilo trả về kết quả rỗng.".to_string()
+            } else {
+                "kilo returned empty output.".to_string()
+            });
+        }
+
+        Ok(stdout)
+    }
+
+    pub fn fetch_kilo_models(&mut self) {
+        self.kilo_models.clear();
+        if let Ok(output) = Command::new("kilo").arg("models").output() {
+            let text = String::from_utf8_lossy(&output.stdout);
+            for line in text.lines() {
+                let line = line.trim();
+                if line.is_empty() { continue; }
+                if line.starts_with("kilo/") || line.contains('/') {
+                    self.kilo_models.push(line.to_string());
+                }
+            }
+        }
+        if self.selected_kilo_model_index >= self.kilo_models.len() {
+            self.selected_kilo_model_index = 0;
+        }
     }
 
     pub fn fetch_amend_msg(&mut self) {

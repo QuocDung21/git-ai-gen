@@ -17,6 +17,8 @@ pub use confirm::{
     render_new_branch_input,
     render_theme_select,
     render_workspace_history,
+    render_view_prompt,
+    render_kilo_model_select,
 };
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};

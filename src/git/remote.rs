@@ -1,4 +1,7 @@
+use std::collections::HashSet;
 use std::process::Command;
+
+use crate::app::models::RemoteEntry;
 
 pub fn get_remote_url() -> String {
     if let Ok(out) = Command::new("git")
@@ -68,4 +71,27 @@ pub fn git_pull() -> Result<String, std::io::Error> {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
         Err(std::io::Error::new(std::io::ErrorKind::Other, err))
     }
+}
+
+pub fn get_remotes() -> Vec<RemoteEntry> {
+    let mut remotes = Vec::new();
+    if let Ok(output) = Command::new("git")
+        .args(["remote", "-v"])
+        .output()
+    {
+        let text = String::from_utf8_lossy(&output.stdout);
+        let mut seen = HashSet::new();
+        for line in text.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 3 {
+                let name = parts[0].to_string();
+                let url = parts[1].to_string();
+                if !seen.contains(&name) {
+                    seen.insert(name.clone());
+                    remotes.push(RemoteEntry { name, url });
+                }
+            }
+        }
+    }
+    remotes
 }
