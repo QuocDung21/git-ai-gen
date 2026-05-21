@@ -871,7 +871,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     _ => {}
                                 }
                             }
-                            GoStep::Pushing => {} // Chặn phím khi đang đẩy code
+                            GoStep::Pushing => {}
                         }
                         continue;
                     }
