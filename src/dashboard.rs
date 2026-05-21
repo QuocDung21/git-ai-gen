@@ -829,20 +829,15 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         }
                                     }
                                     KeyCode::Enter => {
-                                        // ĐÃ SỬA: Chặn hành động nếu không có file nào được chọn
                                         if app.staged_count == 0 {
                                             app.status_message = if app.current_lang == "vi" {
-                                                "⚠️ Không thể tiến hành! Hãy nhấn [Space] ngoài danh sách để chọn ít nhất 1 file.".to_string()
+                                                "⚠️ Không thể tiến hành! Hãy nhấn [Space] để chọn file.".to_string()
                                             } else {
-                                                "⚠️ Cannot proceed! Please press [Space] outside to select at least 1 file.".to_string()
+                                                "⚠️ Cannot proceed! Please stage at least 1 file.".to_string()
                                             };
                                             app.active_modal = ActiveModal::None;
                                         } else {
-                                            let msg = if app.commit_input_mode {
-                                                app.commit_input_text.trim().to_string()
-                                            } else {
-                                                app.commit_message_preview.trim().to_string()
-                                            };
+                                            let msg = if app.commit_input_mode { app.commit_input_text.trim().to_string() } else { app.commit_message_preview.trim().to_string() };
                                             if !msg.is_empty() {
                                                 app.commit_message_preview = msg;
                                                 app.go_step = GoStep::Pushing;
@@ -852,33 +847,31 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     KeyCode::Char('y') | KeyCode::Char('Y') if !app.commit_input_mode => {
                                         if app.staged_count > 0 {
                                             let msg = app.commit_message_preview.trim().to_string();
-                                            if !msg.is_empty() {
-                                                app.go_step = GoStep::Pushing;
-                                            }
+                                            if !msg.is_empty() { app.go_step = GoStep::Pushing; }
                                         }
                                     }
-                                    KeyCode::Backspace if app.commit_input_mode => {
-                                        app.commit_input_text.pop();
-                                    }
-                                    KeyCode::Char(c) if app.commit_input_mode => {
-                                        app.commit_input_text.push(c);
-                                    }
+                                    KeyCode::Backspace if app.commit_input_mode => { app.commit_input_text.pop(); }
+                                    KeyCode::Char(c) if app.commit_input_mode => { app.commit_input_text.push(c); }
                                     KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc if !app.commit_input_mode => {
                                         app.active_modal = ActiveModal::None;
                                         app.commit_input_mode = false;
-                                        app.status_message = if app.current_lang == "vi" {
-                                            "ℹ️ Đã hủy Commit & Push.".to_string()
-                                        } else {
-                                            "ℹ️ Commit & Push cancelled.".to_string()
-                                        };
                                     }
-                                    KeyCode::Esc if app.commit_input_mode => {
-                                        app.commit_input_mode = false;
+                                    KeyCode::Esc if app.commit_input_mode => { app.commit_input_mode = false; }
+                                    _ => {}
+                                }
+                            }
+                            // ĐÃ THÊM ĐOẠN NÀY ĐỂ THOÁT KHỎI MÀN HÌNH DONE
+                            GoStep::Done(_) => {
+                                match key.code {
+                                    KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') => {
+                                        app.active_modal = ActiveModal::None;
+                                        app.go_step = GoStep::Confirm;
+                                        app.refresh_git_status();
                                     }
                                     _ => {}
                                 }
                             }
-                            _ => {}
+                            GoStep::Pushing => {} // Chặn phím khi đang đẩy code
                         }
                         continue;
                     }
