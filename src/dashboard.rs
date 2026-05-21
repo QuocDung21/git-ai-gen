@@ -2204,7 +2204,6 @@ fn ui(f: &mut Frame, app: &App) {
                 for (i, branch) in app.branches.iter().enumerate() {
                     let is_selected = i == app.selected_branch_index;
                     let is_active = branch == &app.current_branch;
-
                     let cursor = if is_selected {
                         Span::styled(" ▶ ", Style::default().fg(Color::Rgb(189, 147, 249)).add_modifier(Modifier::BOLD))
                     } else {
