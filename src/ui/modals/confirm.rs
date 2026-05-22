@@ -678,11 +678,18 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
             Span::styled("  🤖 Model: ", Style::default().fg(theme.border)),
             Span::styled(
                 if app.current_kilo_model.is_empty() {
-                    if is_vi { "Mặc định (Kilo config)" } else { "Default (Kilo config)" }.to_string()
+                    if is_vi {
+                        "Mặc định (Kilo config)"
+                    } else {
+                        "Default (Kilo config)"
+                    }
+                    .to_string()
                 } else {
                     app.current_kilo_model.clone()
                 },
-                Style::default().fg(theme.green).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(theme.green)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled("   [M] Đổi", Style::default().fg(theme.cyan)),
         ]),
@@ -700,7 +707,11 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         Line::from(""),
     ];
 
-    let preview_limit = if !app.diff_kilo_generated.is_empty() { 6 } else { 22 };
+    let preview_limit = if !app.diff_kilo_generated.is_empty() {
+        6
+    } else {
+        22
+    };
 
     for line in app.diff_snapshot.lines().take(preview_limit) {
         let (styled_line, color) = if line.starts_with('+') && !line.starts_with("+++") {
@@ -774,7 +785,9 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         if app.diff_kilo_generated.lines().count() > 11 {
             content.push(Line::from(vec![Span::styled(
                 "    ...",
-                Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+                Style::default()
+                    .fg(theme.border)
+                    .add_modifier(Modifier::ITALIC),
             )]));
         }
         content.push(Line::from(""));
@@ -787,38 +800,38 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]));
     } else {
-    content.push(Line::from(""));
-    if app.kilo_generating {
-        content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  ⏳ ĐANG HỎI KILO..."
-            } else {
-                "  ⏳ ASKING KILO..."
-            },
-            Style::default()
-                .fg(theme.yellow)
-                .add_modifier(Modifier::BOLD),
-        )]));
-        if !app.kilo_generation_status.is_empty() {
+        content.push(Line::from(""));
+        if app.kilo_generating {
             content.push(Line::from(vec![Span::styled(
-                format!("  {}", app.kilo_generation_status),
-                Style::default().fg(theme.fg),
+                if is_vi {
+                    "  ⏳ ĐANG HỎI KILO..."
+                } else {
+                    "  ⏳ ASKING KILO..."
+                },
+                Style::default()
+                    .fg(theme.yellow)
+                    .add_modifier(Modifier::BOLD),
+            )]));
+            if !app.kilo_generation_status.is_empty() {
+                content.push(Line::from(vec![Span::styled(
+                    format!("  {}", app.kilo_generation_status),
+                    Style::default().fg(theme.fg),
+                )]));
+            }
+        } else if !app.diff_kilo_generated.is_empty() {
+            // already handled above
+        } else {
+            content.push(Line::from(vec![Span::styled(
+                if is_vi {
+                    "  Nhấn [K] để KILO sinh commit message trực tiếp!"
+                } else {
+                    "  Press [K] to let KILO generate the commit message!"
+                },
+                Style::default()
+                    .fg(theme.purple)
+                    .add_modifier(Modifier::BOLD),
             )]));
         }
-    } else if !app.diff_kilo_generated.is_empty() {
-        // already handled above
-    } else {
-        content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  Nhấn [K] để KILO sinh commit message trực tiếp!"
-            } else {
-                "  Press [K] to let KILO generate the commit message!"
-            },
-            Style::default()
-                .fg(theme.purple)
-                .add_modifier(Modifier::BOLD),
-        )]));
-    }
     }
 
     content.push(Line::from(""));
@@ -1064,10 +1077,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
     };
 
     let (title, border_color) = match &app.go_step {
-        GoStep::Confirm => (
-            " 🚀 COMMIT & PUSH ",
-            theme.green,
-        ),
+        GoStep::Confirm => (" 🚀 COMMIT & PUSH ", theme.green),
         GoStep::Pushing => (
             if is_vi {
                 " ⚡ ĐANG TIẾN HÀNH "
@@ -1344,7 +1354,9 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "    (no remotes configured)"
             },
-            Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+            Style::default()
+                .fg(theme.border)
+                .add_modifier(Modifier::ITALIC),
         )]));
     } else {
         for remote in &app.remotes {
@@ -1861,9 +1873,7 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "📂 WORKSPACE HISTORY — QUICK PROJECT SWITCH"
             },
-            Style::default()
-                .fg(theme.cyan)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
     ];
@@ -1909,7 +1919,16 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
             let display_path = {
                 let parts: Vec<&str> = path.rsplitn(3, '/').collect();
                 if parts.len() >= 2 {
-                    format!(".../{}", parts.iter().rev().skip(1).cloned().collect::<Vec<&str>>().join("/"))
+                    format!(
+                        ".../{}",
+                        parts
+                            .iter()
+                            .rev()
+                            .skip(1)
+                            .cloned()
+                            .collect::<Vec<&str>>()
+                            .join("/")
+                    )
                 } else {
                     path.clone()
                 }
@@ -1971,9 +1990,7 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 " 📂 WORKSPACE HISTORY "
             },
-            Style::default()
-                .fg(theme.cyan)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.cyan))
@@ -2047,7 +2064,10 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
         app.kilo_models.iter().collect()
     } else {
         let f = app.kilo_model_filter.to_lowercase();
-        app.kilo_models.iter().filter(|m| m.to_lowercase().contains(&f)).collect()
+        app.kilo_models
+            .iter()
+            .filter(|m| m.to_lowercase().contains(&f))
+            .collect()
     };
 
     let mut content = vec![
@@ -2066,7 +2086,11 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
     // Search bar
     if app.kilo_model_search_mode || !app.kilo_model_filter.is_empty() {
         let search_display = if app.kilo_model_filter.is_empty() {
-            if is_vi { "  Tìm: _".to_string() } else { "  Search: _".to_string() }
+            if is_vi {
+                "  Tìm: _".to_string()
+            } else {
+                "  Search: _".to_string()
+            }
         } else {
             if is_vi {
                 format!("  Tìm: {}", app.kilo_model_filter)
@@ -2076,7 +2100,9 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
         };
         content.push(Line::from(vec![Span::styled(
             search_display,
-            Style::default().fg(theme.yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(theme.yellow)
+                .add_modifier(Modifier::BOLD),
         )]));
         content.push(Line::from(""));
     }
@@ -2099,7 +2125,12 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
             let is_selected = real_idx == app.selected_kilo_model_index;
 
             let prefix = if is_selected {
-                Span::styled(" ▶ ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+                Span::styled(
+                    " ▶ ",
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::BOLD),
+                )
             } else {
                 Span::styled("   ", Style::default())
             };
@@ -2160,49 +2191,81 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
 
     let actions = if is_vi {
         vec![
-            ("Commit", vec![
-                (if app.kilo_ai_enabled { "🤖 AI Commit & Push" } else { "🤖 AI Commit & Push (TẮT)" }, 'g'),
-                ("✍️  Commit thủ công", 'c'),
-                ("📝 Amend commit cuối", 'm'),
-            ]),
-            ("Remote", vec![
-                ("📥 Fetch", 'f'),
-                ("⬇️  Pull", 'p'),
-                ("⬆️  Push", 'u'),
-                ("🌐 Remote Info", 'i'),
-            ]),
-            ("Khác", vec![
-                ("🌿 Quản lý Branch", 'b'),
-                ("📦 Stash", 's'),
-                ("🌳 Cấu trúc Commit (graph)", 't'),
-                ("📜 Lịch sử Commit", 'v'),
-                ("🧩 Commit theo Feature", 'e'),
-                ("📥 Tải từ GitHub", 'n'),
-                ("⚙️  Cài đặt hệ thống", 'y'),
-            ]),
+            (
+                "Commit",
+                vec![
+                    (
+                        if app.kilo_ai_enabled {
+                            "🤖 AI Commit & Push"
+                        } else {
+                            "🤖 AI Commit & Push (TẮT)"
+                        },
+                        'g',
+                    ),
+                    ("✍️  Commit thủ công", 'c'),
+                    ("📝 Amend commit cuối", 'm'),
+                ],
+            ),
+            (
+                "Remote",
+                vec![
+                    ("📥 Fetch", 'f'),
+                    ("⬇️  Pull", 'p'),
+                    ("⬆️  Push", 'u'),
+                    ("🌐 Remote Info", 'i'),
+                ],
+            ),
+            (
+                "Khác",
+                vec![
+                    ("🌿 Quản lý Branch", 'b'),
+                    ("📦 Stash", 's'),
+                    ("🌳 Cấu trúc Commit (graph)", 't'),
+                    ("📜 Lịch sử Commit", 'v'),
+                    ("🧩 Commit theo Feature", 'e'),
+                    ("📥 Tải từ GitHub", 'n'),
+                    ("⚙️  Cài đặt hệ thống", 'y'),
+                ],
+            ),
         ]
     } else {
         vec![
-            ("Commit", vec![
-                (if app.kilo_ai_enabled { "🤖 AI Commit & Push" } else { "🤖 AI Commit & Push (DISABLED)" }, 'g'),
-                ("✍️  Manual Commit", 'c'),
-                ("📝 Amend Last Commit", 'm'),
-            ]),
-            ("Remote", vec![
-                ("📥 Fetch", 'f'),
-                ("⬇️  Pull", 'p'),
-                ("⬆️  Push", 'u'),
-                ("🌐 Remote Info", 'i'),
-            ]),
-            ("Other", vec![
-                ("🌿 Branch Management", 'b'),
-                ("📦 Stash", 's'),
-                ("🌳 Commit Tree (graph)", 't'),
-                ("📜 Commit History", 'v'),
-                ("🧩 Feature Commit", 'e'),
-                ("📥 GitHub Download", 'n'),
-                ("⚙️  System Settings", 'y'),
-            ]),
+            (
+                "Commit",
+                vec![
+                    (
+                        if app.kilo_ai_enabled {
+                            "🤖 AI Commit & Push"
+                        } else {
+                            "🤖 AI Commit & Push (DISABLED)"
+                        },
+                        'g',
+                    ),
+                    ("✍️  Manual Commit", 'c'),
+                    ("📝 Amend Last Commit", 'm'),
+                ],
+            ),
+            (
+                "Remote",
+                vec![
+                    ("📥 Fetch", 'f'),
+                    ("⬇️  Pull", 'p'),
+                    ("⬆️  Push", 'u'),
+                    ("🌐 Remote Info", 'i'),
+                ],
+            ),
+            (
+                "Other",
+                vec![
+                    ("🌿 Branch Management", 'b'),
+                    ("📦 Stash", 's'),
+                    ("🌳 Commit Tree (graph)", 't'),
+                    ("📜 Commit History", 'v'),
+                    ("🧩 Feature Commit", 'e'),
+                    ("📥 GitHub Download", 'n'),
+                    ("⚙️  System Settings", 'y'),
+                ],
+            ),
         ]
     };
 
@@ -2223,14 +2286,21 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
     for (group, items) in &actions {
         content.push(Line::from(vec![Span::styled(
             format!("  ■ {}", group),
-            Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
         )]));
 
         for (name, key) in items {
             let is_selected = idx == app.selected_git_action;
 
             let prefix = if is_selected {
-                Span::styled(" ▶ ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+                Span::styled(
+                    " ▶ ",
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::BOLD),
+                )
             } else {
                 Span::styled("   ", Style::default())
             };
@@ -2307,44 +2377,51 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
         Line::from(""),
         Line::from(vec![Span::styled(
             "🌳 COMMIT GRAPH",
-            Style::default().fg(theme.green).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(theme.green)
+                .add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
     ];
 
     if app.commit_logs.is_empty() {
         left_content.push(Line::from(vec![Span::styled(
-            if is_vi { "Không có commit." } else { "No commits." },
-            Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+            if is_vi {
+                "Không có commit."
+            } else {
+                "No commits."
+            },
+            Style::default()
+                .fg(theme.border)
+                .add_modifier(Modifier::ITALIC),
         )]));
     } else {
         for (i, entry) in app.commit_logs.iter().enumerate() {
             let is_selected = i == app.selected_log_index;
 
             // === Graph nâng cao - nhiều lane + ký tự kết nối ===
-            let lane = if entry.parents.len() > 1 {
-                0
-            } else {
-                i % 4
-            };
+            let lane = if entry.parents.len() > 1 { 0 } else { i % 4 };
 
             // Xây dựng graph column
             let graph = match (entry.parents.len() > 1, lane, i) {
                 (true, _, _) => " ├─◉".to_string(), // Merge
-                (_, 0, 0)    => " ●  ".to_string(), // Root main
-                (_, 0, _)    => " │  ".to_string(), // Main line
-                (_, 1, _)    => " ├─●".to_string(), // Branch 1
-                (_, 2, _)    => " ├─●".to_string(), // Branch 2
-                (_, 3, _)    => " └─●".to_string(), // Branch 3
-                _            => " │  ".to_string(),
+                (_, 0, 0) => " ●  ".to_string(),    // Root main
+                (_, 0, _) => " │  ".to_string(),    // Main line
+                (_, 1, _) => " ├─●".to_string(),    // Branch 1
+                (_, 2, _) => " ├─●".to_string(),    // Branch 2
+                (_, 3, _) => " └─●".to_string(),    // Branch 3
+                _ => " │  ".to_string(),
             };
 
             let branch_color = graph_colors[lane % graph_colors.len()];
 
-
             // Avatar: đồng bộ theme sáng/tối để không bị chìm
             let initial = entry.author.chars().next().unwrap_or('?');
-            let avatar_fg = if app.is_light_theme { theme.fg } else { theme.bg };
+            let avatar_fg = if app.is_light_theme {
+                theme.fg
+            } else {
+                theme.bg
+            };
             let avatar = Span::styled(
                 format!(" {} ", initial),
                 Style::default()
@@ -2353,18 +2430,34 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
                     .add_modifier(Modifier::BOLD),
             );
 
-            let author = Span::styled(format!("{:<12}", entry.author), Style::default().fg(theme.fg));
-            let hash = Span::styled(format!("[{}]", entry.short_hash), Style::default().fg(theme.yellow).add_modifier(Modifier::BOLD));
+            let author = Span::styled(
+                format!("{:<12}", entry.author),
+                Style::default().fg(theme.fg),
+            );
+            let hash = Span::styled(
+                format!("[{}]", entry.short_hash),
+                Style::default()
+                    .fg(theme.yellow)
+                    .add_modifier(Modifier::BOLD),
+            );
 
             let subject_style = if is_selected {
-                Style::default().fg(theme.fg).bg(theme.select_bg).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.select_bg)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(theme.fg)
             };
             let subject = Span::styled(format!(" {}", entry.subject), subject_style);
 
             left_content.push(Line::from(vec![
-                Span::styled(graph, Style::default().fg(branch_color).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    graph,
+                    Style::default()
+                        .fg(branch_color)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 avatar,
                 author,
                 hash,
@@ -2384,7 +2477,12 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
         .border_style(Style::default().fg(theme.green))
         .border_type(BorderType::Rounded)
         .style(Style::default().bg(theme.bg))
-        .title(Span::styled(" Graph ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD)));
+        .title(Span::styled(
+            " Graph ",
+            Style::default()
+                .fg(theme.green)
+                .add_modifier(Modifier::BOLD),
+        ));
 
     let left_paragraph = Paragraph::new(left_content)
         .alignment(ratatui::layout::Alignment::Left)
@@ -2395,7 +2493,11 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
     let mut right_content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi { "DIFF CỦA COMMIT" } else { "DIFF OF COMMIT" },
+            if is_vi {
+                "DIFF CỦA COMMIT"
+            } else {
+                "DIFF OF COMMIT"
+            },
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -2420,8 +2522,14 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
         }
     } else {
         right_content.push(Line::from(vec![Span::styled(
-            if is_vi { "(Chọn commit để xem diff)" } else { "(Select commit to view diff)" },
-            Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+            if is_vi {
+                "(Chọn commit để xem diff)"
+            } else {
+                "(Select commit to view diff)"
+            },
+            Style::default()
+                .fg(theme.border)
+                .add_modifier(Modifier::ITALIC),
         )]));
     }
 
@@ -2430,7 +2538,10 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
         .border_style(Style::default().fg(theme.cyan))
         .border_type(BorderType::Rounded)
         .style(Style::default().bg(theme.bg))
-        .title(Span::styled(" Diff ", Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD)));
+        .title(Span::styled(
+            " Diff ",
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        ));
 
     let right_paragraph = Paragraph::new(right_content)
         .alignment(ratatui::layout::Alignment::Left)
