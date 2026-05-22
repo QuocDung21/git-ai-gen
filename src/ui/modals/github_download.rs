@@ -13,8 +13,8 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
-    let display_msg = if app.github_download_url.len() > 70 {
-        format!("{}...", &app.github_download_url[..67])
+    let display_msg = if app.github_download_url.len() > 65 {
+        format!("{}...", &app.github_download_url[..62])
     } else {
         app.github_download_url.clone()
     };
@@ -44,11 +44,12 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
         Line::from(vec![
             Span::styled("  🔍 [ ", Style::default().fg(theme.cyan)),
             Span::styled(
-                format!("{}_", display_msg),
+                display_msg,
                 Style::default()
                     .fg(theme.green)
                     .add_modifier(Modifier::BOLD),
             ),
+            Span::styled("_", Style::default().fg(theme.green)),
             Span::styled(" ]", Style::default().fg(theme.cyan)),
         ]),
         Line::from(""),
@@ -59,6 +60,48 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
             format!("  ❌ Lỗi: {}", err),
             Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
         )]));
+        content.push(Line::from(""));
+    }
+
+    if !app.github_history.is_empty() {
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "  📋 LỊCH SỬ REMOTE (Dùng ↑/↓ để chọn, Backspace để xóa):"
+            } else {
+                "  📋 REMOTE HISTORY (Use ↑/↓ to select, Backspace to delete):"
+            },
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        )]));
+        content.push(Line::from(""));
+
+        for (i, url) in app.github_history.iter().enumerate() {
+            let is_selected = app.selected_github_history_index == Some(i);
+            let display_url = if url.len() > 65 {
+                format!("{}...", &url[..62])
+            } else {
+                url.clone()
+            };
+
+            let prefix = if is_selected {
+                Span::styled("   ➜ ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+            } else {
+                Span::styled("     ", Style::default().fg(theme.border))
+            };
+
+            let item_style = if is_selected {
+                Style::default()
+                    .fg(theme.select_fg)
+                    .bg(theme.select_bg)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(theme.border)
+            };
+
+            content.push(Line::from(vec![
+                prefix,
+                Span::styled(display_url, item_style),
+            ]));
+        }
         content.push(Line::from(""));
     }
 
@@ -299,12 +342,12 @@ pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect)
         Line::from(vec![
             Span::styled("  📥 [ ", Style::default().fg(theme.green)),
             Span::styled(
-                format!("{}_", display_msg),
+                display_msg,
                 Style::default()
-                    .fg(theme.fg)
-                    .bg(theme.bg)
+                    .fg(theme.green)
                     .add_modifier(Modifier::BOLD),
             ),
+            Span::styled("_", Style::default().fg(theme.green)),
             Span::styled(" ]", Style::default().fg(theme.green)),
         ]),
         Line::from(""),

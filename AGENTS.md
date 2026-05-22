@@ -114,14 +114,14 @@ Style::default().fg(theme.green).add_modifier(Modifier::BOLD)
 
 ## Quick Reference Table
 
-| Task                        | Primary Files                                      | Notes |
-|----------------------------|----------------------------------------------------|-------|
-| New Modal (recommended)    | `app/models.rs` + `ui/modals/<name>.rs`           | One file per modal |
-| New Git wrapper            | `src/git/<module>.rs`                              | Keep pure |
-| Add UI state               | `app/mod.rs` (App struct)                          | Keep struct manageable |
-| Handle keys for modal      | `events.rs`                                        | Use `match &app.active_modal` |
-| Theme colors               | `app.theme()`                                      | Never hardcode |
-| Bilingual strings          | `locales/en.yml` + `locales/vi.yml`               | Always check `is_vi` |
+| Task                    | Primary Files                           | Notes                         |
+| ----------------------- | --------------------------------------- | ----------------------------- |
+| New Modal (recommended) | `app/models.rs` + `ui/modals/<name>.rs` | One file per modal            |
+| New Git wrapper         | `src/git/<module>.rs`                   | Keep pure                     |
+| Add UI state            | `app/mod.rs` (App struct)               | Keep struct manageable        |
+| Handle keys for modal   | `events.rs`                             | Use `match &app.active_modal` |
+| Theme colors            | `app.theme()`                           | Never hardcode                |
+| Bilingual strings       | `locales/en.yml` + `locales/vi.yml`     | Always check `is_vi`          |
 
 ---
 

@@ -133,7 +133,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GitMenu => modals::centered_rect(60, 70, f.size()),
             ActiveModal::CommitTree => modals::centered_rect(85, 80, f.size()),
             ActiveModal::FeatureCommit => modals::centered_rect(55, 50, f.size()),
-            ActiveModal::GithubDownloadUrlInput => modals::centered_rect(80, 42, f.size()),
+            ActiveModal::GithubDownloadUrlInput => modals::centered_rect(80, 68, f.size()),
             ActiveModal::GithubDownloadTree => modals::centered_rect(85, 80, f.size()),
             ActiveModal::GithubDownloadTargetInput => modals::centered_rect(80, 45, f.size()),
             ActiveModal::None => f.size(),

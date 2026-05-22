@@ -151,6 +151,9 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         app.github_cloning = false;
                         app.active_modal = ActiveModal::GithubDownloadUrlInput;
                     } else {
+                        let url = app.github_download_url.trim().to_string();
+                        app.add_to_github_history(&url);
+                        app.selected_github_history_index = None;
                         app.github_cloning = false;
                         app.selected_github_tree_index = 0;
                         app.active_modal = ActiveModal::GithubDownloadTree;
@@ -1284,11 +1287,58 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     app.github_cloning_error = None;
                                 }
                             }
+                            KeyCode::Up | KeyCode::Char('k') | KeyCode::Char('K') => {
+                                if !app.github_history.is_empty() {
+                                    if app.selected_github_history_index.is_none() {
+                                        app.github_download_url_temp = app.github_download_url.clone();
+                                        app.selected_github_history_index = Some(app.github_history.len() - 1);
+                                        app.github_download_url = app.github_history[app.github_history.len() - 1].clone();
+                                    } else if let Some(idx) = app.selected_github_history_index {
+                                        if idx > 0 {
+                                            app.selected_github_history_index = Some(idx - 1);
+                                            app.github_download_url = app.github_history[idx - 1].clone();
+                                        } else {
+                                            app.selected_github_history_index = None;
+                                            app.github_download_url = app.github_download_url_temp.clone();
+                                        }
+                                    }
+                                }
+                            }
+                            KeyCode::Down | KeyCode::Char('j') | KeyCode::Char('J') => {
+                                if !app.github_history.is_empty() {
+                                    if app.selected_github_history_index.is_none() {
+                                        app.github_download_url_temp = app.github_download_url.clone();
+                                        app.selected_github_history_index = Some(0);
+                                        app.github_download_url = app.github_history[0].clone();
+                                    } else if let Some(idx) = app.selected_github_history_index {
+                                        if idx < app.github_history.len() - 1 {
+                                            app.selected_github_history_index = Some(idx + 1);
+                                            app.github_download_url = app.github_history[idx + 1].clone();
+                                        } else {
+                                            app.selected_github_history_index = None;
+                                            app.github_download_url = app.github_download_url_temp.clone();
+                                        }
+                                    }
+                                }
+                            }
                             KeyCode::Backspace => {
-                                app.github_download_url.pop();
+                                if let Some(idx) = app.selected_github_history_index {
+                                    app.remove_from_github_history(idx);
+                                    if app.github_history.is_empty() {
+                                        app.selected_github_history_index = None;
+                                        app.github_download_url = app.github_download_url_temp.clone();
+                                    } else if let Some(new_idx) = app.selected_github_history_index {
+                                        app.github_download_url = app.github_history[new_idx].clone();
+                                    }
+                                } else {
+                                    app.github_download_url.pop();
+                                    app.github_download_url_temp = app.github_download_url.clone();
+                                }
                             }
                             KeyCode::Char(c) => {
+                                app.selected_github_history_index = None;
                                 app.github_download_url.push(c);
+                                app.github_download_url_temp = app.github_download_url.clone();
                             }
                             _ => {}
                         }

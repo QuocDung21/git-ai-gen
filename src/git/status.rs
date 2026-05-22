@@ -61,7 +61,7 @@ pub fn get_diff_staged(path: &str) -> Option<String> {
 }
 
 pub fn stage_all() -> Result<(), std::io::Error> {
-    Command::new("git").args(["add", "."]).output()?;
+    Command::new("git").args(["add", "-A"]).output()?;
     Ok(())
 }
 

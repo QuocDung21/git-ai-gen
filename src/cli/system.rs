@@ -103,7 +103,7 @@ pub fn handle_go(locales: &Locales) -> Result<()> {
         logger::heading(&locales.pushing);
 
         if !Command::new("git")
-            .args(["add", "."])
+            .args(["add", "-A"])
             .output()?
             .status
             .success()
