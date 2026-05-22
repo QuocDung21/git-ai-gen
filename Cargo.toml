@@ -21,3 +21,4 @@ serde = { version = "1.0.228", features = ["derive"] }
 dark-light = "2.0.0"
   open = "5.3.5"
   enigo = "0.2"
+tempfile = "3.27.0"

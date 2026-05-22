@@ -1,6 +1,7 @@
 use crate::app::models::BranchEntry;
 use std::process::Command;
 
+/// Get a list of all branches (including local and remote) from the Git system.
 pub fn get_branches() -> Vec<BranchEntry> {
     let mut branches = Vec::new();
     if let Ok(output) = Command::new("git")
@@ -32,6 +33,7 @@ pub fn get_branches() -> Vec<BranchEntry> {
     branches
 }
 
+/// Checkout the specified Git branch.
 pub fn checkout_branch(branch: &str) -> Result<String, std::io::Error> {
     let output = Command::new("git").args(["checkout", branch]).output()?;
     if output.status.success() {
@@ -42,6 +44,7 @@ pub fn checkout_branch(branch: &str) -> Result<String, std::io::Error> {
     }
 }
 
+/// Merge a branch into the current branch.
 pub fn git_merge(branch: &str) -> Result<String, std::io::Error> {
     let output = Command::new("git").args(["merge", branch]).output()?;
     if output.status.success() {
@@ -52,6 +55,7 @@ pub fn git_merge(branch: &str) -> Result<String, std::io::Error> {
     }
 }
 
+/// Create a new branch, checkout, and push it to the origin remote.
 pub fn create_and_checkout_branch(branch: &str) -> Result<String, std::io::Error> {
     let output = Command::new("git")
         .args(["checkout", "-b", branch])
@@ -68,16 +72,17 @@ pub fn create_and_checkout_branch(branch: &str) -> Result<String, std::io::Error
     }
     match push_branch(branch) {
         Ok(_) => Ok(format!(
-            "{}\nĐã push nhánh '{}' lên origin thành công.",
+            "{}\nSuccessfully pushed branch '{}' to origin.",
             msg, branch
         )),
         Err(e) => Err(std::io::Error::new(
             std::io::ErrorKind::Other,
-            format!("Tạo nhánh thành công nhưng push thất bại:\n{}", e),
+            format!("Branch created, but failed to push:\n{}", e),
         )),
     }
 }
 
+/// Push a branch to the origin remote.
 fn push_branch(branch: &str) -> Result<String, std::io::Error> {
     let output = Command::new("git")
         .args(["push", "-u", "origin", branch])
@@ -95,6 +100,7 @@ fn push_branch(branch: &str) -> Result<String, std::io::Error> {
     }
 }
 
+/// Configuration options for deleting a branch.
 pub struct DeleteBranchOptions {
     pub local: bool,
     pub remote: bool,
@@ -111,76 +117,311 @@ impl Default for DeleteBranchOptions {
     }
 }
 
-// Delete branch
+/// Get the name of the current working branch.
 #[allow(dead_code)]
-pub fn delete_branch(branch: &str, options: DeleteBranchOptions) -> Result<String, std::io::Error> {
-    let mut messages = Vec::new();
+pub fn get_current_branch() -> Option<String> {
+    if let Ok(output) = Command::new("git")
+        .args(["branch", "--show-current"])
+        .output()
+    {
+        let name = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if !name.is_empty() {
+            return Some(name);
+        }
+    }
+    None
+}
 
+/// Delete a local or remote branch based on the DeleteBranchOptions.
+#[allow(dead_code)]
+pub fn delete_branch(
+    mut branch: &str,
+    mut options: DeleteBranchOptions,
+) -> Result<String, std::io::Error> {
+    // Automatically detect if the branch name is remote (starts with "origin/")
+    if let Some(real_name) = branch.strip_prefix("origin/") {
+        branch = real_name;
+        options.local = false;
+        options.remote = true;
+    }
+
+    // Check if the branch is protected
+    if protected_branch(branch) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            format!(
+                "WARNING: Branch '{}' is protected and cannot be deleted.",
+                branch
+            ),
+        ));
+    }
+
+    // Check if the user is currently on the local branch to be deleted
     if options.local {
-        let delete_flag = if options.force { "-D" } else { "-d" };
-        let output = Command::new("git")
-            .args(["branch", delete_flag, branch])
-            .output()?;
-
-        if output.status.success() {
-            let msg = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            messages.push(format!("Local: {}", msg));
-        } else {
-            let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Lỗi xóa nhánh local '{}':\n{}", branch, err),
-            ));
+        if let Some(current) = get_current_branch() {
+            if current == branch {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!(
+                        "WARNING: Cannot delete local branch '{}' while currently on it.",
+                        branch
+                    ),
+                ));
+            }
         }
     }
 
-    if options.remote {
-        let output = Command::new("git")
-            .args(["push", "origin", "--delete", branch])
-            .output()?;
+    let mut messages = Vec::new();
 
-        if output.status.success() {
-            let mut msg = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if msg.is_empty() {
-                msg = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            }
-            messages.push(format!("Remote: {}", msg));
-        } else {
-            let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Lỗi xóa nhánh remote '{}':\n{}", branch, err),
+    // Handle local deletion
+    if options.local {
+        if !branch_exists(branch, false) {
+            messages.push(format!(
+                "Local: Branch '{}' does not exist, skipping.",
+                branch
             ));
+        } else {
+            let delete_flag = if options.force { "-D" } else { "-d" };
+            let output = Command::new("git")
+                .args(["branch", delete_flag, branch])
+                .output()?;
+
+            if output.status.success() {
+                let msg = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                messages.push(format!("Local: {}", msg));
+            } else {
+                let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                messages.push(format!(
+                    "Local (Error ignored): Could not delete '{}' - {}",
+                    branch, err
+                ));
+            }
+        }
+    }
+
+    // Handle remote deletion
+    if options.remote {
+        if !branch_exists(branch, true) {
+            messages.push(format!(
+                "Remote: Branch '{}' does not exist on origin, skipping.",
+                branch
+            ));
+        } else {
+            let output = Command::new("git")
+                .env("LC_ALL", "C")
+                .args(["push", "origin", "--delete", branch])
+                .output()?;
+
+            if output.status.success() {
+                let mut msg = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if msg.is_empty() {
+                    msg = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                }
+                messages.push(format!("Remote: {}", msg));
+            } else {
+                let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
+                messages.push(format!(
+                    "Remote (Error ignored): Could not delete '{}' - {}",
+                    branch, err
+                ));
+            }
         }
     }
 
     if messages.is_empty() {
-        Ok("Không có hành động xóa nào được yêu cầu.".to_string())
+        Ok("No deletion actions required.".to_string())
     } else {
         Ok(messages.join("\n"))
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Check if the branch is in the list of protected branches (cannot be deleted).
+#[allow(dead_code)]
+pub fn protected_branch(branch: &str) -> bool {
+    matches!(branch, "main" | "master" | "origin/main" | "origin/master")
+}
 
-    #[test]
-    fn test_get_branches() {
-        let branches = get_branches();
-        println!("Danh sách nhánh: {:#?}", branches);
-        assert!(
-            branches.len() > 0,
-            "Nên có ít nhất 1 nhánh (thường là main/master)"
-        );
+/// Check if a branch exists.
+/// Set `check_remote = false` to check locally, or `true` to check on the origin remote.
+#[allow(dead_code)]
+pub fn branch_exists(branch: &str, check_remote: bool) -> bool {
+    if check_remote {
+        if let Ok(output) = Command::new("git")
+            .args(["ls-remote", "--heads", "origin", branch])
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            !stdout.trim().is_empty()
+        } else {
+            false
+        }
+    } else {
+        let ref_path = format!("refs/heads/{}", branch);
+
+        if let Ok(output) = Command::new("git")
+            .args(["rev-parse", "--verify", "--quiet", &ref_path])
+            .output()
+        {
+            output.status.success()
+        } else {
+            false
+        }
+    }
+}
+
+#[test]
+fn test_exits_path() {
+    let path_to_verify;
+    {
+        let tmp = tempfile::tempdir().unwrap();
+        path_to_verify = tmp.path().to_path_buf();
+        println!("Inside scope: Path là {:?}", path_to_verify);
+        assert!(path_to_verify.exists(), "Thư mục phải tồn tại trong scope!");
+    }
+
+    println!(
+        "Outside scope: Đường dẫn {:?} còn tồn tại không? -> {}",
+        path_to_verify,
+        path_to_verify.exists()
+    );
+
+    assert!(!path_to_verify.exists(), "Thư mục đã bị Drop (xóa) rồi!");
+}
+
+#[cfg(test)]
+mod additional_tests {
+    use super::*;
+    use std::fs;
+    use std::process::Command;
+    use tempfile::TempDir;
+
+    fn setup_test_repo() -> TempDir {
+        let tmp = tempfile::tempdir().unwrap();
+
+        std::env::set_current_dir(tmp.path()).unwrap();
+        Command::new("git").args(["init"]).output().unwrap();
+        Command::new("git")
+            .args(["config", "user.email", "test@git.com"])
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["config", "user.name", "Tester"])
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "--allow-empty", "-m", "Init"])
+            .output()
+            .unwrap();
+        tmp
     }
 
     #[test]
-    fn test_delete_branch() {
-        let result = delete_branch("", DeleteBranchOptions::default());
+    fn test_force_delete_vs_normal_delete() {
+        let _tmp = setup_test_repo();
+        Command::new("git")
+            .args(["checkout", "-b", "unmerged-branch"])
+            .output()
+            .unwrap();
+        fs::write("test.txt", "data").unwrap();
+        Command::new("git").args(["add", "."]).output().unwrap();
+        Command::new("git")
+            .args(["commit", "-m", "commit"])
+            .output()
+            .unwrap();
+
+        Command::new("git")
+            .args(["checkout", "master"])
+            .output()
+            .unwrap();
+
+        let options_normal = DeleteBranchOptions {
+            local: true,
+            remote: false,
+            force: false,
+        };
+        let res_normal = delete_branch("unmerged-branch", options_normal);
         assert!(
-            result.is_ok(),
-            "Xóa nhánh không phải là hành động quan trọng nên không cần phải trả về lỗi"
+            res_normal.is_err(),
+            "Normal delete should fail for unmerged branch"
         );
+
+        let options_force = DeleteBranchOptions {
+            local: true,
+            remote: false,
+            force: true,
+        };
+        let res_force = delete_branch("unmerged-branch", options_force);
+        assert!(res_force.is_ok(), "Force delete should succeed");
+    }
+
+    #[test]
+    fn test_merge_conflict_scenario() {
+        let _tmp = setup_test_repo();
+
+        Command::new("git")
+            .args(["checkout", "-b", "branch-a"])
+            .output()
+            .unwrap();
+        fs::write("file.txt", "A").unwrap();
+        Command::new("git").args(["add", "."]).output().unwrap();
+        Command::new("git")
+            .args(["commit", "-m", "A"])
+            .output()
+            .unwrap();
+
+        Command::new("git")
+            .args(["checkout", "master"])
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["checkout", "-b", "branch-b"])
+            .output()
+            .unwrap();
+        fs::write("file.txt", "B").unwrap();
+        Command::new("git").args(["add", "."]).output().unwrap();
+        Command::new("git")
+            .args(["commit", "-m", "B"])
+            .output()
+            .unwrap();
+
+        Command::new("git")
+            .args(["checkout", "branch-a"])
+            .output()
+            .unwrap();
+        let res = git_merge("branch-b");
+
+        assert!(res.is_err(), "Merge should fail due to conflict");
+    }
+
+    #[test]
+    fn test_remote_auto_detection() {
+        let _tmp = setup_test_repo();
+        let options = DeleteBranchOptions {
+            local: true,
+            remote: false,
+            force: false,
+        };
+
+        let res = delete_branch("origin/main", options);
+
+        assert!(res.is_ok());
+        assert!(res
+            .unwrap()
+            .contains("Remote: Branch 'my-branch' does not exist on origin"));
+    }
+
+    #[test]
+    fn test_delete_non_existent_branch() {
+        let _tmp = setup_test_repo();
+
+        let options = DeleteBranchOptions {
+            local: true,
+            remote: false,
+            force: false,
+        };
+        let res = delete_branch("ghost-branch", options);
+
+        assert!(res.is_ok());
+        assert!(res.unwrap().contains("does not exist, skipping"));
     }
 }
