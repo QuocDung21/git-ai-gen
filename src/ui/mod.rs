@@ -65,6 +65,7 @@ pub fn ui(f: &mut Frame, app: &App) {
     let is_error = app.status_message.starts_with("❌")
         || app.status_message.contains("Error")
         || app.status_message.contains("Lỗi");
+    let is_loading = app.status_message.starts_with("⏳");
     let is_success = app.status_message.starts_with("✅")
         || app.status_message.starts_with("🚀")
         || app.status_message.starts_with("⚡")
@@ -76,6 +77,8 @@ pub fn ui(f: &mut Frame, app: &App) {
         theme.red
     } else if is_success {
         theme.green
+    } else if is_loading {
+        theme.cyan
     } else {
         theme.cyan
     };

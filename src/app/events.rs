@@ -828,6 +828,12 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     }
                                 }
                                 KeyCode::Char('m') | KeyCode::Char('M') => {
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "⏳ Đang tải danh sách model Kilo...".to_string()
+                                    } else {
+                                        "⏳ Fetching Kilo model list...".to_string()
+                                    };
+                                    terminal.draw(|f| crate::ui::ui(f, app))?;
                                     app.fetch_kilo_models();
                                     app.kilo_model_filter.clear();
                                     app.kilo_model_search_mode = false;
@@ -1028,11 +1034,12 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             }
                             KeyCode::Char('f') | KeyCode::Char('F') => {
                                 app.status_message = if app.current_lang == "vi" {
-                                    "⚡ Đang Fetch..."
+                                    "⏳ Đang tải thông tin mới từ Remote (Fetch)..."
                                 } else {
-                                    "⚡ Fetching..."
+                                    "⏳ Fetching new updates from Remote..."
                                 }
                                 .to_string();
+                                terminal.draw(|f| crate::ui::ui(f, app))?;
                                 let _ = crate::git::remote::git_fetch();
                                 app.status_message = if app.current_lang == "vi" {
                                     "✅ Fetch hoàn tất"
@@ -1046,11 +1053,12 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             }
                             KeyCode::Char('p') | KeyCode::Char('P') => {
                                 app.status_message = if app.current_lang == "vi" {
-                                    "⚡ Đang Pull..."
+                                    "⏳ Đang cập nhật thay đổi từ Remote (Pull)..."
                                 } else {
-                                    "⚡ Pulling..."
+                                    "⏳ Pulling changes from Remote..."
                                 }
                                 .to_string();
+                                terminal.draw(|f| crate::ui::ui(f, app))?;
                                 let _ = crate::git::remote::git_pull();
                                 app.status_message = if app.current_lang == "vi" {
                                     "✅ Pull hoàn tất"
@@ -1064,11 +1072,12 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             }
                             KeyCode::Char('u') | KeyCode::Char('U') => {
                                 app.status_message = if app.current_lang == "vi" {
-                                    "⚡ Đang Push..."
+                                    "⏳ Đang đẩy các thay đổi lên Remote (Push)..."
                                 } else {
-                                    "⚡ Pushing..."
+                                    "⏳ Pushing committed changes to Remote..."
                                 }
                                 .to_string();
+                                terminal.draw(|f| crate::ui::ui(f, app))?;
                                 match crate::git::remote::git_push() {
                                     Ok(_) => {
                                         app.status_message = if app.current_lang == "vi" {
@@ -1178,49 +1187,52 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         app.active_modal = ActiveModal::AmendCommit;
                                     }
                                     3 => {
-                                        // Fetch
-                                        app.status_message = if app.current_lang == "vi" {
-                                            "⚡ Đang Fetch..."
-                                        } else {
-                                            "⚡ Fetching..."
-                                        }
-                                        .to_string();
-                                        let _ = crate::git::remote::git_fetch();
-                                        app.status_message = if app.current_lang == "vi" {
-                                            "✅ Fetch hoàn tất"
-                                        } else {
-                                            "✅ Fetch completed"
-                                        }
-                                        .to_string();
-                                        app.active_modal = ActiveModal::None;
-                                        app.refresh_git_status();
+                                         // Fetch
+                                         app.status_message = if app.current_lang == "vi" {
+                                             "⏳ Đang tải thông tin mới từ Remote (Fetch)..."
+                                         } else {
+                                             "⏳ Fetching new updates from Remote..."
+                                         }
+                                         .to_string();
+                                         terminal.draw(|f| crate::ui::ui(f, app))?;
+                                         let _ = crate::git::remote::git_fetch();
+                                         app.status_message = if app.current_lang == "vi" {
+                                             "✅ Fetch hoàn tất"
+                                         } else {
+                                             "✅ Fetch completed"
+                                         }
+                                         .to_string();
+                                         app.active_modal = ActiveModal::None;
+                                         app.refresh_git_status();
                                     }
                                     4 => {
-                                        // Pull
-                                        app.status_message = if app.current_lang == "vi" {
-                                            "⚡ Đang Pull..."
-                                        } else {
-                                            "⚡ Pulling..."
-                                        }
-                                        .to_string();
-                                        let _ = crate::git::remote::git_pull();
-                                        app.status_message = if app.current_lang == "vi" {
-                                            "✅ Pull hoàn tất"
-                                        } else {
-                                            "✅ Pull completed"
-                                        }
-                                        .to_string();
-                                        app.active_modal = ActiveModal::None;
-                                        app.refresh_git_status();
+                                         // Pull
+                                         app.status_message = if app.current_lang == "vi" {
+                                             "⏳ Đang cập nhật thay đổi từ Remote (Pull)..."
+                                         } else {
+                                             "⏳ Pulling changes from Remote..."
+                                         }
+                                         .to_string();
+                                         terminal.draw(|f| crate::ui::ui(f, app))?;
+                                         let _ = crate::git::remote::git_pull();
+                                         app.status_message = if app.current_lang == "vi" {
+                                             "✅ Pull hoàn tất"
+                                         } else {
+                                             "✅ Pull completed"
+                                         }
+                                         .to_string();
+                                         app.active_modal = ActiveModal::None;
+                                         app.refresh_git_status();
                                     }
                                     5 => {
                                         // Push
                                         app.status_message = if app.current_lang == "vi" {
-                                            "⚡ Đang Push..."
+                                            "⏳ Đang đẩy các thay đổi lên Remote (Push)..."
                                         } else {
-                                            "⚡ Pushing..."
+                                            "⏳ Pushing committed changes to Remote..."
                                         }
                                         .to_string();
+                                        terminal.draw(|f| crate::ui::ui(f, app))?;
                                         match crate::git::remote::git_push() {
                                             Ok(_) => {
                                                 app.status_message = if app.current_lang == "vi" {
@@ -1390,6 +1402,12 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             KeyCode::Enter => {
                                 let url = app.github_download_url.trim().to_string();
                                 if !url.is_empty() {
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "⏳ Đang tải thông tin repository từ GitHub...".to_string()
+                                    } else {
+                                        "⏳ Fetching repository metadata from GitHub...".to_string()
+                                    };
+                                    terminal.draw(|f| crate::ui::ui(f, app))?;
                                     app.github_cloning = true;
                                     app.github_cloning_error = None;
                                 }
@@ -1579,7 +1597,15 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     };
                                     continue;
                                 }
-                                match app.copy_github_download_item() {
+                                match {
+                                    app.status_message = if is_vi {
+                                        "⏳ Đang sao chép tập tin từ GitHub...".to_string()
+                                    } else {
+                                        "⏳ Copying files from GitHub...".to_string()
+                                    };
+                                    terminal.draw(|f| crate::ui::ui(f, app))?;
+                                    app.copy_github_download_item()
+                                } {
                                     Ok(_) => {
                                         let visible = app.get_visible_github_tree_entries();
                                         let selected_name = visible.get(app.selected_github_tree_index)
@@ -2180,10 +2206,11 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     KeyCode::Char('f') | KeyCode::Char('F') => {
                         let is_vi = app.current_lang == "vi";
                         app.status_message = if is_vi {
-                            "⚡ Đang tìm nạp (git fetch)...".to_string()
+                            "⏳ Đang tải thông tin mới từ Remote (Fetch)...".to_string()
                         } else {
-                            "⚡ Fetching (git fetch)...".to_string()
+                            "⏳ Fetching new updates from Remote...".to_string()
                         };
+                        terminal.draw(|f| crate::ui::ui(f, app))?;
                         match git_fetch() {
                             Ok(_) => {
                                 app.status_message = if is_vi {
@@ -2205,10 +2232,11 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     KeyCode::Char('p') | KeyCode::Char('P') => {
                         let is_vi = app.current_lang == "vi";
                         app.status_message = if is_vi {
-                            "⚡ Đang cập nhật (git pull)...".to_string()
+                            "⏳ Đang cập nhật thay đổi từ Remote (Pull)...".to_string()
                         } else {
-                            "⚡ Pulling (git pull)...".to_string()
+                            "⏳ Pulling changes from Remote...".to_string()
                         };
+                        terminal.draw(|f| crate::ui::ui(f, app))?;
                         match git_pull() {
                             Ok(_) => {
                                 app.status_message = if is_vi {
