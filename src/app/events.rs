@@ -1374,29 +1374,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 }
                             }
                             KeyCode::Char(' ') => {
-                                let entry = {
-                                    let visible = app.get_visible_github_tree_entries();
-                                    if app.selected_github_tree_index < visible.len() {
-                                        Some(visible[app.selected_github_tree_index].clone())
-                                    } else {
-                                        None
-                                    }
-                                };
-                                if let Some(entry) = entry {
-                                    if entry.is_dir {
-                                        if app.github_expanded_dirs.contains(&entry.path) {
-                                            app.github_expanded_dirs.remove(&entry.path);
-                                            let prefix = format!("{}/", entry.path);
-                                            app.github_expanded_dirs.retain(|k| !k.starts_with(&prefix));
-                                        } else {
-                                            app.github_expanded_dirs.insert(entry.path.clone());
-                                        }
-                                        let next_len = app.get_visible_github_tree_entries().len();
-                                        if app.selected_github_tree_index >= next_len {
-                                            app.selected_github_tree_index = next_len.saturating_sub(1);
-                                        }
-                                    }
-                                }
+                                app.toggle_github_tree_selection(app.selected_github_tree_index);
                             }
                             KeyCode::Right => {
                                 let entry = {
@@ -1445,6 +1423,17 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 if len > 0 && app.selected_github_tree_index < len {
                                     app.github_download_target_path = app.current_dir.clone();
                                     app.active_modal = ActiveModal::GithubDownloadTargetInput;
+                                    if let Ok(output) = Command::new("osascript")
+                                        .args(["-e", "POSIX path of (choose folder with prompt \"Select Destination Folder:\")"])
+                                        .output()
+                                    {
+                                        if output.status.success() {
+                                            let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                                            if !path_str.is_empty() {
+                                                app.github_download_target_path = path_str;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             _ => {}
@@ -1455,6 +1444,19 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         match key.code {
                             KeyCode::Esc => {
                                 app.active_modal = ActiveModal::GithubDownloadTree;
+                            }
+                            KeyCode::Tab => {
+                                if let Ok(output) = Command::new("osascript")
+                                    .args(["-e", "POSIX path of (choose folder with prompt \"Select Destination Folder:\")"])
+                                    .output()
+                                {
+                                    if output.status.success() {
+                                        let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                                        if !path_str.is_empty() {
+                                            app.github_download_target_path = path_str;
+                                        }
+                                    }
+                                }
                             }
                             KeyCode::Enter => {
                                 let is_vi = app.current_lang == "vi";

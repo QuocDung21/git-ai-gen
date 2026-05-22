@@ -221,6 +221,14 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
                 line_spans.push(Span::styled(connector, Style::default().fg(theme.border)));
             }
 
+            let is_checked = app.github_selected_paths.contains(&entry.path);
+            let checkbox = if is_checked {
+                Span::styled("[✓] ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+            } else {
+                Span::styled("[ ] ", Style::default().fg(theme.border))
+            };
+            line_spans.push(checkbox);
+
             let icon = if entry.is_dir {
                 if app.github_expanded_dirs.contains(&entry.path) {
                     "▼ 📁 "
@@ -265,9 +273,9 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
         if is_vi {
-            "  [Khoảng trắng] Mở/Đóng  [↑/↓] Di chuyển  [Enter] Chọn để tải về  [Esc] Quay lại"
+            "  [Khoảng trắng] Chọn/Bỏ chọn  [◀/▶] Đóng/Mở thư mục  [↑/↓] Di chuyển  [Enter] Xác nhận lưu & tải  [Esc] Quay lại"
         } else {
-            "  [Space] Expand/Collapse  [↑/↓] Navigate  [Enter] Select to download  [Esc] Back"
+            "  [Space] Select/Deselect  [◀/▶] Collapse/Expand Folder  [↑/↓] Navigate  [Enter] Confirm & Download  [Esc] Back"
         },
         Style::default().fg(theme.border),
     )]));
@@ -353,9 +361,9 @@ pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect)
         Line::from(""),
         Line::from(vec![Span::styled(
             if is_vi {
-                "  [Enter] Đồng ý & Tải về  [Esc] Quay lại"
+                "  [Enter] Đồng ý & Tải về  [Tab] Chọn thư mục (Finder)  [Esc] Quay lại"
             } else {
-                "  [Enter] Confirm & Download  [Esc] Back"
+                "  [Enter] Confirm & Download  [Tab] Select Folder (Finder)  [Esc] Back"
             },
             Style::default().fg(theme.border),
         )]),
