@@ -133,6 +133,9 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GitMenu => modals::centered_rect(60, 70, f.size()),
             ActiveModal::CommitTree => modals::centered_rect(85, 80, f.size()),
             ActiveModal::FeatureCommit => modals::centered_rect(55, 50, f.size()),
+            ActiveModal::GithubDownloadUrlInput => modals::centered_rect(80, 42, f.size()),
+            ActiveModal::GithubDownloadTree => modals::centered_rect(85, 80, f.size()),
+            ActiveModal::GithubDownloadTargetInput => modals::centered_rect(80, 45, f.size()),
             ActiveModal::None => f.size(),
         };
 
@@ -163,6 +166,9 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GitMenu => modals::render_git_menu(f, app, area),
             ActiveModal::CommitTree => modals::render_commit_tree(f, app, area),
             ActiveModal::FeatureCommit => modals::render_feature_commit(f, app, area),
+            ActiveModal::GithubDownloadUrlInput => modals::render_github_download_url_input(f, app, area),
+            ActiveModal::GithubDownloadTree => modals::render_github_download_tree(f, app, area),
+            ActiveModal::GithubDownloadTargetInput => modals::render_github_download_target_input(f, app, area),
             ActiveModal::None => {}
         }
     }

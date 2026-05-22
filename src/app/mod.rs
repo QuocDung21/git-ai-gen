@@ -80,6 +80,13 @@ pub struct App {
     pub workspace_history: Vec<String>,
     pub selected_workspace_index: usize,
     pub prompt_text: String,
+    pub github_download_url: String,
+    pub github_cloning: bool,
+    pub github_tree_entries: Vec<GithubTreeEntry>,
+    pub selected_github_tree_index: usize,
+    pub github_download_target_path: String,
+    pub github_cloning_error: Option<String>,
+    pub github_expanded_dirs: std::collections::HashSet<String>,
 }
 
 impl App {
@@ -175,6 +182,13 @@ impl App {
             workspace_history: Vec::new(),
             selected_workspace_index: 0,
             prompt_text: String::new(),
+            github_download_url: String::new(),
+            github_cloning: false,
+            github_tree_entries: Vec::new(),
+            selected_github_tree_index: 0,
+            github_download_target_path: String::new(),
+            github_cloning_error: None,
+            github_expanded_dirs: std::collections::HashSet::new(),
         };
         app.load_workspace_history();
         app.add_to_workspace_history(&app.current_dir.clone());
@@ -686,5 +700,170 @@ impl App {
                 bg: Color::Rgb(40, 42, 54),         // Dracula Background
             }
         }
+    }
+
+    pub fn visit_repo_dir(&mut self) -> std::io::Result<()> {
+        self.github_tree_entries.clear();
+        self.github_expanded_dirs.clear();
+        let temp_dir = std::path::Path::new(&self.current_dir).join(".git_ai_download_temp");
+        if !temp_dir.exists() {
+            return Ok(());
+        }
+
+        let output = std::process::Command::new("git")
+            .args(["ls-tree", "-r", "-t", "HEAD"])
+            .current_dir(&temp_dir)
+            .output()?;
+
+        if !output.status.success() {
+            let err_msg = String::from_utf8_lossy(&output.stderr).to_string();
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, err_msg));
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let mut entries = Vec::new();
+
+        #[derive(Clone)]
+        struct ParsedEntry {
+            path: String,
+            name: String,
+            is_dir: bool,
+        }
+
+        for line in stdout.lines() {
+            let parts: Vec<&str> = line.split('\t').collect();
+            if parts.len() < 2 {
+                continue;
+            }
+            let meta = parts[0];
+            let path_str = parts[1].to_string();
+            let is_dir = meta.contains(" tree ");
+            let name = if let Some(idx) = path_str.rfind('/') {
+                path_str[idx + 1..].to_string()
+            } else {
+                path_str.clone()
+            };
+            entries.push(ParsedEntry {
+                path: path_str,
+                name,
+                is_dir,
+            });
+        }
+
+        let mut parent_to_children: std::collections::HashMap<String, Vec<ParsedEntry>> =
+            std::collections::HashMap::new();
+        for entry in entries {
+            let parent = if let Some(idx) = entry.path.rfind('/') {
+                entry.path[..idx].to_string()
+            } else {
+                "".to_string()
+            };
+            parent_to_children.entry(parent).or_default().push(entry);
+        }
+
+        fn build_tree(
+            parent: &str,
+            depth: usize,
+            parent_to_children: &std::collections::HashMap<String, Vec<ParsedEntry>>,
+            result: &mut Vec<GithubTreeEntry>,
+        ) {
+            if let Some(children) = parent_to_children.get(parent) {
+                let mut sorted_children = children.clone();
+                sorted_children.sort_by(|a, b| {
+                    if a.is_dir != b.is_dir {
+                        b.is_dir.cmp(&a.is_dir)
+                    } else {
+                        a.name.cmp(&b.name)
+                    }
+                });
+                for child in sorted_children {
+                    result.push(GithubTreeEntry {
+                        path: child.path.clone(),
+                        name: child.name.clone(),
+                        is_dir: child.is_dir,
+                        depth,
+                    });
+                    if child.is_dir {
+                        build_tree(&child.path, depth + 1, parent_to_children, result);
+                    }
+                }
+            }
+        }
+
+        let mut sorted_entries = Vec::new();
+        build_tree("", 0, &parent_to_children, &mut sorted_entries);
+        self.github_tree_entries = sorted_entries;
+        Ok(())
+    }
+
+    pub fn get_visible_github_tree_entries(&self) -> Vec<&GithubTreeEntry> {
+        self.github_tree_entries
+            .iter()
+            .filter(|entry| {
+                let parts: Vec<&str> = entry.path.split('/').collect();
+                if parts.len() <= 1 {
+                    return true;
+                }
+                let mut current = String::new();
+                for i in 0..(parts.len() - 1) {
+                    if i > 0 {
+                        current.push('/');
+                    }
+                    current.push_str(parts[i]);
+                    if !self.github_expanded_dirs.contains(&current) {
+                        return false;
+                    }
+                }
+                true
+            })
+            .collect()
+    }
+
+    pub fn copy_github_download_item(&self) -> std::io::Result<()> {
+        let visible = self.get_visible_github_tree_entries();
+        if visible.is_empty() || self.selected_github_tree_index >= visible.len() {
+            return Ok(());
+        }
+        let entry = visible[self.selected_github_tree_index];
+        let temp_dir = std::path::Path::new(&self.current_dir).join(".git_ai_download_temp");
+
+        let output = std::process::Command::new("git")
+            .args(["checkout", "HEAD", &entry.path])
+            .current_dir(&temp_dir)
+            .output()?;
+
+        if !output.status.success() {
+            let err_msg = String::from_utf8_lossy(&output.stderr).to_string();
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, err_msg));
+        }
+
+        let src_path = temp_dir.join(&entry.path);
+        let dst_dir = std::path::Path::new(&self.github_download_target_path);
+        std::fs::create_dir_all(dst_dir)?;
+        let dst_path = dst_dir.join(&entry.name);
+        if entry.is_dir {
+            self.copy_dir_rec(&src_path, &dst_path)?;
+        } else {
+            if let Some(parent) = dst_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::copy(&src_path, &dst_path)?;
+        }
+        Ok(())
+    }
+
+    fn copy_dir_rec(&self, src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
+        std::fs::create_dir_all(dst)?;
+        for entry in std::fs::read_dir(src)? {
+            let entry = entry?;
+            let file_type = entry.file_type()?;
+            let new_dst = dst.join(entry.file_name());
+            if file_type.is_dir() {
+                self.copy_dir_rec(&entry.path(), &new_dst)?;
+            } else {
+                std::fs::copy(entry.path(), new_dst)?;
+            }
+        }
+        Ok(())
     }
 }

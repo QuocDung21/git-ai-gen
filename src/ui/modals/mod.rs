@@ -2,6 +2,7 @@ pub mod help;
 pub mod confirm;
 pub mod manual_commit;
 pub mod feature_commit;
+pub mod github_download;
 
 pub use help::render_help_modal;
 pub use confirm::{
@@ -26,6 +27,11 @@ pub use confirm::{
 };
 pub use manual_commit::render_manual_commit;
 pub use feature_commit::render_feature_commit;
+pub use github_download::{
+    render_github_download_url_input,
+    render_github_download_tree,
+    render_github_download_target_input,
+};
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 

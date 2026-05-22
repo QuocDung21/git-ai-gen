@@ -135,6 +135,42 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
             continue;
         }
 
+        if app.github_cloning {
+            let temp_dir = std::path::Path::new(&app.current_dir).join(".git_ai_download_temp");
+            if temp_dir.exists() {
+                let _ = std::fs::remove_dir_all(&temp_dir);
+            }
+            let output = Command::new("git")
+                .args(["clone", "--depth", "1", "--filter=blob:none", "--no-checkout", &app.github_download_url, temp_dir.to_str().unwrap_or_default()])
+                .output();
+
+            match output {
+                Ok(out) if out.status.success() => {
+                    if let Err(e) = app.visit_repo_dir() {
+                        app.github_cloning_error = Some(format!("{}", e));
+                        app.github_cloning = false;
+                        app.active_modal = ActiveModal::GithubDownloadUrlInput;
+                    } else {
+                        app.github_cloning = false;
+                        app.selected_github_tree_index = 0;
+                        app.active_modal = ActiveModal::GithubDownloadTree;
+                    }
+                }
+                Ok(out) => {
+                    let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
+                    app.github_cloning_error = Some(stderr);
+                    app.github_cloning = false;
+                    app.active_modal = ActiveModal::GithubDownloadUrlInput;
+                }
+                Err(err) => {
+                    app.github_cloning_error = Some(format!("{}", err));
+                    app.github_cloning = false;
+                    app.active_modal = ActiveModal::GithubDownloadUrlInput;
+                }
+            }
+            continue;
+        }
+
         if event::poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
                 // Intercept keys if a modal is active
@@ -860,12 +896,10 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         continue;
                     }
                     ActiveModal::GitMenu => {
-                        let max = 9;
+                        let max = 12;
 
-                        // Quick shortcuts even when menu is open (thao tác nhanh)
                         match key.code {
                             KeyCode::Char('g') | KeyCode::Char('G') => {
-                                // AI Commit & Push
                                 let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() {
                                     cb.get_text().unwrap_or_default()
                                 } else {
@@ -882,6 +916,13 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 };
                                 app.go_step = GoStep::Confirm;
                                 app.active_modal = ActiveModal::GoConfirm;
+                                continue;
+                            }
+                            KeyCode::Char('n') | KeyCode::Char('N') => {
+                                app.github_download_url.clear();
+                                app.github_cloning_error = None;
+                                app.github_cloning = false;
+                                app.active_modal = ActiveModal::GithubDownloadUrlInput;
                                 continue;
                             }
                             KeyCode::Char('c') | KeyCode::Char('C') => {
@@ -1107,9 +1148,27 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         app.active_modal = ActiveModal::StashList;
                                     }
                                     9 => {
-                                        // Log
+                                        app.fetch_commit_tree();
+                                        app.selected_log_index = 0;
+                                        if !app.commit_logs.is_empty() {
+                                            let hash = app.commit_logs[0].hash.clone();
+                                            app.fetch_commit_diff(&hash);
+                                        }
+                                        app.active_modal = ActiveModal::CommitTree;
+                                    }
+                                    10 => {
                                         app.fetch_commit_logs();
                                         app.active_modal = ActiveModal::GitLog;
+                                    }
+                                    11 => {
+                                        app.compute_feature_groups();
+                                        app.active_modal = ActiveModal::FeatureCommit;
+                                    }
+                                    12 => {
+                                        app.github_download_url.clear();
+                                        app.github_cloning_error = None;
+                                        app.github_cloning = false;
+                                        app.active_modal = ActiveModal::GithubDownloadUrlInput;
                                     }
                                     _ => {}
                                 }
@@ -1208,6 +1267,179 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
 
                                     app.active_modal = ActiveModal::None;
                                 }
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::GithubDownloadUrlInput => {
+                        match key.code {
+                            KeyCode::Esc => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Enter => {
+                                let url = app.github_download_url.trim().to_string();
+                                if !url.is_empty() {
+                                    app.github_cloning = true;
+                                    app.github_cloning_error = None;
+                                }
+                            }
+                            KeyCode::Backspace => {
+                                app.github_download_url.pop();
+                            }
+                            KeyCode::Char(c) => {
+                                app.github_download_url.push(c);
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::GithubDownloadTree => {
+                        match key.code {
+                            KeyCode::Esc => {
+                                let temp_dir = std::path::Path::new(&app.current_dir).join(".git_ai_download_temp");
+                                if temp_dir.exists() {
+                                    let _ = std::fs::remove_dir_all(&temp_dir);
+                                }
+                                app.active_modal = ActiveModal::GithubDownloadUrlInput;
+                            }
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                let len = app.get_visible_github_tree_entries().len();
+                                if len > 0 {
+                                    if app.selected_github_tree_index > 0 {
+                                        app.selected_github_tree_index -= 1;
+                                    } else {
+                                        app.selected_github_tree_index = len - 1;
+                                    }
+                                }
+                            }
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                let len = app.get_visible_github_tree_entries().len();
+                                if len > 0 {
+                                    if app.selected_github_tree_index < len - 1 {
+                                        app.selected_github_tree_index += 1;
+                                    } else {
+                                        app.selected_github_tree_index = 0;
+                                    }
+                                }
+                            }
+                            KeyCode::Char(' ') => {
+                                let entry = {
+                                    let visible = app.get_visible_github_tree_entries();
+                                    if app.selected_github_tree_index < visible.len() {
+                                        Some(visible[app.selected_github_tree_index].clone())
+                                    } else {
+                                        None
+                                    }
+                                };
+                                if let Some(entry) = entry {
+                                    if entry.is_dir {
+                                        if app.github_expanded_dirs.contains(&entry.path) {
+                                            app.github_expanded_dirs.remove(&entry.path);
+                                            let prefix = format!("{}/", entry.path);
+                                            app.github_expanded_dirs.retain(|k| !k.starts_with(&prefix));
+                                        } else {
+                                            app.github_expanded_dirs.insert(entry.path.clone());
+                                        }
+                                        let next_len = app.get_visible_github_tree_entries().len();
+                                        if app.selected_github_tree_index >= next_len {
+                                            app.selected_github_tree_index = next_len.saturating_sub(1);
+                                        }
+                                    }
+                                }
+                            }
+                            KeyCode::Right => {
+                                let entry = {
+                                    let visible = app.get_visible_github_tree_entries();
+                                    if app.selected_github_tree_index < visible.len() {
+                                        Some(visible[app.selected_github_tree_index].clone())
+                                    } else {
+                                        None
+                                    }
+                                };
+                                if let Some(entry) = entry {
+                                    if entry.is_dir {
+                                        app.github_expanded_dirs.insert(entry.path.clone());
+                                        let next_len = app.get_visible_github_tree_entries().len();
+                                        if app.selected_github_tree_index >= next_len {
+                                            app.selected_github_tree_index = next_len.saturating_sub(1);
+                                        }
+                                    }
+                                }
+                            }
+                            KeyCode::Left => {
+                                let entry = {
+                                    let visible = app.get_visible_github_tree_entries();
+                                    if app.selected_github_tree_index < visible.len() {
+                                        Some(visible[app.selected_github_tree_index].clone())
+                                    } else {
+                                        None
+                                    }
+                                };
+                                if let Some(entry) = entry {
+                                    if entry.is_dir {
+                                        if app.github_expanded_dirs.contains(&entry.path) {
+                                            app.github_expanded_dirs.remove(&entry.path);
+                                            let prefix = format!("{}/", entry.path);
+                                            app.github_expanded_dirs.retain(|k| !k.starts_with(&prefix));
+                                        }
+                                        let next_len = app.get_visible_github_tree_entries().len();
+                                        if app.selected_github_tree_index >= next_len {
+                                            app.selected_github_tree_index = next_len.saturating_sub(1);
+                                        }
+                                    }
+                                }
+                            }
+                            KeyCode::Enter => {
+                                let len = app.get_visible_github_tree_entries().len();
+                                if len > 0 && app.selected_github_tree_index < len {
+                                    app.github_download_target_path = app.current_dir.clone();
+                                    app.active_modal = ActiveModal::GithubDownloadTargetInput;
+                                }
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::GithubDownloadTargetInput => {
+                        match key.code {
+                            KeyCode::Esc => {
+                                app.active_modal = ActiveModal::GithubDownloadTree;
+                            }
+                            KeyCode::Enter => {
+                                let is_vi = app.current_lang == "vi";
+                                match app.copy_github_download_item() {
+                                    Ok(_) => {
+                                        let visible = app.get_visible_github_tree_entries();
+                                        let selected_name = visible.get(app.selected_github_tree_index)
+                                            .map(|e| e.name.clone())
+                                            .unwrap_or_default();
+                                        app.status_message = if is_vi {
+                                            format!("✅ Đã tải thành công: {}", selected_name)
+                                        } else {
+                                            format!("✅ Downloaded successfully: {}", selected_name)
+                                        };
+                                        let temp_dir = std::path::Path::new(&app.current_dir).join(".git_ai_download_temp");
+                                        if temp_dir.exists() {
+                                            let _ = std::fs::remove_dir_all(&temp_dir);
+                                        }
+                                        app.active_modal = ActiveModal::None;
+                                        app.refresh_git_status();
+                                    }
+                                    Err(err) => {
+                                        app.status_message = if is_vi {
+                                            format!("❌ Lỗi lưu tập tin: {}", err)
+                                        } else {
+                                            format!("❌ Save error: {}", err)
+                                        };
+                                    }
+                                }
+                            }
+                            KeyCode::Backspace => {
+                                app.github_download_target_path.pop();
+                            }
+                            KeyCode::Char(c) => {
+                                app.github_download_target_path.push(c);
                             }
                             _ => {}
                         }
@@ -1685,6 +1917,12 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     KeyCode::Char('g') => {
                         app.selected_git_action = 0;
                         app.active_modal = ActiveModal::GitMenu;
+                    }
+                    KeyCode::Char('n') | KeyCode::Char('N') => {
+                        app.github_download_url.clear();
+                        app.github_cloning_error = None;
+                        app.github_cloning = false;
+                        app.active_modal = ActiveModal::GithubDownloadUrlInput;
                     }
                     KeyCode::Char('c') | KeyCode::Char('C') => {
                         app.manual_commit_message.clear();

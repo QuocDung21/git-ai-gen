@@ -86,6 +86,14 @@ pub enum AmendStep {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct GithubTreeEntry {
+    pub path: String,
+    pub name: String,
+    pub is_dir: bool,
+    pub depth: usize,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum ActiveModal {
     None,
     RevertConfirm(String), // Path of the file to revert
@@ -109,4 +117,7 @@ pub enum ActiveModal {
     GitMenu,
     CommitTree,
     FeatureCommit,
+    GithubDownloadUrlInput,
+    GithubDownloadTree,
+    GithubDownloadTargetInput,
 }

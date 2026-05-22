@@ -186,6 +186,15 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     },
                     theme.green,
                 ),
+                (
+                    "N",
+                    if is_vi {
+                        "Tải tập tin từ GitHub"
+                    } else {
+                        "Download from GitHub"
+                    },
+                    theme.cyan,
+                ),
             ],
         ),
         (

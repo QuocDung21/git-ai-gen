@@ -2192,8 +2192,10 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
             ("Khác", vec![
                 ("🌿 Quản lý Branch", 'b'),
                 ("📦 Stash", 's'),
+                ("🌳 Cấu trúc Commit (graph)", 't'),
                 ("📜 Lịch sử Commit", 'v'),
                 ("🧩 Commit theo Feature", 'e'),
+                ("📥 Tải từ GitHub", 'n'),
             ]),
         ]
     } else {
@@ -2215,6 +2217,7 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
                 ("🌳 Commit Tree (graph)", 't'),
                 ("📜 Commit History", 'v'),
                 ("🧩 Feature Commit", 'e'),
+                ("📥 GitHub Download", 'n'),
             ]),
         ]
     };
