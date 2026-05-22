@@ -469,7 +469,7 @@ impl App {
     }
 
     pub fn fetch_prompt(&mut self) {
-        let ai_lang = crate::helper::Helper::get_ai_language();
+        let ai_lang = crate::helper::Helper::get_ai_language_name();
         self.prompt_text = format!(
             "{}{}.",
             crate::constant::Constant::PROMPT_EXPERT,
@@ -478,7 +478,7 @@ impl App {
     }
 
     pub fn try_generate_with_kilo(&mut self, full_diff: &str) -> Result<String, String> {
-        let ai_lang = crate::helper::Helper::get_ai_language();
+        let ai_lang = crate::helper::Helper::get_ai_language_name();
         let prompt = format!(
             "{} {}.\n\nDiff:\n\n{}",
             crate::constant::Constant::PROMPT_EXPERT,

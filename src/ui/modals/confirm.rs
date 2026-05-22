@@ -2,7 +2,7 @@ use crate::app::models::{AmendStep, GoStep, StashAction, StashStep};
 use crate::app::App;
 
 use ratatui::{
-    layout::Rect,
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap},
@@ -2293,127 +2293,82 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(paragraph, area);
 }
 
-pub fn render_manual_commit(f: &mut Frame, app: &App, area: Rect) {
-    let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
-    f.render_widget(Clear, area);
-
-    let display_msg = if app.manual_commit_message.len() > 70 {
-        format!("{}...", &app.manual_commit_message[..67])
-    } else {
-        app.manual_commit_message.clone()
-    };
-
-    let content = vec![
-        Line::from(""),
-        Line::from(vec![Span::styled(
-            if is_vi {
-                "✍️ COMMIT THỦ CÔNG"
-            } else {
-                "✍️ MANUAL COMMIT"
-            },
-            Style::default()
-                .fg(theme.green)
-                .add_modifier(Modifier::BOLD),
-        )]),
-        Line::from(""),
-        Line::from(vec![Span::styled(
-            if is_vi {
-                "  Nhập commit message bên dưới:"
-            } else {
-                "  Enter commit message below:"
-            },
-            Style::default().fg(theme.border),
-        )]),
-        Line::from(vec![
-            Span::styled("  ┌─── ", Style::default().fg(theme.green)),
-            Span::styled(
-                format!("{}_", display_msg),
-                Style::default()
-                    .fg(theme.fg)
-                    .bg(theme.bg)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]),
-        Line::from(""),
-        Line::from(vec![Span::styled(
-            if is_vi {
-                "  [Enter] Commit  [Esc] Hủy"
-            } else {
-                "  [Enter] Commit  [Esc] Cancel"
-            },
-            Style::default().fg(theme.border),
-        )]),
-    ];
-
-    let block = Block::default()
-        .title(Span::styled(
-            if is_vi {
-                " ✍️ MANUAL COMMIT "
-            } else {
-                " ✍️ MANUAL COMMIT "
-            },
-            Style::default()
-                .fg(theme.green)
-                .add_modifier(Modifier::BOLD),
-        ))
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(theme.green))
-        .border_type(BorderType::Double)
-        .style(Style::default().bg(theme.bg));
-
-    let paragraph = Paragraph::new(content)
-        .alignment(ratatui::layout::Alignment::Left)
-        .block(block);
-    f.render_widget(paragraph, area);
-}
+// render_manual_commit has been moved to ui/modals/manual_commit.rs
+// (see docs/adding-a-modal.md for the new recommended pattern)
 
 pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
-    let mut content = vec![
+    // Split thành 2 cột - cho Graph nhiều không gian hơn
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(62), Constraint::Percentage(38)])
+        .split(area);
+
+    // === LEFT: Commit Graph (cải tiến) ===
+    // Màu graph đồng bộ theme + ưu tiên màu nổi bật
+    let graph_colors = vec![
+        theme.green,
+        theme.cyan,
+        theme.purple,
+        theme.yellow,
+        theme.orange,
+        theme.green, // lặp lại để đủ lane
+    ];
+
+    let mut left_content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🌳 LỊCH SỬ COMMIT DẠNG CÂY (giống VS Code)"
-            } else {
-                "🌳 COMMIT HISTORY TREE (VS Code style)"
-            },
-            Style::default()
-                .fg(theme.green)
-                .add_modifier(Modifier::BOLD),
+            if is_vi { "🌳 COMMIT GRAPH" } else { "🌳 COMMIT GRAPH" },
+            Style::default().fg(theme.green).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
     ];
 
     if app.commit_logs.is_empty() {
-        content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "Không có commit nào."
-            } else {
-                "No commits found."
-            },
+        left_content.push(Line::from(vec![Span::styled(
+            if is_vi { "Không có commit." } else { "No commits." },
             Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
         )]));
     } else {
         for (i, entry) in app.commit_logs.iter().enumerate() {
             let is_selected = i == app.selected_log_index;
 
-            let tree = if i == 0 {
-                Span::styled("● ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+            // === Graph nâng cao - nhiều lane + ký tự kết nối ===
+            let lane = if entry.parents.len() > 1 {
+                0
             } else {
-                Span::styled("│ ", Style::default().fg(theme.border))
+                (i % 4) as usize
             };
 
+            // Xây dựng graph column
+            let graph = match (entry.parents.len() > 1, lane, i) {
+                (true, _, _) => " ├─◉".to_string(), // Merge
+                (_, 0, 0)    => " ●  ".to_string(), // Root main
+                (_, 0, _)    => " │  ".to_string(), // Main line
+                (_, 1, _)    => " ├─●".to_string(), // Branch 1
+                (_, 2, _)    => " ├─●".to_string(), // Branch 2
+                (_, 3, _)    => " └─●".to_string(), // Branch 3
+                _            => " │  ".to_string(),
+            };
+
+            let branch_color = graph_colors[lane % graph_colors.len()];
+
+
+            // Avatar: đồng bộ theme sáng/tối để không bị chìm
             let initial = entry.author.chars().next().unwrap_or('?');
+            let avatar_fg = if app.is_light_theme { theme.fg } else { theme.bg };
             let avatar = Span::styled(
                 format!(" {} ", initial),
-                Style::default().fg(theme.bg).bg(theme.purple).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(avatar_fg)
+                    .bg(branch_color)
+                    .add_modifier(Modifier::BOLD),
             );
 
-            let author = Span::styled(format!("{:<14}", entry.author), Style::default().fg(theme.fg));
+            let author = Span::styled(format!("{:<12}", entry.author), Style::default().fg(theme.fg));
             let hash = Span::styled(format!("[{}]", entry.short_hash), Style::default().fg(theme.yellow).add_modifier(Modifier::BOLD));
 
             let subject_style = if is_selected {
@@ -2423,36 +2378,77 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
             };
             let subject = Span::styled(format!(" {}", entry.subject), subject_style);
 
-            content.push(Line::from(vec![tree, avatar, author, hash, subject]));
+            left_content.push(Line::from(vec![
+                Span::styled(graph, Style::default().fg(branch_color).add_modifier(Modifier::BOLD)),
+                avatar,
+                author,
+                hash,
+                subject,
+            ]));
         }
     }
 
-    content.push(Line::from(""));
-    content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  ↑/↓ Chọn  [Esc] Đóng  |  t = Tree View"
-        } else {
-            "  ↑/↓ Select  [Esc] Close  |  t = Tree View"
-        },
-        Style::default().fg(theme.orange),
+    left_content.push(Line::from(""));
+    left_content.push(Line::from(vec![Span::styled(
+        if is_vi { "↑/↓  [Esc]  t = Tree" } else { "↑/↓  [Esc]  t = Tree" },
+        Style::default().fg(theme.border),
     )]));
 
-    let block = Block::default()
-        .title(Span::styled(
-            if is_vi {
-                " 🌳 COMMIT TREE "
-            } else {
-                " 🌳 COMMIT TREE "
-            },
-            Style::default().fg(theme.green).add_modifier(Modifier::BOLD),
-        ))
+    let left_block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.green))
-        .border_type(BorderType::Double)
-        .style(Style::default().bg(theme.bg));
+        .border_type(BorderType::Rounded)
+        .style(Style::default().bg(theme.bg))
+        .title(Span::styled(" Graph ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD)));
 
-    let paragraph = Paragraph::new(content)
+    let left_paragraph = Paragraph::new(left_content)
         .alignment(ratatui::layout::Alignment::Left)
-        .block(block);
-    f.render_widget(paragraph, area);
+        .block(left_block);
+    f.render_widget(left_paragraph, chunks[0]);
+
+    // === RIGHT: Diff Preview ===
+    let mut right_content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi { "DIFF CỦA COMMIT" } else { "DIFF OF COMMIT" },
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+    ];
+
+    if !app.commit_diff_content.is_empty() {
+        let diff_lines: Vec<&str> = app.commit_diff_content.lines().take(22).collect();
+        for line in diff_lines {
+            let color = if line.starts_with('+') && !line.starts_with("+++") {
+                theme.green
+            } else if line.starts_with('-') && !line.starts_with("---") {
+                theme.red
+            } else if line.starts_with("@@") {
+                theme.cyan
+            } else {
+                theme.fg
+            };
+            right_content.push(Line::from(vec![Span::styled(
+                format!(" {}", line),
+                Style::default().fg(color),
+            )]));
+        }
+    } else {
+        right_content.push(Line::from(vec![Span::styled(
+            if is_vi { "(Chọn commit để xem diff)" } else { "(Select commit to view diff)" },
+            Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+        )]));
+    }
+
+    let right_block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Rounded)
+        .style(Style::default().bg(theme.bg))
+        .title(Span::styled(" Diff ", Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD)));
+
+    let right_paragraph = Paragraph::new(right_content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .block(right_block);
+    f.render_widget(right_paragraph, chunks[1]);
 }

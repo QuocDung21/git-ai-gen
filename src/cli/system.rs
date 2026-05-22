@@ -58,7 +58,7 @@ pub fn handle_diff(locales: &Locales) -> Result<String> {
         return Ok(locales.no_changes.clone());
     }
 
-    let ai_lang = Helper::get_ai_language();
+    let ai_lang = Helper::get_ai_language_name();
 
     let prompt = format!(
         "{} {}.\n\nDiff:\n\n{}",

@@ -1,128 +1,130 @@
 # Git-AI Agent Instructions
 
-This file provides context for AI agents to work efficiently on this Rust TUI codebase with minimal tokens.
+This file provides the **standard context** for AI agents to work on this Rust TUI project with **maximum efficiency and minimum tokens**.
 
 ## Project Overview
 
-**git-ai** is a terminal UI (TUI) tool for generating Git commit messages with AI assistance. It provides an interactive dashboard for staging files, viewing diffs, committing, pushing, branch management, stash, and more — all with bilingual (Vietnamese/English) support.
+**git-ai** is a terminal UI (TUI) tool for generating Git commit messages with AI assistance. It provides a full interactive dashboard including staging, diff viewing, AI/manual commit, push, branch management, stash, remote operations, and bilingual (Vietnamese/English) support.
 
-**Version**: 3.0.0 | **Language**: Rust (2021) | **No async** — all sync `std::process::Command`
+**Version**: 3.0.0  
+**Language**: Rust (2021)  
+**Hard Constraint**: **No async** — everything uses synchronous `std::process::Command`
 
-## Core Architecture
+## Current Recommended Architecture (2026)
 
 ```
 src/
-├── main.rs          # Clap CLI router (Diff, Go, Lang, Install, etc.)
+├── main.rs
 ├── app/
-│   ├── mod.rs       # App struct (65+ state fields), refresh_git_status, theme()
-│   ├── models.rs    # Enums: ActiveModal, GoStep, AmendStep, StashStep...
-│   └── events.rs    # Event loop, key handling, modal intercepts (1275 lines)
+│   ├── mod.rs                 # App struct + small core methods (keep < 400 LOC if possible)
+│   ├── models.rs              # Data models & enums only (ActiveModal, Entry structs, Steps...)
+│   ├── events.rs              # Main event loop + key routing (avoid putting heavy logic here)
+│   ├── state/                 # (Preferred) Domain-specific state modules
+│   └── handlers/              # (Preferred) Grouped action handlers
 ├── ui/
-│   ├── mod.rs       # Layout + modal dispatch
-│   ├── components/  # header, changes, diff, legend
-│   └── modals/      # help, confirm, branch, stash, gitlog, etc.
-├── git/
-│   ├── status.rs    # get_git_status, get_diff_*, stage_*, revert_file
-│   ├── commit.rs    # commit, amend_commit, get_last_commit_subject
-│   ├── branch.rs    # checkout, create, merge, get_branches
-│   ├── remote.rs    # push, pull, fetch, ahead/behind
-│   └── stash.rs     # push, pop, apply, drop
+│   ├── mod.rs
+│   ├── components/            # Reusable UI pieces (header, changes, legend, diff)
+│   └── modals/                # ← Each modal should live in its own file
+│       ├── mod.rs
+│       ├── manual_commit.rs
+│       ├── commit_tree.rs
+│       ├── git_log.rs
+│       ├── branch.rs
+│       └── ...
+├── git/                       # Pure Git command wrappers (excellent separation)
+│   ├── mod.rs
+│   ├── status.rs
+│   ├── commit.rs
+│   ├── branch.rs
+│   ├── remote.rs
+│   └── stash.rs
 ├── cli/
-│   ├── system.rs    # handle_diff, handle_go, handle_lang, handle_restore
-│   ├── install.rs   # shell alias setup
-│   └── locales.rs   # en.yml / vi.yml via include_str + serde_yaml
-├── helper/mod.rs    # get_ai_language, get_os_theme, get_locales
-└── constant/mod.rs  # PROMPT_EXPERT (AI prompt prefix)
+├── helper/
+└── constant/
 ```
+
+**Key Principle**: Keep files small and focused. One concept = one file when reasonable.
 
 ## Critical Rules (Always Follow)
 
-1. **Bilingual mandatory**: Every user-facing string must exist in both `locales/en.yml` and `locales/vi.yml`. Use `app.current_lang == "vi"` checks. Never hardcode English-only strings.
+1. **Bilingual mandatory**  
+   Every user-facing string must exist in both `locales/en.yml` and `locales/vi.yml`. Always check `app.current_lang == "vi"`.
 
-2. **TUI is sacred**: All rendering goes through `ratatui`. Never use `println!` inside the dashboard. Only use `logger::*` for CLI commands (outside TUI).
+2. **TUI is sacred**  
+   All rendering must go through `ratatui`. Never use `println!` / `eprintln!` inside the dashboard.
 
-3. **Git via Command only**: Every git operation is `Command::new("git").args([...]).output()?`. No libgit2. Handle errors with `if let Ok(...)` or `?`.
+3. **Git via Command only**  
+   Every Git operation uses `Command::new("git").args([...]).output()?`. No `libgit2`.
 
-4. **State lives in App**: Add new UI state fields to `App` struct in `app/mod.rs`. Never use global statics or separate stores.
+4. **State lives in App**  
+   Add new UI state to the `App` struct in `app/mod.rs`. No global statics.
 
-5. **Modals via ActiveModal enum**: New floating panels must be added as variants in `app/models.rs:ActiveModal`, rendered in `ui/mod.rs`, and handled in `events.rs`.
+5. **Modals via ActiveModal**  
+   New floating panels **must** be added as variants in `app/models.rs`, rendered via `ui/mod.rs`, and handled in `events.rs`.
 
-6. **No comments in code** unless explicitly requested. Existing code has zero comments — keep it that way.
+6. **No comments in source code** (unless explicitly requested).
 
-7. **Theme support**: Always use `app.theme()` for colors. Support both `is_light_theme` (Premium Light) and dark (Dracula).
+7. **Theme support**  
+   Always use `app.theme()`. Support both light (`is_light_theme`) and dark themes.
 
-8. **Event loop pattern**: 250ms poll in `events.rs:run_app`. Long-running git ops (commit/push/amend) must be handled in the `if app.active_modal == ...` pre-poll blocks to avoid blocking the UI.
+8. **Long-running operations**  
+   Handle in pre-poll blocks (`if app.active_modal == ...`) before `event::poll`.
+
+## How to Work Efficiently (Token-Saving Rules)
+
+- **Read the smallest possible context** — prefer one focused file over large ones.
+- **Copy existing patterns** — look for similar modals or handlers before creating new ones.
+- **Prefer per-file modals** — do not add new logic into `confirm.rs`.
+- **Use `app.theme()` everywhere** for colors.
+- When adding a feature, first check if a similar pattern already exists in the codebase.
 
 ## Common Patterns
 
-**Adding a new Git operation**:
-
-- Add wrapper in `src/git/<module>.rs`
-- Call from `events.rs` or `cli/system.rs`
-- Update `App` state if needed
-- Add bilingual messages in locales
-
-**Adding a new Modal**:
+### Adding a New Modal (Preferred Modern Way)
 
 1. Add variant to `ActiveModal` enum (`app/models.rs`)
-2. Add state fields to `App` struct if required
-3. Add render function in `ui/modals/<new>.rs` + export in `mod.rs`
-4. Wire size + dispatch in `ui/mod.rs:ui()`
-5. Handle keys in `events.rs` under `match &app.active_modal`
+2. (Optional) Add state fields to `App` struct
+3. **Create new file**: `ui/modals/<name>.rs`
+4. Export the render function in `ui/modals/mod.rs`
+5. Add size + dispatch in `ui/mod.rs`
+6. Handle keys in `events.rs` under `match &app.active_modal`
 
-**Adding a new CLI subcommand**:
+### Adding a Git Operation
 
-- Add variant to `Commands` enum in `main.rs`
-- Implement handler in `cli/system.rs` or new module
-- Wire in `run()` match
+- Add pure wrapper in `src/git/<module>.rs`
+- Call it from `events.rs` or `cli/system.rs`
+- Update relevant `App` state
+- Add bilingual status messages
 
-**Reading/writing git config** (global):
-
-```rust
-Command::new("git").args(["config", "--global", "git-ai.<key>", value]).output()
-```
-
-**Current language detection**:
-
-```rust
-let is_vi = app.current_lang == "vi";
-```
-
-**Theme colors** (never hardcode):
+### Theme Colors
 
 ```rust
 let theme = app.theme();
-Style::default().fg(theme.green)
+Style::default().fg(theme.green).add_modifier(Modifier::BOLD)
 ```
 
 ## What to Avoid
 
-- Do not introduce async/await or tokio (project is sync-only)
-- Do not use `println!`/`eprintln!` inside TUI event loop
-- Do not skip locale files when adding user strings
-- Do not add comments to source files
-- Do not use external git libraries — stick to `std::process::Command`
-- Do not break the 3-column layout (28% / 48% / 24%)
-- Do not assume a file exists — always check `if let Ok(...)`
+- Do not put multiple modals into one file (legacy `confirm.rs`).
+- Do not create files larger than ~400 lines without strong reason.
+- Do not introduce async/await or tokio.
+- Do not hardcode colors or user-facing strings.
+- Do not use external Git libraries.
+- Do not skip bilingual support.
 
-## Token-Saving Tips for Agents
+## Quick Reference Table
 
-- The App struct is intentionally large — adding 2-3 fields per feature is normal.
-- Most "logic" is just calling git commands and updating string fields.
-- Diff rendering truncates at 500 lines for untracked files.
-- Clipboard usage: `arboard::Clipboard` — only for Diff and Go commands.
-- When asked to "add feature X", first check if similar modal already exists and copy its pattern exactly.
+| Task                        | Primary Files                                      | Notes |
+|----------------------------|----------------------------------------------------|-------|
+| New Modal (recommended)    | `app/models.rs` + `ui/modals/<name>.rs`           | One file per modal |
+| New Git wrapper            | `src/git/<module>.rs`                              | Keep pure |
+| Add UI state               | `app/mod.rs` (App struct)                          | Keep struct manageable |
+| Handle keys for modal      | `events.rs`                                        | Use `match &app.active_modal` |
+| Theme colors               | `app.theme()`                                      | Never hardcode |
+| Bilingual strings          | `locales/en.yml` + `locales/vi.yml`               | Always check `is_vi` |
 
-## Quick Reference
+---
 
-| Task               | Primary Files                              |
-| ------------------ | ------------------------------------------ |
-| New TUI feature    | `app/mod.rs`, `app/events.rs`, `ui/mod.rs` |
-| New modal          | `app/models.rs`, `ui/modals/*.rs`          |
-| Git wrapper        | `src/git/*.rs`                             |
-| Bilingual text     | `locales/en.yml`, `locales/vi.yml`         |
-| CLI command        | `main.rs`, `cli/system.rs`                 |
-| Theme colors       | `app/mod.rs:theme()`                       |
-| Language detection | `helper/mod.rs:get_ai_language()`          |
+**Update this file** whenever the architecture changes significantly (especially when moving more modals out of `confirm.rs` or introducing new modules like `state/` or `handlers/`).
 
-Update this file when architecture changes significantly.
+Last updated: 2026-05-22
