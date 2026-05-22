@@ -91,6 +91,10 @@ pub struct App {
     pub github_history: Vec<String>,
     pub selected_github_history_index: Option<usize>,
     pub github_download_url_temp: String,
+    pub auto_push: bool,
+    pub auto_stage_all: bool,
+    pub kilo_ai_enabled: bool,
+    pub selected_setting_index: usize,
 }
 
 impl App {
@@ -125,6 +129,42 @@ impl App {
         };
 
         let selected_theme_index = if is_light_theme { 1 } else { 0 };
+
+        let auto_push = {
+            if let Ok(output) = std::process::Command::new("git")
+                .args(["config", "--global", "--get", "git-ai.auto-push"])
+                .output()
+            {
+                let text = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+                text != "false"
+            } else {
+                true
+            }
+        };
+
+        let auto_stage_all = {
+            if let Ok(output) = std::process::Command::new("git")
+                .args(["config", "--global", "--get", "git-ai.auto-stage-all"])
+                .output()
+            {
+                let text = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+                text == "true"
+            } else {
+                false
+            }
+        };
+
+        let kilo_ai_enabled = {
+            if let Ok(output) = std::process::Command::new("git")
+                .args(["config", "--global", "--get", "git-ai.kilo-ai"])
+                .output()
+            {
+                let text = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+                text != "false"
+            } else {
+                true
+            }
+        };
 
         let mut app = App {
             status_message: init_msg.to_string(),
@@ -197,12 +237,23 @@ impl App {
             github_history: Vec::new(),
             selected_github_history_index: None,
             github_download_url_temp: String::new(),
+            auto_push,
+            auto_stage_all,
+            kilo_ai_enabled,
+            selected_setting_index: 0,
         };
         app.load_workspace_history();
         app.load_github_history();
         app.add_to_workspace_history(&app.current_dir.clone());
         app.refresh_git_status();
         app
+    }
+
+    pub fn auto_stage_all_if_enabled(&mut self) {
+        if self.auto_stage_all {
+            let _ = crate::git::status::stage_all();
+            self.refresh_git_status();
+        }
     }
 
     pub fn refresh_git_status(&mut self) {

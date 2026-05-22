@@ -61,26 +61,33 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             .to_string()
                     });
                 } else {
-                    // Next step: git push
-                    match git_push() {
-                        Ok(_) => {
-                            app.go_step = GoStep::Done(if is_vi {
-                                "✅ Commit & Push thành công! Code đã lên mây ☁️".to_string()
-                            } else {
-                                "✅ Commit & Push successful! Code is in the cloud ☁️".to_string()
-                            });
-                        }
-                        Err(err) => {
-                            app.go_step = GoStep::Done(format!(
-                                "{} {}",
-                                if is_vi {
-                                    "❌ Push thất bại:"
+                    if app.auto_push {
+                        match git_push() {
+                            Ok(_) => {
+                                app.go_step = GoStep::Done(if is_vi {
+                                    "✅ Commit & Push thành công! Code đã lên mây ☁️".to_string()
                                 } else {
-                                    "❌ Push failed:"
-                                },
-                                err
-                            ));
+                                    "✅ Commit & Push successful! Code is in the cloud ☁️".to_string()
+                                });
+                            }
+                            Err(err) => {
+                                app.go_step = GoStep::Done(format!(
+                                    "{} {}",
+                                    if is_vi {
+                                        "❌ Push thất bại:"
+                                    } else {
+                                        "❌ Push failed:"
+                                    },
+                                    err
+                                ));
+                            }
                         }
+                    } else {
+                        app.go_step = GoStep::Done(if is_vi {
+                            "✅ Commit thành công (Đã bỏ qua Tự động Push)!".to_string()
+                        } else {
+                            "✅ Commit successful (Auto Push disabled)!".to_string()
+                        });
                     }
                 }
                 app.refresh_git_status();
@@ -321,6 +328,71 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     )
                                 };
                                 app.active_modal = ActiveModal::None;
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::Settings => {
+                        let is_vi = app.current_lang == "vi";
+                        match key.code {
+                            KeyCode::Esc | KeyCode::Char('q') => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                if app.selected_setting_index > 0 {
+                                    app.selected_setting_index -= 1;
+                                } else {
+                                    app.selected_setting_index = 2;
+                                }
+                            }
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                if app.selected_setting_index < 2 {
+                                    app.selected_setting_index += 1;
+                                } else {
+                                    app.selected_setting_index = 0;
+                                }
+                            }
+                            KeyCode::Char(' ') | KeyCode::Enter => {
+                                match app.selected_setting_index {
+                                    0 => {
+                                        app.auto_push = !app.auto_push;
+                                        let val = app.auto_push.to_string();
+                                        let _ = Command::new("git")
+                                            .args(["config", "--global", "git-ai.auto-push", &val])
+                                            .output();
+                                        app.status_message = if is_vi {
+                                            format!("⚙️ Tự động Push: {}", if app.auto_push { "BẬT" } else { "TẮT" })
+                                        } else {
+                                            format!("⚙️ Auto Push: {}", if app.auto_push { "ON" } else { "OFF" })
+                                        };
+                                    }
+                                    1 => {
+                                        app.auto_stage_all = !app.auto_stage_all;
+                                        let val = app.auto_stage_all.to_string();
+                                        let _ = Command::new("git")
+                                            .args(["config", "--global", "git-ai.auto-stage-all", &val])
+                                            .output();
+                                        app.status_message = if is_vi {
+                                            format!("⚙️ Tự động Stage tất cả: {}", if app.auto_stage_all { "BẬT" } else { "TẮT" })
+                                        } else {
+                                            format!("⚙️ Auto Stage All: {}", if app.auto_stage_all { "ON" } else { "OFF" })
+                                        };
+                                    }
+                                    2 => {
+                                        app.kilo_ai_enabled = !app.kilo_ai_enabled;
+                                        let val = app.kilo_ai_enabled.to_string();
+                                        let _ = Command::new("git")
+                                            .args(["config", "--global", "git-ai.kilo-ai", &val])
+                                            .output();
+                                        app.status_message = if is_vi {
+                                            format!("⚙️ Kilo AI: {}", if app.kilo_ai_enabled { "BẬT" } else { "TẮT" })
+                                        } else {
+                                            format!("⚙️ Kilo AI Generation: {}", if app.kilo_ai_enabled { "ON" } else { "OFF" })
+                                        };
+                                    }
+                                    _ => {}
+                                }
                             }
                             _ => {}
                         }
@@ -733,7 +805,13 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         } else {
                             match key.code {
                                 KeyCode::Char('k') | KeyCode::Char('K') => {
-                                    if app.last_staged_diff.trim().is_empty() {
+                                    if !app.kilo_ai_enabled {
+                                        app.kilo_generation_status = if app.current_lang == "vi" {
+                                            "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!".to_string()
+                                        } else {
+                                            "⚠️ Kilo AI Generation is disabled in Settings!".to_string()
+                                        };
+                                    } else if app.last_staged_diff.trim().is_empty() {
                                         app.kilo_generation_status = if app.current_lang == "vi" {
                                             "⚠️ Không có diff staged.".to_string()
                                         } else {
@@ -899,10 +977,18 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         continue;
                     }
                     ActiveModal::GitMenu => {
-                        let max = 12;
+                        let max = 13;
 
                         match key.code {
                             KeyCode::Char('g') | KeyCode::Char('G') => {
+                                if !app.kilo_ai_enabled {
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!".to_string()
+                                    } else {
+                                        "⚠️ Kilo AI Generation is disabled in Settings!".to_string()
+                                    };
+                                    continue;
+                                }
                                 let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() {
                                     cb.get_text().unwrap_or_default()
                                 } else {
@@ -918,6 +1004,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     clipboard_msg.trim().to_string()
                                 };
                                 app.go_step = GoStep::Confirm;
+                                app.auto_stage_all_if_enabled();
                                 app.active_modal = ActiveModal::GoConfirm;
                                 continue;
                             }
@@ -930,6 +1017,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             }
                             KeyCode::Char('c') | KeyCode::Char('C') => {
                                 app.manual_commit_message.clear();
+                                app.auto_stage_all_if_enabled();
                                 app.active_modal = ActiveModal::ManualCommit;
                                 continue;
                             }
@@ -1033,6 +1121,11 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 app.active_modal = ActiveModal::FeatureCommit;
                                 continue;
                             }
+                            KeyCode::Char('y') | KeyCode::Char('Y') => {
+                                app.selected_setting_index = 0;
+                                app.active_modal = ActiveModal::Settings;
+                                continue;
+                            }
                             _ => {}
                         }
 
@@ -1044,29 +1137,39 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 match app.selected_git_action {
                                     0 => {
                                         // AI Commit & Push
-                                        let clipboard_msg =
-                                            if let Ok(mut cb) = arboard::Clipboard::new() {
-                                                cb.get_text().unwrap_or_default()
+                                        if !app.kilo_ai_enabled {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!".to_string()
                                             } else {
-                                                String::new()
+                                                "⚠️ Kilo AI Generation is disabled in Settings!".to_string()
                                             };
-                                        app.commit_message_preview =
-                                            if clipboard_msg.trim().is_empty() {
-                                                if app.current_lang == "vi" {
-                                                    "(Chưa có commit message trong clipboard)"
-                                                        .to_string()
+                                        } else {
+                                            let clipboard_msg =
+                                                if let Ok(mut cb) = arboard::Clipboard::new() {
+                                                    cb.get_text().unwrap_or_default()
                                                 } else {
-                                                    "(No commit message in clipboard)".to_string()
-                                                }
-                                            } else {
-                                                clipboard_msg.trim().to_string()
-                                            };
-                                        app.go_step = GoStep::Confirm;
-                                        app.active_modal = ActiveModal::GoConfirm;
+                                                    String::new()
+                                                };
+                                            app.commit_message_preview =
+                                                if clipboard_msg.trim().is_empty() {
+                                                    if app.current_lang == "vi" {
+                                                        "(Chưa có commit message trong clipboard)"
+                                                            .to_string()
+                                                    } else {
+                                                        "(No commit message in clipboard)".to_string()
+                                                    }
+                                                } else {
+                                                    clipboard_msg.trim().to_string()
+                                                };
+                                            app.go_step = GoStep::Confirm;
+                                            app.auto_stage_all_if_enabled();
+                                            app.active_modal = ActiveModal::GoConfirm;
+                                        }
                                     }
                                     1 => {
                                         // Manual Commit
                                         app.manual_commit_message.clear();
+                                        app.auto_stage_all_if_enabled();
                                         app.active_modal = ActiveModal::ManualCommit;
                                     }
                                     2 => {
@@ -1172,6 +1275,10 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         app.github_cloning_error = None;
                                         app.github_cloning = false;
                                         app.active_modal = ActiveModal::GithubDownloadUrlInput;
+                                    }
+                                    13 => {
+                                        app.selected_setting_index = 0;
+                                        app.active_modal = ActiveModal::Settings;
                                     }
                                     _ => {}
                                 }
@@ -1460,6 +1567,18 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             }
                             KeyCode::Enter => {
                                 let is_vi = app.current_lang == "vi";
+                                let current = std::path::Path::new(&app.current_dir);
+                                let target = std::path::Path::new(&app.github_download_target_path);
+                                let current_canon = current.canonicalize().unwrap_or_else(|_| current.to_path_buf());
+                                let target_canon = target.canonicalize().unwrap_or_else(|_| target.to_path_buf());
+                                if target_canon.starts_with(&current_canon) || target.starts_with(&current) {
+                                    app.status_message = if is_vi {
+                                        "⚠️ Không thể tải vào dự án hiện tại để tránh xung đột file!".to_string()
+                                    } else {
+                                        "⚠️ Cannot download into the current project to avoid file conflicts!".to_string()
+                                    };
+                                    continue;
+                                }
                                 match app.copy_github_download_item() {
                                     Ok(_) => {
                                         let visible = app.get_visible_github_tree_entries();
@@ -1978,6 +2097,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     }
                     KeyCode::Char('c') | KeyCode::Char('C') => {
                         app.manual_commit_message.clear();
+                        app.auto_stage_all_if_enabled();
                         app.active_modal = ActiveModal::ManualCommit;
                     }
                     KeyCode::Char('r') => {
@@ -2134,6 +2254,10 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     KeyCode::Char('t') | KeyCode::Char('T') => {
                         app.selected_theme_index = if app.is_light_theme { 1 } else { 0 };
                         app.active_modal = ActiveModal::ThemeSelect;
+                    }
+                    KeyCode::Char(',') => {
+                        app.selected_setting_index = 0;
+                        app.active_modal = ActiveModal::Settings;
                     }
                     _ => {}
                 }

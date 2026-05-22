@@ -27,9 +27,7 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "📥 DOWNLOAD FILES FROM GITHUB"
             },
-            Style::default()
-                .fg(theme.cyan)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
         Line::from(vec![Span::styled(
@@ -83,7 +81,12 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
             };
 
             let prefix = if is_selected {
-                Span::styled("   ➜ ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+                Span::styled(
+                    "   ➜ ",
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::BOLD),
+                )
             } else {
                 Span::styled("     ", Style::default().fg(theme.border))
             };
@@ -121,9 +124,7 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 " 📥 GITHUB DOWNLOAD "
             },
-            Style::default()
-                .fg(theme.cyan)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.cyan))
@@ -145,9 +146,7 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
     let total = visible.len();
     let selected = app.selected_github_tree_index;
 
-    let mut content = vec![
-        Line::from(""),
-    ];
+    let mut content = vec![Line::from("")];
 
     if visible.is_empty() {
         content.push(Line::from(vec![Span::styled(
@@ -165,7 +164,9 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "  (No files found)"
             },
-            Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+            Style::default()
+                .fg(theme.border)
+                .add_modifier(Modifier::ITALIC),
         )]));
     } else {
         content.push(Line::from(vec![
@@ -179,7 +180,9 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
             ),
             Span::styled(
                 format!("  (Mục {} / {})", selected + 1, total),
-                Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+                Style::default()
+                    .fg(theme.border)
+                    .add_modifier(Modifier::ITALIC),
             ),
         ]));
         content.push(Line::from(""));
@@ -199,7 +202,12 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
             let mut line_spans = Vec::new();
 
             let cursor = if is_selected {
-                Span::styled(" ➜ ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+                Span::styled(
+                    " ➜ ",
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::BOLD),
+                )
             } else {
                 Span::styled("   ", Style::default())
             };
@@ -223,7 +231,12 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
 
             let is_checked = app.github_selected_paths.contains(&entry.path);
             let checkbox = if is_checked {
-                Span::styled("[✓] ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+                Span::styled(
+                    "[✓] ",
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::BOLD),
+                )
             } else {
                 Span::styled("[ ] ", Style::default().fg(theme.border))
             };
@@ -238,7 +251,14 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "  📄 "
             };
-            line_spans.push(Span::styled(icon, if entry.is_dir { Style::default().fg(theme.cyan) } else { Style::default().fg(theme.border) }));
+            line_spans.push(Span::styled(
+                icon,
+                if entry.is_dir {
+                    Style::default().fg(theme.cyan)
+                } else {
+                    Style::default().fg(theme.border)
+                },
+            ));
 
             let name_style = if is_selected {
                 Style::default()
@@ -246,9 +266,7 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
                     .bg(theme.select_bg)
                     .add_modifier(Modifier::BOLD)
             } else if entry.is_dir {
-                Style::default()
-                    .fg(theme.cyan)
-                    .add_modifier(Modifier::BOLD)
+                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(theme.fg)
             };
@@ -265,7 +283,9 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
                 } else {
                     format!("   ... and {} more items", total - (start + page_size))
                 },
-                Style::default().fg(theme.border).add_modifier(Modifier::ITALIC),
+                Style::default()
+                    .fg(theme.border)
+                    .add_modifier(Modifier::ITALIC),
             )]));
         }
     }
@@ -287,9 +307,7 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 " 📁 SELECT ITEM TO DOWNLOAD "
             },
-            Style::default()
-                .fg(theme.cyan)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.cyan))
@@ -334,8 +352,18 @@ pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect)
         )]),
         Line::from(""),
         Line::from(vec![
-            Span::styled(if is_vi { "  Tập tin/Thư mục tải: " } else { "  Downloading: " }, Style::default().fg(theme.fg)),
-            Span::styled(selected_entry_name, Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                if is_vi {
+                    "  Tập tin/Thư mục tải: "
+                } else {
+                    "  Downloading: "
+                },
+                Style::default().fg(theme.fg),
+            ),
+            Span::styled(
+                selected_entry_name,
+                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+            ),
         ]),
         Line::from(""),
         Line::from(vec![Span::styled(

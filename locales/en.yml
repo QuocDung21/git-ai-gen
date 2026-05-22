@@ -26,3 +26,7 @@ cmd_help_diff: "  -> git-copydiff     : Capture code diff snapshot"
 cmd_help_go: "  -> git-go           : Package and push code to git"
 cmd_help_un: "  -> git-ai-uninstall : Uninstall this toolset"
 cmd_help_base: "  -> git-ai           : Base command (e.g., git-ai help)"
+setting_auto_push: "Auto Push"
+setting_auto_stage_all: "Auto Stage All"
+setting_kilo_ai: "Kilo AI Generation"
+

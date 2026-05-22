@@ -41,6 +41,9 @@ pub struct Locales {
     pub cmd_help_go: String,
     pub cmd_help_un: String,
     pub cmd_help_base: String,
+    pub setting_auto_push: String,
+    pub setting_auto_stage_all: String,
+    pub setting_kilo_ai: String,
 }
 
 impl Locales {

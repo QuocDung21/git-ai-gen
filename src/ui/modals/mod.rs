@@ -3,6 +3,9 @@ pub mod confirm;
 pub mod manual_commit;
 pub mod feature_commit;
 pub mod github_download;
+pub mod settings;
+
+pub use settings::render_settings;
 
 pub use help::render_help_modal;
 pub use confirm::{

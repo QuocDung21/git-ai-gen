@@ -2161,7 +2161,7 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
     let actions = if is_vi {
         vec![
             ("Commit", vec![
-                ("🤖 AI Commit & Push", 'g'),
+                (if app.kilo_ai_enabled { "🤖 AI Commit & Push" } else { "🤖 AI Commit & Push (TẮT)" }, 'g'),
                 ("✍️  Commit thủ công", 'c'),
                 ("📝 Amend commit cuối", 'm'),
             ]),
@@ -2178,12 +2178,13 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
                 ("📜 Lịch sử Commit", 'v'),
                 ("🧩 Commit theo Feature", 'e'),
                 ("📥 Tải từ GitHub", 'n'),
+                ("⚙️  Cài đặt hệ thống", 'y'),
             ]),
         ]
     } else {
         vec![
             ("Commit", vec![
-                ("🤖 AI Commit & Push", 'g'),
+                (if app.kilo_ai_enabled { "🤖 AI Commit & Push" } else { "🤖 AI Commit & Push (DISABLED)" }, 'g'),
                 ("✍️  Manual Commit", 'c'),
                 ("📝 Amend Last Commit", 'm'),
             ]),
@@ -2200,6 +2201,7 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
                 ("📜 Commit History", 'v'),
                 ("🧩 Feature Commit", 'e'),
                 ("📥 GitHub Download", 'n'),
+                ("⚙️  System Settings", 'y'),
             ]),
         ]
     };

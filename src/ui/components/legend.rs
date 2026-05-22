@@ -221,6 +221,15 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     theme.purple,
                 ),
                 (
+                    ",",
+                    if is_vi {
+                        "Cài đặt hệ thống"
+                    } else {
+                        "System settings"
+                    },
+                    theme.purple,
+                ),
+                (
                     "R",
                     if is_vi {
                         "Reset cài đặt"

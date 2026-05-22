@@ -120,4 +120,5 @@ pub enum ActiveModal {
     GithubDownloadUrlInput,
     GithubDownloadTree,
     GithubDownloadTargetInput,
+    Settings,
 }

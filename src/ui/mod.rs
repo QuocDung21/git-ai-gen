@@ -136,6 +136,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubDownloadUrlInput => modals::centered_rect(80, 68, f.size()),
             ActiveModal::GithubDownloadTree => modals::centered_rect(85, 80, f.size()),
             ActiveModal::GithubDownloadTargetInput => modals::centered_rect(80, 45, f.size()),
+            ActiveModal::Settings => modals::centered_rect(55, 38, f.size()),
             ActiveModal::None => f.size(),
         };
 
@@ -169,6 +170,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubDownloadUrlInput => modals::render_github_download_url_input(f, app, area),
             ActiveModal::GithubDownloadTree => modals::render_github_download_tree(f, app, area),
             ActiveModal::GithubDownloadTargetInput => modals::render_github_download_target_input(f, app, area),
+            ActiveModal::Settings => modals::render_settings(f, app, area),
             ActiveModal::None => {}
         }
     }
