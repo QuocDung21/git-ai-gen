@@ -834,13 +834,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .title(Span::styled(
             if !app.diff_kilo_generated.is_empty() {
-                if is_vi {
-                    " 🤖 KILO AI COMMIT "
-                } else {
-                    " 🤖 KILO AI COMMIT "
-                }
-            } else if is_vi {
-                " 🤖 AI DIFF SNAPSHOT "
+                " 🤖 KILO AI COMMIT "
             } else {
                 " 🤖 AI DIFF SNAPSHOT "
             },
@@ -1071,11 +1065,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
 
     let (title, border_color) = match &app.go_step {
         GoStep::Confirm => (
-            if is_vi {
-                " 🚀 COMMIT & PUSH "
-            } else {
-                " 🚀 COMMIT & PUSH "
-            },
+            " 🚀 COMMIT & PUSH ",
             theme.green,
         ),
         GoStep::Pushing => (
@@ -1271,11 +1261,7 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 📦 STASH MANAGER "
-            } else {
-                " 📦 STASH MANAGER "
-            },
+            " 📦 STASH MANAGER ",
             Style::default()
                 .fg(theme.orange)
                 .add_modifier(Modifier::BOLD),
@@ -2105,11 +2091,7 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
             Style::default().fg(theme.red),
         )]));
     } else {
-        let start = if app.selected_kilo_model_index > 10 {
-            app.selected_kilo_model_index - 10
-        } else {
-            0
-        };
+        let start = app.selected_kilo_model_index.saturating_sub(10);
         let visible: Vec<_> = filtered.iter().skip(start).take(16).collect();
 
         for (i, model) in visible.iter().enumerate() {
@@ -2280,11 +2262,7 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 🛠️ GIT MENU "
-            } else {
-                " 🛠️ GIT MENU "
-            },
+            " 🛠️ GIT MENU ",
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
@@ -2314,19 +2292,19 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
 
     // === LEFT: Commit Graph (cải tiến) ===
     // Màu graph đồng bộ theme + ưu tiên màu nổi bật
-    let graph_colors = vec![
+    let graph_colors = [
         theme.green,
         theme.cyan,
         theme.purple,
         theme.yellow,
         theme.orange,
-        theme.green, // lặp lại để đủ lane
+        theme.green,
     ];
 
     let mut left_content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi { "🌳 COMMIT GRAPH" } else { "🌳 COMMIT GRAPH" },
+            "🌳 COMMIT GRAPH",
             Style::default().fg(theme.green).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -2345,7 +2323,7 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
             let lane = if entry.parents.len() > 1 {
                 0
             } else {
-                (i % 4) as usize
+                i % 4
             };
 
             // Xây dựng graph column
@@ -2395,7 +2373,7 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
 
     left_content.push(Line::from(""));
     left_content.push(Line::from(vec![Span::styled(
-        if is_vi { "↑/↓  [Esc]  t = Tree" } else { "↑/↓  [Esc]  t = Tree" },
+        "↑/↓  [Esc]  t = Tree",
         Style::default().fg(theme.border),
     )]));
 

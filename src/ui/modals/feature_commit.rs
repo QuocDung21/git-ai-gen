@@ -75,11 +75,7 @@ pub fn render_feature_commit(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 🧩 FEATURE COMMIT "
-            } else {
-                " 🧩 FEATURE COMMIT "
-            },
+            " 🧩 FEATURE COMMIT ",
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)

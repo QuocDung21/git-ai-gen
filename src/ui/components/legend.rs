@@ -80,11 +80,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
             vec![
                 (
                     "Space",
-                    if is_vi {
-                        "Stage/Unstage"
-                    } else {
-                        "Stage/Unstage"
-                    },
+                    "Stage/Unstage",
                     theme.green,
                 ),
                 (
@@ -161,11 +157,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                 ),
                 (
                     "D",
-                    if is_vi {
-                        "Copy diff -> AI"
-                    } else {
-                        "Copy diff -> AI"
-                    },
+                    "Copy diff -> AI",
                     theme.yellow,
                 ),
                 (

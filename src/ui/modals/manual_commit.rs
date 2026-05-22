@@ -63,11 +63,7 @@ pub fn render_manual_commit(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " ✍️ MANUAL COMMIT "
-            } else {
-                " ✍️ MANUAL COMMIT "
-            },
+            " ✍️ MANUAL COMMIT ",
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
