@@ -22,5 +22,5 @@ impl Constant {
     - Keep the body short and concise (omit it entirely if not useful)
 
 
-Write the commit message in"#;
+Write the commit message in "#;
 }

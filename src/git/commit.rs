@@ -1,7 +1,9 @@
 use std::process::Command;
 
 pub fn commit(message: &str) -> Result<String, std::io::Error> {
-    let output = Command::new("git").args(["commit", "-m", message]).output()?;
+    let output = Command::new("git")
+        .args(["commit", "-m", message])
+        .output()?;
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
@@ -22,7 +24,9 @@ pub fn get_last_commit_subject() -> String {
 }
 
 pub fn amend_commit(message: &str) -> Result<String, std::io::Error> {
-    let output = Command::new("git").args(["commit", "--amend", "-m", message]).output()?;
+    let output = Command::new("git")
+        .args(["commit", "--amend", "-m", message])
+        .output()?;
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {

@@ -52,6 +52,13 @@ pub struct RemoteEntry {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct FeatureGroup {
+    pub name: String,
+    pub files: Vec<String>,
+    pub file_count: usize,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum StashAction {
     Pop,
     Apply,
@@ -101,4 +108,5 @@ pub enum ActiveModal {
     ManualCommit,
     GitMenu,
     CommitTree,
+    FeatureCommit,
 }

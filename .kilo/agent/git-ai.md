@@ -31,7 +31,7 @@ src/
 │   ├── system.rs    # handle_diff, handle_go, handle_lang, handle_restore
 │   ├── install.rs   # shell alias setup
 │   └── locales.rs   # en.yml / vi.yml via include_str + serde_yaml
-├── helper/mod.rs    # get_ai_language, get_os_theme, get_locales
+├── helper/mod.rs    # get_ai_language, get_ai_language_name, get_os_theme, get_locales
 └── constant/mod.rs  # PROMPT_EXPERT (AI prompt prefix)
 ```
 
@@ -117,6 +117,6 @@ Style::default().fg(theme.green)
 | Bilingual text          | `locales/en.yml`, `locales/vi.yml`         |
 | CLI command             | `main.rs`, `cli/system.rs`                 |
 | Theme colors            | `app/mod.rs:theme()`                       |
-| Language detection      | `helper/mod.rs:get_ai_language()`          |
+| Language detection      | `helper/mod.rs:get_ai_language()`, `get_ai_language_name()` |
 
 Update this file when architecture changes significantly.

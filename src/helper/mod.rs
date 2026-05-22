@@ -32,6 +32,13 @@ impl Helper {
         }
     }
 
+    pub fn get_ai_language_name() -> String {
+        match Helper::get_ai_language().as_str() {
+            "vi" => "Vietnamese".to_string(),
+            _ => "English".to_string(),
+        }
+    }
+
     pub fn get_locales() -> Locales {
         let lang = Helper::get_ai_language();
         Locales::new(&lang)

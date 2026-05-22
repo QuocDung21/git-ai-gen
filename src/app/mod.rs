@@ -44,6 +44,9 @@ pub struct App {
     // Manual commit
     pub manual_commit_message: String,
     pub selected_git_action: usize,
+    // Feature commit (commit theo features)
+    pub feature_groups: Vec<FeatureGroup>,
+    pub selected_feature_index: usize,
     // Go confirm modal
     pub commit_message_preview: String,
     pub go_step: GoStep,
@@ -145,6 +148,8 @@ impl App {
             kilo_model_search_mode: false,
             manual_commit_message: String::new(),
             selected_git_action: 0,
+            feature_groups: Vec::new(),
+            selected_feature_index: 0,
             commit_message_preview: String::new(),
             go_step: GoStep::Confirm,
             commit_input_mode: false,
@@ -469,7 +474,7 @@ impl App {
     }
 
     pub fn fetch_prompt(&mut self) {
-        let ai_lang = crate::helper::Helper::get_ai_language();
+        let ai_lang = crate::helper::Helper::get_ai_language_name();
         self.prompt_text = format!(
             "{}{}.",
             crate::constant::Constant::PROMPT_EXPERT,
@@ -478,7 +483,7 @@ impl App {
     }
 
     pub fn try_generate_with_kilo(&mut self, full_diff: &str) -> Result<String, String> {
-        let ai_lang = crate::helper::Helper::get_ai_language();
+        let ai_lang = crate::helper::Helper::get_ai_language_name();
         let prompt = format!(
             "{} {}.\n\nDiff:\n\n{}",
             crate::constant::Constant::PROMPT_EXPERT,
@@ -561,6 +566,49 @@ impl App {
     pub fn fetch_commit_diff(&mut self, hash: &str) {
         self.commit_diff_content = crate::git::commit::get_commit_diff(hash);
         self.commit_diff_scroll = 0;
+    }
+
+    pub fn compute_feature_groups(&mut self) {
+        self.feature_groups.clear();
+        self.selected_feature_index = 0;
+
+        if self.files.is_empty() {
+            return;
+        }
+
+        use std::collections::HashMap;
+        let mut groups: HashMap<String, Vec<String>> = HashMap::new();
+
+        for file in &self.files {
+            let path = &file.path;
+            let mut feature = if path.contains('/') {
+                let parts: Vec<&str> = path.split('/').collect();
+                if parts.len() > 1 && (parts[0] == "src" || parts[0] == "crates" || parts[0] == "packages" || parts[0] == "libs" || parts[0] == "apps") {
+                    parts[1].to_string()
+                } else {
+                    parts[0].to_string()
+                }
+            } else {
+                "root".to_string()
+            };
+            if feature.is_empty() {
+                feature = "root".to_string();
+            }
+
+            groups.entry(feature).or_default().push(path.clone());
+        }
+
+        for (name, files) in groups {
+            let count = files.len();
+            self.feature_groups.push(FeatureGroup {
+                name,
+                files,
+                file_count: count,
+            });
+        }
+
+        // Sort by file count desc for UX
+        self.feature_groups.sort_by(|a, b| b.file_count.cmp(&a.file_count));
     }
 
     pub fn load_workspace_history(&mut self) {

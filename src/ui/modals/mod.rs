@@ -1,5 +1,7 @@
 pub mod help;
 pub mod confirm;
+pub mod manual_commit;
+pub mod feature_commit;
 
 pub use help::render_help_modal;
 pub use confirm::{
@@ -19,10 +21,11 @@ pub use confirm::{
     render_workspace_history,
     render_view_prompt,
     render_kilo_model_select,
-    render_manual_commit,
     render_git_menu,
     render_commit_tree,
 };
+pub use manual_commit::render_manual_commit;
+pub use feature_commit::render_feature_commit;
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
