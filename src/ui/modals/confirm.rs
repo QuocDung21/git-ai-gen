@@ -383,9 +383,8 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 Span::styled("    ● ", Style::default().fg(theme.border))
             };
-
             let hash_span = Span::styled(
-                format!("[{}]", entry.hash),
+                format!("[{}]", &entry.hash[..7.min(entry.hash.len())]),
                 Style::default()
                     .fg(theme.yellow)
                     .add_modifier(Modifier::BOLD),
@@ -403,6 +402,17 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
                     .add_modifier(Modifier::ITALIC),
             );
 
+            let max_width = 40; // Đặt giới hạn số lượng ký tự bạn muốn
+            let subject_text = &entry.subject;
+
+            let display_subject = if subject_text.chars().count() > max_width {
+                // Nếu quá dài, lấy 40 ký tự đầu và thêm "..."
+                let truncated: String = subject_text.chars().take(max_width).collect();
+                format!(" : {}...", truncated)
+            } else {
+                // Nếu vừa đủ thì giữ nguyên
+                format!(" : {}", subject_text)
+            };
             let subject_style = if is_selected {
                 Style::default()
                     .fg(theme.fg)
@@ -411,8 +421,7 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 Style::default().fg(theme.fg)
             };
-            let subject_span = Span::styled(format!(" : {}", entry.subject), subject_style);
-
+            let subject_span = Span::styled(display_subject, subject_style);
             content.push(Line::from(vec![
                 bullet,
                 hash_span,
