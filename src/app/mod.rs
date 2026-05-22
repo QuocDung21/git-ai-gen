@@ -80,6 +80,7 @@ pub struct App {
     pub workspace_history: Vec<String>,
     pub selected_workspace_index: usize,
     pub prompt_text: String,
+    pub terminal_scroll_offset: usize,
 }
 
 impl App {
@@ -175,6 +176,7 @@ impl App {
             workspace_history: Vec::new(),
             selected_workspace_index: 0,
             prompt_text: String::new(),
+            terminal_scroll_offset: 0,
         };
         app.load_workspace_history();
         app.add_to_workspace_history(&app.current_dir.clone());

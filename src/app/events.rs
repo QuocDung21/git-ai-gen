@@ -1285,6 +1285,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                             }
 
                                             app.active_modal = ActiveModal::TerminalResult(combined);
+                                            app.terminal_scroll_offset = 0;
                                             app.status_message = if app.current_lang == "vi" {
                                                 "✅ Thực thi hoàn tất!".to_string()
                                             } else {
@@ -1312,17 +1313,28 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     }
                     ActiveModal::TerminalResult(_) => {
                         match key.code {
-                            KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') => {
+                            KeyCode::Enter => {
+                                app.active_modal = ActiveModal::TerminalCommand;
+                            }
+                            KeyCode::Esc | KeyCode::Char('q') => {
                                 app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                if app.terminal_scroll_offset > 0 {
+                                    app.terminal_scroll_offset -= 1;
+                                }
+                            }
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                app.terminal_scroll_offset += 1;
                             }
                             KeyCode::Char('c') | KeyCode::Char('C') => {
                                 if let ActiveModal::TerminalResult(result) = &app.active_modal {
                                     if let Ok(mut cb) = arboard::Clipboard::new() {
                                         let _ = cb.set_text(result.clone());
                                         app.status_message = if app.current_lang == "vi" {
-                                            "✅ Đã copy lệnh vào clipboard!".to_string()
+                                            "✅ Đã copy kết quả vào clipboard!".to_string()
                                         } else {
-                                            "✅ Command copied to clipboard!".to_string()
+                                            "✅ Output copied to clipboard!".to_string()
                                         };
                                     }
                                 }

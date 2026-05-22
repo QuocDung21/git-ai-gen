@@ -12,7 +12,7 @@ pub fn render_terminal_command(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     
-    let popup_area = centered_rect(60, 30, area);
+    let popup_area = centered_rect(60, 40, area);
     f.render_widget(Clear, popup_area);
 
     let title = if is_vi { "💻 Chạy lệnh Terminal" } else { "💻 Run Terminal Command" };
@@ -71,14 +71,14 @@ pub fn render_terminal_result(f: &mut Frame, app: &App, result: &str, area: Rect
     let theme = app.theme();
     let is_vi = app.current_lang == "vi";
     
-    let popup_area = centered_rect(70, 40, area);
+    let popup_area = centered_rect(80, 70, area);
     f.render_widget(Clear, popup_area);
 
     let title = if is_vi { "📋 Kết quả thực thi" } else { "📋 Execution Result" };
     let footer = if is_vi { 
-        "C: Copy kết quả | Esc/Enter: Đóng" 
+        "↑/↓: Cuộn | C: Copy | Enter: Viết tiếp | Esc: Đóng" 
     } else { 
-        "C: Copy output | Esc/Enter: Close" 
+        "↑/↓: Scroll | C: Copy | Enter: Write next | Esc: Close" 
     };
 
     let block = Block::default()
@@ -86,9 +86,7 @@ pub fn render_terminal_result(f: &mut Frame, app: &App, result: &str, area: Rect
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.green));
 
-    let mut text = vec![
-        Line::from(""),
-    ];
+    let mut text = Vec::new();
 
     for line in result.lines() {
         text.push(Line::from(vec![
@@ -97,11 +95,10 @@ pub fn render_terminal_result(f: &mut Frame, app: &App, result: &str, area: Rect
         ]));
     }
 
-    text.push(Line::from(""));
-
     let paragraph = Paragraph::new(text)
         .block(block)
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap { trim: false })
+        .scroll((app.terminal_scroll_offset as u16, 0));
 
     f.render_widget(paragraph, popup_area);
 
