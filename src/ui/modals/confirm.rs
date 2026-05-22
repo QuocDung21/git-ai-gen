@@ -865,13 +865,12 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
 
     let content = match &app.go_step {
         GoStep::Confirm => {
-            let msg_lines: Vec<&str> = app.commit_message_preview.lines().take(3).collect();
-            let msg_preview = msg_lines.join(" | ");
-            let msg_truncated = if msg_preview.len() > 80 {
-                format!("{}...", &msg_preview[..77])
+            let display_msg = if app.commit_input_mode {
+                &app.commit_input_text
             } else {
-                msg_preview
+                &app.commit_message_preview
             };
+            let msg_lines: Vec<&str> = display_msg.lines().take(10).collect();
 
             let mut lines = vec![
                 Line::from(""),
@@ -916,36 +915,37 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                 ]));
             }
 
-            lines.extend(vec![
-                Line::from(""),
-                Line::from(vec![Span::styled(
-                    if is_vi {
-                        "📋 Commit message từ Clipboard:"
-                    } else {
-                        "📋 Commit message from Clipboard:"
-                    },
-                    Style::default()
-                        .fg(theme.border)
-                        .add_modifier(Modifier::ITALIC),
-                )]),
-                Line::from(vec![Span::styled(
-                    format!("  💬 {}", msg_truncated),
+            lines.push(Line::from(""));
+            lines.push(Line::from(vec![Span::styled(
+                if is_vi {
+                    "📋 Commit message từ Clipboard:"
+                } else {
+                    "📋 Commit message from Clipboard:"
+                },
+                Style::default()
+                    .fg(theme.border)
+                    .add_modifier(Modifier::ITALIC),
+            )]));
+
+            for l in &msg_lines {
+                lines.push(Line::from(vec![Span::styled(
+                    format!("  {}", l),
                     Style::default()
                         .fg(theme.fg)
-                        .bg(theme.bg)
                         .add_modifier(Modifier::BOLD),
-                )]),
-                Line::from(""),
-                Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  ⚡ Tiến trình: git commit -> git push"
-                    } else {
-                        "  ⚡ Execution: git commit -> git push"
-                    },
-                    Style::default().fg(theme.orange),
-                )]),
-                Line::from(""),
-            ]);
+                )]));
+            }
+
+            lines.push(Line::from(""));
+            lines.push(Line::from(vec![Span::styled(
+                if is_vi {
+                    "  ⚡ Tiến trình: git commit -> git push"
+                } else {
+                    "  ⚡ Execution: git commit -> git push"
+                },
+                Style::default().fg(theme.orange),
+            )]));
+            lines.push(Line::from(""));
 
             if app.staged_count > 0 {
                 lines.push(Line::from(vec![
