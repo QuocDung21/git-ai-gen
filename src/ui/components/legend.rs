@@ -179,11 +179,7 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                 ),
                 (
                     "G",
-                    if is_vi {
-                        "Git Menu (Add/Commit/Fetch/Pull/Remote...)"
-                    } else {
-                        "Git Menu (Add/Commit/Fetch/Pull/Remote...)"
-                    },
+                    "Git Menu (Add/Commit/Fetch/Pull/Remote...)",
                     theme.green,
                 ),
                 (
