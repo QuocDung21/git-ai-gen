@@ -860,7 +860,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         continue;
                     }
                     ActiveModal::GitMenu => {
-                        let max = 9;
+                        let max = 12;
 
                         // Quick shortcuts even when menu is open (thao tác nhanh)
                         match key.code {
@@ -989,6 +989,11 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 app.active_modal = ActiveModal::FeatureCommit;
                                 continue;
                             }
+                            KeyCode::Char('z') | KeyCode::Char('Z') => {
+                                app.prompt_text.clear();
+                                app.active_modal = ActiveModal::TerminalCommand;
+                                continue;
+                            }
                             _ => {}
                         }
 
@@ -1107,9 +1112,29 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         app.active_modal = ActiveModal::StashList;
                                     }
                                     9 => {
+                                        // Commit Tree
+                                        app.fetch_commit_tree();
+                                        app.selected_log_index = 0;
+                                        if !app.commit_logs.is_empty() {
+                                            let hash = app.commit_logs[0].hash.clone();
+                                            app.fetch_commit_diff(&hash);
+                                        }
+                                        app.active_modal = ActiveModal::CommitTree;
+                                    }
+                                    10 => {
                                         // Log
                                         app.fetch_commit_logs();
                                         app.active_modal = ActiveModal::GitLog;
+                                    }
+                                    11 => {
+                                        // Feature Commit
+                                        app.compute_feature_groups();
+                                        app.active_modal = ActiveModal::FeatureCommit;
+                                    }
+                                    12 => {
+                                        // Terminal Command
+                                        app.prompt_text.clear();
+                                        app.active_modal = ActiveModal::TerminalCommand;
                                     }
                                     _ => {}
                                 }
@@ -1207,6 +1232,99 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     };
 
                                     app.active_modal = ActiveModal::None;
+                                }
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::TerminalCommand => {
+                        match key.code {
+                            KeyCode::Esc => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Enter => {
+                                let prompt = app.prompt_text.trim().to_string();
+                                if !prompt.is_empty() {
+                                    app.status_message = if app.current_lang == "vi" {
+                                        "⚡ Đang thực thi lệnh...".to_string()
+                                    } else {
+                                        "⚡ Executing command...".to_string()
+                                    };
+
+                                    #[cfg(target_family = "unix")]
+                                    let output = std::process::Command::new("sh")
+                                        .arg("-c")
+                                        .arg(&prompt)
+                                        .output();
+
+                                    #[cfg(target_os = "windows")]
+                                    let output = std::process::Command::new("cmd")
+                                        .arg("/C")
+                                        .arg(&prompt)
+                                        .output();
+
+                                    match output {
+                                        Ok(out) => {
+                                            let stdout = String::from_utf8_lossy(&out.stdout).to_string();
+                                            let stderr = String::from_utf8_lossy(&out.stderr).to_string();
+                                            let mut combined = stdout;
+                                            if !stderr.is_empty() {
+                                                if !combined.is_empty() {
+                                                    combined.push_str("\n\nError:\n");
+                                                }
+                                                combined.push_str(&stderr);
+                                            }
+                                            
+                                            if combined.trim().is_empty() {
+                                                combined = if app.current_lang == "vi" {
+                                                    "(Lệnh đã thực thi nhưng không có output)".to_string()
+                                                } else {
+                                                    "(Command executed but no output produced)".to_string()
+                                                };
+                                            }
+
+                                            app.active_modal = ActiveModal::TerminalResult(combined);
+                                            app.status_message = if app.current_lang == "vi" {
+                                                "✅ Thực thi hoàn tất!".to_string()
+                                            } else {
+                                                "✅ Execution completed!".to_string()
+                                            };
+                                        }
+                                        Err(e) => {
+                                            app.status_message = format!("❌ Lỗi thực thi: {}", e);
+                                            app.active_modal = ActiveModal::None;
+                                        }
+                                    }
+                                    app.prompt_text.clear();
+                                    app.refresh_git_status();
+                                }
+                            }
+                            KeyCode::Backspace => {
+                                app.prompt_text.pop();
+                            }
+                            KeyCode::Char(c) => {
+                                app.prompt_text.push(c);
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::TerminalResult(_) => {
+                        match key.code {
+                            KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') => {
+                                app.active_modal = ActiveModal::None;
+                            }
+                            KeyCode::Char('c') | KeyCode::Char('C') => {
+                                if let ActiveModal::TerminalResult(result) = &app.active_modal {
+                                    if let Ok(mut cb) = arboard::Clipboard::new() {
+                                        let _ = cb.set_text(result.clone());
+                                        app.status_message = if app.current_lang == "vi" {
+                                            "✅ Đã copy lệnh vào clipboard!".to_string()
+                                        } else {
+                                            "✅ Command copied to clipboard!".to_string()
+                                        };
+                                    }
                                 }
                             }
                             _ => {}
@@ -1840,6 +1958,10 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         app.load_workspace_history();
                         app.selected_workspace_index = 0;
                         app.active_modal = ActiveModal::WorkspaceHistory;
+                    }
+                    KeyCode::Char('z') => {
+                        app.prompt_text.clear();
+                        app.active_modal = ActiveModal::TerminalCommand;
                     }
                     KeyCode::Char('t') | KeyCode::Char('T') => {
                         app.selected_theme_index = if app.is_light_theme { 1 } else { 0 };

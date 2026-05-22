@@ -490,7 +490,10 @@ impl App {
             ai_lang,
             full_diff
         );
+        self.try_generate_with_kilo_custom(&prompt)
+    }
 
+    pub fn try_generate_with_kilo_custom(&mut self, prompt: &str) -> Result<String, String> {
         let mut cmd = Command::new("kilo");
         cmd.args(["run", "--pure", "--auto"]);
 

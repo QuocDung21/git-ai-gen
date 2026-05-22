@@ -3,7 +3,43 @@ use crate::cli::{ask_confirm, ask_confirm_default_no, uninstall, Locales};
 use crate::helper::Helper;
 use anyhow::Result;
 use arboard::Clipboard;
+use inquire::Text;
 use std::process::Command;
+
+pub fn handle_cmd(prompt: Option<String>, locales: &Locales) -> Result<String> {
+    let user_prompt = match prompt {
+        Some(p) => p,
+        None => Text::new(&locales.cmd_prompt_input).prompt()?,
+    };
+
+    if user_prompt.trim().is_empty() {
+        return Ok(locales.cmd_empty.clone());
+    }
+
+    #[cfg(target_family = "unix")]
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(&user_prompt)
+        .output()?;
+
+    #[cfg(target_os = "windows")]
+    let output = std::process::Command::new("cmd")
+        .arg("/C")
+        .arg(&user_prompt)
+        .output()?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    if !stdout.trim().is_empty() {
+        println!("{}", stdout);
+    }
+    if !stderr.trim().is_empty() {
+        eprintln!("{}", stderr);
+    }
+
+    Ok(locales.cmd_success.clone())
+}
 
 pub fn handle_lang(lang: &str, locales: &Locales) -> Result<String> {
     match lang {

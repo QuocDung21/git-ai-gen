@@ -133,6 +133,8 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GitMenu => modals::centered_rect(60, 70, f.size()),
             ActiveModal::CommitTree => modals::centered_rect(85, 80, f.size()),
             ActiveModal::FeatureCommit => modals::centered_rect(55, 50, f.size()),
+            ActiveModal::TerminalCommand => modals::centered_rect(60, 30, f.size()),
+            ActiveModal::TerminalResult(_) => modals::centered_rect(70, 40, f.size()),
             ActiveModal::None => f.size(),
         };
 
@@ -163,6 +165,10 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GitMenu => modals::render_git_menu(f, app, area),
             ActiveModal::CommitTree => modals::render_commit_tree(f, app, area),
             ActiveModal::FeatureCommit => modals::render_feature_commit(f, app, area),
+            ActiveModal::TerminalCommand => modals::render_terminal_command(f, app, area),
+            ActiveModal::TerminalResult(result) => {
+                modals::render_terminal_result(f, app, result, area)
+            }
             ActiveModal::None => {}
         }
     }

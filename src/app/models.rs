@@ -109,4 +109,6 @@ pub enum ActiveModal {
     GitMenu,
     CommitTree,
     FeatureCommit,
+    TerminalCommand,
+    TerminalResult(String),
 }

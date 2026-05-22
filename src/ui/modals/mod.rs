@@ -2,6 +2,7 @@ pub mod help;
 pub mod confirm;
 pub mod manual_commit;
 pub mod feature_commit;
+pub mod terminal_command;
 
 pub use help::render_help_modal;
 pub use confirm::{
@@ -26,6 +27,7 @@ pub use confirm::{
 };
 pub use manual_commit::render_manual_commit;
 pub use feature_commit::render_feature_commit;
+pub use terminal_command::{render_terminal_command, render_terminal_result};
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 

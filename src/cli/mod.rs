@@ -37,9 +37,13 @@ pub struct Locales {
     pub lang_set: String,
     pub lang_auto: String,
     pub lang_invalid: String,
+    pub cmd_prompt_input: String,
+    pub cmd_empty: String,
+    pub cmd_success: String,
     pub cmd_help_diff: String,
     pub cmd_help_go: String,
     pub cmd_help_un: String,
+    pub cmd_help_cmd: String,
     pub cmd_help_base: String,
 }
 
@@ -60,10 +64,12 @@ pub const MARKERS: &[&str] = &[
     "# ULTIMATE GIT-AI WORKFLOW",
     "alias git-copydiff",
     "alias git-go",
+    "alias git-ai-cmd",
     "alias git-ai-uninstall",
     "alias git-ai=",
     "function git-copydiff",
     "function git-go",
+    "function git-ai-cmd",
     "function git-ai-uninstall",
     "function git-ai",
 ];
@@ -180,6 +186,7 @@ pub fn append_to_file(path: &PathBuf, content: &str) -> Result<()> {
 pub fn print_commands_help(locales: &Locales) {
     logger::info(&locales.cmd_help_diff);
     logger::info(&locales.cmd_help_go);
+    logger::info(&locales.cmd_help_cmd);
     logger::info(&locales.cmd_help_un);
     logger::info(&locales.cmd_help_base);
 }
