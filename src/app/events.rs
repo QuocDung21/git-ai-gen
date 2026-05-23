@@ -1583,6 +1583,31 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             KeyCode::Char(' ') => {
                                 app.toggle_github_tree_selection(app.selected_github_tree_index);
                             }
+                            KeyCode::Char('b') | KeyCode::Char('B') => {
+                                app.status_message = if app.current_lang == "vi" {
+                                    "⏳ Đang tải danh sách chi nhánh (branch)...".to_string()
+                                } else {
+                                    "⏳ Fetching branch list...".to_string()
+                                };
+                                terminal.draw(|f| crate::ui::ui(f, app))?;
+                                match app.fetch_github_branches() {
+                                    Ok(_) => {
+                                        app.selected_github_branch_index = app.github_branches
+                                            .iter()
+                                            .position(|b| b == &app.current_github_branch)
+                                            .unwrap_or(0);
+                                        app.active_modal = ActiveModal::GithubBranchSelect;
+                                        app.status_message = if app.current_lang == "vi" {
+                                            "✅ Tải danh sách chi nhánh hoàn tất".to_string()
+                                        } else {
+                                            "✅ Branches loaded".to_string()
+                                        };
+                                    }
+                                    Err(e) => {
+                                        app.status_message = format!("❌ Lỗi: {}", e);
+                                    }
+                                }
+                            }
                             KeyCode::Char('v') | KeyCode::Char('V') => {
                                 let visible = app.get_visible_github_tree_entries();
                                 if !visible.is_empty()
@@ -1750,6 +1775,95 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         match key.code {
                             KeyCode::Esc | KeyCode::Enter => {
                                 app.active_modal = ActiveModal::GithubDownloadTree;
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::GithubBranchSelect => {
+                        match key.code {
+                            KeyCode::Esc | KeyCode::Char('q') => {
+                                app.active_modal = ActiveModal::GithubDownloadTree;
+                            }
+                            KeyCode::Up | KeyCode::Char('k') => {
+                                if !app.github_branches.is_empty() {
+                                    if app.selected_github_branch_index > 0 {
+                                        app.selected_github_branch_index -= 1;
+                                    } else {
+                                        app.selected_github_branch_index = app.github_branches.len() - 1;
+                                    }
+                                }
+                            }
+                            KeyCode::Down | KeyCode::Char('j') => {
+                                if !app.github_branches.is_empty() {
+                                    if app.selected_github_branch_index < app.github_branches.len() - 1 {
+                                        app.selected_github_branch_index += 1;
+                                    } else {
+                                        app.selected_github_branch_index = 0;
+                                    }
+                                }
+                            }
+                            KeyCode::Enter => {
+                                if !app.github_branches.is_empty() && app.selected_github_branch_index < app.github_branches.len() {
+                                    let selected_branch = app.github_branches[app.selected_github_branch_index].clone();
+                                    app.status_message = if app.current_lang == "vi" {
+                                        format!("⏳ Đang chuyển sang nhánh {}...", selected_branch)
+                                    } else {
+                                        format!("⏳ Switching to branch {}...", selected_branch)
+                                    };
+                                    terminal.draw(|f| crate::ui::ui(f, app))?;
+                                    if let Some(ref dir) = app.github_temp_dir {
+                                        let fetch_out = Command::new("git")
+                                            .args(["fetch", "--depth", "1", "origin", &selected_branch])
+                                            .current_dir(dir.path())
+                                            .output();
+                                        if let Ok(out) = fetch_out {
+                                            if out.status.success() {
+                                                let checkout_out = Command::new("git")
+                                                    .args(["checkout", "FETCH_HEAD"])
+                                                    .current_dir(dir.path())
+                                                    .output();
+                                                if let Ok(c_out) = checkout_out {
+                                                    if c_out.status.success() {
+                                                        if let Err(e) = app.visit_repo_dir() {
+                                                            app.status_message = format!("❌ Lỗi: {}", e);
+                                                        } else {
+                                                            app.current_github_branch = selected_branch;
+                                                            app.selected_github_tree_index = 0;
+                                                            app.active_modal = ActiveModal::GithubDownloadTree;
+                                                            app.status_message = if app.current_lang == "vi" {
+                                                                "✅ Đã chuyển nhánh thành công".to_string()
+                                                            } else {
+                                                                "✅ Successfully switched branch".to_string()
+                                                            };
+                                                        }
+                                                    } else {
+                                                        app.status_message = if app.current_lang == "vi" {
+                                                            "❌ Lỗi checkout chi nhánh".to_string()
+                                                        } else {
+                                                            "❌ Error checking out branch".to_string()
+                                                        };
+                                                    }
+                                                } else {
+                                                    app.status_message = if app.current_lang == "vi" {
+                                                        "❌ Không thể chạy lệnh checkout".to_string()
+                                                    } else {
+                                                        "❌ Cannot execute checkout command".to_string()
+                                                    };
+                                                }
+                                            } else {
+                                                let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
+                                                app.status_message = format!("❌ Fetch failed: {}", stderr);
+                                            }
+                                        } else {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                "❌ Không thể chạy lệnh fetch".to_string()
+                                            } else {
+                                                "❌ Cannot execute fetch command".to_string()
+                                            };
+                                        }
+                                    }
+                                }
                             }
                             _ => {}
                         }
