@@ -311,73 +311,80 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             continue;
                         }
                         ActiveModal::ThemeSelect => {
+                            let themes = crate::theme::get_all_themes();
+                            let themes_len = themes.len();
                             match key.code {
-                                KeyCode::Esc | KeyCode::Char('q') => {
+                                KeyCode::Esc => {
                                     app.active_modal = ActiveModal::None;
                                 }
-                                KeyCode::Char('d') | KeyCode::Char('D') => {
-                                    app.is_light_theme = false;
-                                    let _ = Command::new("git")
-                                        .args(["config", "--global", "git-ai.theme", "dark"])
-                                        .output();
-                                    app.refresh_git_status();
-                                    app.status_message = if app.current_lang == "vi" {
-                                        "🎨 Đã chuyển sang giao diện Tối (Dracula)".to_string()
+                                KeyCode::Char(c) => {
+                                    let lower_c = c.to_lowercase().to_string();
+                                    if lower_c == "q" {
+                                        app.active_modal = ActiveModal::None;
+                                    } else if lower_c == "j" {
+                                        if app.selected_theme_index < themes_len - 1 {
+                                            app.selected_theme_index += 1;
+                                        } else {
+                                            app.selected_theme_index = 0;
+                                        }
+                                    } else if lower_c == "k" {
+                                        if app.selected_theme_index > 0 {
+                                            app.selected_theme_index -= 1;
+                                        } else {
+                                            app.selected_theme_index = themes_len - 1;
+                                        }
                                     } else {
-                                        "🎨 Switched to Dracula (Dark) theme".to_string()
-                                    };
-                                    app.active_modal = ActiveModal::None;
+                                        if let Some((idx, t_info)) = themes.iter().enumerate().find(|(_, t)| {
+                                            t.hotkey.to_lowercase().to_string() == lower_c
+                                        }) {
+                                            app.theme_id = t_info.id.to_string();
+                                            app.is_light_theme = t_info.id == "light";
+                                            app.selected_theme_index = idx;
+                                            let _ = Command::new("git")
+                                                .args(["config", "--global", "git-ai.theme", t_info.id])
+                                                .output();
+                                            app.refresh_git_status();
+                                            let label = if app.current_lang == "vi" { t_info.name_vi } else { t_info.name_en };
+                                            app.status_message = if app.current_lang == "vi" {
+                                                format!("🎨 Đã chuyển sang giao diện {}", label)
+                                            } else {
+                                                format!("🎨 Switched to {} theme", label)
+                                            };
+                                            app.active_modal = ActiveModal::None;
+                                        }
+                                    }
                                 }
-                                KeyCode::Char('l') | KeyCode::Char('L') => {
-                                    app.is_light_theme = true;
-                                    let _ = Command::new("git")
-                                        .args(["config", "--global", "git-ai.theme", "light"])
-                                        .output();
-                                    app.refresh_git_status();
-                                    app.status_message = if app.current_lang == "vi" {
-                                        "🎨 Đã chuyển sang giao diện Sáng (Premium Light)"
-                                            .to_string()
+                                KeyCode::Up => {
+                                    if app.selected_theme_index > 0 {
+                                        app.selected_theme_index -= 1;
                                     } else {
-                                        "🎨 Switched to Premium Light theme".to_string()
-                                    };
-                                    app.active_modal = ActiveModal::None;
+                                        app.selected_theme_index = themes_len - 1;
+                                    }
                                 }
-                                KeyCode::Up
-                                | KeyCode::Char('k')
-                                | KeyCode::Down
-                                | KeyCode::Char('j') => {
-                                    app.selected_theme_index = 1 - app.selected_theme_index;
+                                KeyCode::Down => {
+                                    if app.selected_theme_index < themes_len - 1 {
+                                        app.selected_theme_index += 1;
+                                    } else {
+                                        app.selected_theme_index = 0;
+                                    }
                                 }
                                 KeyCode::Enter => {
-                                    let selection = match app.selected_theme_index {
-                                        0 => "dark",
-                                        _ => "light",
-                                    };
-                                    app.is_light_theme = selection == "light";
-                                    let _ = Command::new("git")
-                                        .args(["config", "--global", "git-ai.theme", selection])
-                                        .output();
-                                    app.refresh_git_status();
-                                    app.status_message = if app.current_lang == "vi" {
-                                        format!(
-                                            "🎨 Đã chuyển sang giao diện {}",
-                                            if app.is_light_theme {
-                                                "Sáng (Premium Light)"
-                                            } else {
-                                                "Tối (Dracula)"
-                                            }
-                                        )
-                                    } else {
-                                        format!(
-                                            "🎨 Switched to {} theme",
-                                            if app.is_light_theme {
-                                                "Premium Light"
-                                            } else {
-                                                "Dracula (Dark)"
-                                            }
-                                        )
-                                    };
-                                    app.active_modal = ActiveModal::None;
+                                    if app.selected_theme_index < themes_len {
+                                        let t_info = &themes[app.selected_theme_index];
+                                        app.theme_id = t_info.id.to_string();
+                                        app.is_light_theme = t_info.id == "light";
+                                        let _ = Command::new("git")
+                                            .args(["config", "--global", "git-ai.theme", t_info.id])
+                                            .output();
+                                        app.refresh_git_status();
+                                        let label = if app.current_lang == "vi" { t_info.name_vi } else { t_info.name_en };
+                                        app.status_message = if app.current_lang == "vi" {
+                                            format!("🎨 Đã chuyển sang giao diện {}", label)
+                                        } else {
+                                            format!("🎨 Switched to {} theme", label)
+                                        };
+                                        app.active_modal = ActiveModal::None;
+                                    }
                                 }
                                 _ => {}
                             }
@@ -737,6 +744,22 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     app.new_branch_name.clear();
                                     app.active_modal = ActiveModal::NewBranchInput;
                                 }
+                                KeyCode::Char('d') | KeyCode::Char('D') | KeyCode::Char('x') | KeyCode::Char('X') => {
+                                    if !app.branches.is_empty()
+                                        && app.selected_branch_index < app.branches.len()
+                                    {
+                                        let branch = &app.branches[app.selected_branch_index];
+                                        if branch.name == app.current_branch && !branch.is_remote {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                "❌ Không thể xóa chi nhánh đang hoạt động!".to_string()
+                                            } else {
+                                                "❌ Cannot delete the active branch!".to_string()
+                                            };
+                                        } else {
+                                            app.active_modal = ActiveModal::BranchDeleteConfirm(branch.name.clone());
+                                        }
+                                    }
+                                }
                                 KeyCode::Char('m') | KeyCode::Char('M') => {
                                     if !app.branches.is_empty()
                                         && app.selected_branch_index < app.branches.len()
@@ -823,6 +846,46 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         }
                                     }
                                     app.active_modal = ActiveModal::None;
+                                    app.refresh_git_status();
+                                }
+                                _ => {}
+                            }
+                            continue;
+                        }
+                        ActiveModal::BranchDeleteConfirm(branch_name) => {
+                            let branch_name = branch_name.clone();
+                            match key.code {
+                                KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
+                                    app.active_modal = ActiveModal::BranchSelect;
+                                }
+                                KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
+                                    app.status_message = if app.current_lang == "vi" {
+                                        format!("🗑️ Đang xóa chi nhánh {}...", branch_name)
+                                    } else {
+                                        format!("🗑️ Deleting branch {}...", branch_name)
+                                    };
+                                    terminal.draw(|f| crate::ui::ui(f, app))?;
+                                    match crate::git::branch::delete_branch(&branch_name, crate::git::branch::DeleteBranchOptions::default()) {
+                                        Ok(out) => {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                format!("✅ Đã xóa thành công: {}", out)
+                                            } else {
+                                                format!("✅ Delete successful: {}", out)
+                                            };
+                                        }
+                                        Err(err) => {
+                                            app.status_message = if app.current_lang == "vi" {
+                                                format!("❌ Lỗi xóa chi nhánh: {}", err)
+                                            } else {
+                                                format!("❌ Delete failed: {}", err)
+                                            };
+                                        }
+                                    }
+                                    app.fetch_branches();
+                                    if app.selected_branch_index >= app.branches.len() {
+                                        app.selected_branch_index = app.branches.len().saturating_sub(1);
+                                    }
+                                    app.active_modal = ActiveModal::BranchSelect;
                                     app.refresh_git_status();
                                 }
                                 _ => {}
@@ -1727,7 +1790,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     app.github_expanded_dirs.clear();
                                     let locales = crate::cli::Locales::new(&app.current_lang);
                                     app.status_message = locales.github_close_all_folders.clone();
-                                }q
+                                }
                                 KeyCode::Right => {
                                     let entry = {
                                         let visible = app.get_visible_github_tree_entries();

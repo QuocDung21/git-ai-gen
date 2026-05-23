@@ -301,9 +301,15 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
     )]));
 
     let title_text = if is_vi {
-        format!(" 📁 CHỌN MỤC TẢI VỀ (Nhánh: {}) ", app.current_github_branch)
+        format!(
+            " 📁 CHỌN MỤC TẢI VỀ (Nhánh: {}) ",
+            app.current_github_branch
+        )
     } else {
-        format!(" 📁 SELECT ITEM TO DOWNLOAD (Branch: {}) ", app.current_github_branch)
+        format!(
+            " 📁 SELECT ITEM TO DOWNLOAD (Branch: {}) ",
+            app.current_github_branch
+        )
     };
 
     let block = Block::default()
@@ -421,33 +427,45 @@ pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect)
     f.render_widget(paragraph, area);
 }
 
-fn highlight_word(word: &str, theme: &crate::app::models::AppTheme) -> Span<'static> {
+fn highlight_word(word: &str, theme: &crate::theme::AppTheme) -> Span<'static> {
     if word.chars().all(|c| c.is_numeric()) {
         return Span::styled(word.to_string(), Style::default().fg(theme.orange));
     }
     let keywords = [
-        "fn", "let", "pub", "struct", "enum", "impl", "if", "else", "return",
-        "class", "import", "const", "var", "function", "for", "while", "match",
-        "use", "mod", "true", "false", "null", "nil", "static", "mut", "ref",
-        "self", "Self", "type", "as", "break", "continue", "in", "loop", "where",
-        "trait", "crate", "async", "await", "dyn"
+        "fn", "let", "pub", "struct", "enum", "impl", "if", "else", "return", "class", "import",
+        "const", "var", "function", "for", "while", "match", "use", "mod", "true", "false", "null",
+        "nil", "static", "mut", "ref", "self", "Self", "type", "as", "break", "continue", "in",
+        "loop", "where", "trait", "crate", "async", "await", "dyn",
     ];
     if keywords.contains(&word) {
-        return Span::styled(word.to_string(), Style::default().fg(theme.purple).add_modifier(Modifier::BOLD));
+        return Span::styled(
+            word.to_string(),
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
+        );
     }
     let first_char = word.chars().next().unwrap_or(' ');
     let is_capitalized = first_char.is_uppercase();
-    let is_numeric_type = ["i32", "u32", "i64", "u64", "f32", "f64", "usize", "bool", "char", "str"].contains(&word);
+    let is_numeric_type = [
+        "i32", "u32", "i64", "u64", "f32", "f64", "usize", "bool", "char", "str",
+    ]
+    .contains(&word);
     if is_capitalized || is_numeric_type {
         return Span::styled(word.to_string(), Style::default().fg(theme.yellow));
     }
     Span::styled(word.to_string(), Style::default().fg(theme.fg))
 }
 
-fn highlight_line(line: &str, theme: &crate::app::models::AppTheme) -> Line<'static> {
+fn highlight_line(line: &str, theme: &crate::theme::AppTheme) -> Line<'static> {
     let mut spans = Vec::new();
     let trimmed = line.trim_start();
-    if trimmed.starts_with("//") || trimmed.starts_with("///") || trimmed.starts_with("#") || trimmed.starts_with("/*") || trimmed.starts_with("* ") {
+    if trimmed.starts_with("//")
+        || trimmed.starts_with("///")
+        || trimmed.starts_with("#")
+        || trimmed.starts_with("/*")
+        || trimmed.starts_with("* ")
+    {
         return Line::from(vec![Span::styled(
             line.to_string(),
             Style::default().fg(theme.border),
@@ -475,14 +493,14 @@ fn highlight_line(line: &str, theme: &crate::app::models::AppTheme) -> Line<'sta
         }
         if c == '/' && i + 1 < chars.len() && chars[i + 1] == '/' {
             if !current_word.is_empty() {
-                spans.push(Span::styled(current_word.clone(), Style::default().fg(theme.fg)));
+                spans.push(Span::styled(
+                    current_word.clone(),
+                    Style::default().fg(theme.fg),
+                ));
                 current_word.clear();
             }
             let rest: String = chars[i..].iter().collect();
-            spans.push(Span::styled(
-                rest,
-                Style::default().fg(theme.border),
-            ));
+            spans.push(Span::styled(rest, Style::default().fg(theme.border)));
             break;
         }
         if c == '"' || c == '\'' {
@@ -515,7 +533,19 @@ fn highlight_line(line: &str, theme: &crate::app::models::AppTheme) -> Line<'sta
             }
             let style = if c == '(' || c == ')' || c == '{' || c == '}' || c == '[' || c == ']' {
                 Style::default().fg(theme.yellow)
-            } else if c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '&' || c == '|' || c == '!' || c == '<' || c == '>' || c == '?' || c == ':' {
+            } else if c == '='
+                || c == '+'
+                || c == '-'
+                || c == '*'
+                || c == '/'
+                || c == '&'
+                || c == '|'
+                || c == '!'
+                || c == '<'
+                || c == '>'
+                || c == '?'
+                || c == ':'
+            {
                 Style::default().fg(theme.purple)
             } else {
                 Style::default().fg(theme.fg)
@@ -531,7 +561,11 @@ fn highlight_line(line: &str, theme: &crate::app::models::AppTheme) -> Line<'sta
     Line::from(spans)
 }
 
-fn apply_search_highlight(spans: Vec<Span<'static>>, query: &str, theme: &crate::app::models::AppTheme) -> Vec<Span<'static>> {
+fn apply_search_highlight(
+    spans: Vec<Span<'static>>,
+    query: &str,
+    theme: &crate::theme::AppTheme,
+) -> Vec<Span<'static>> {
     if query.is_empty() {
         return spans;
     }
@@ -545,24 +579,21 @@ fn apply_search_highlight(spans: Vec<Span<'static>>, query: &str, theme: &crate:
             let mut temp_lower = text_lower.clone();
             while let Some(match_idx) = temp_lower.find(&query_lower) {
                 if match_idx > 0 {
-                    new_spans.push(Span::styled(
-                        temp_text[..match_idx].to_string(),
-                        span.style,
-                    ));
+                    new_spans.push(Span::styled(temp_text[..match_idx].to_string(), span.style));
                 }
                 let match_end = match_idx + query.len();
                 new_spans.push(Span::styled(
                     temp_text[match_idx..match_end].to_string(),
-                    Style::default().bg(theme.yellow).fg(theme.select_fg).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .bg(theme.yellow)
+                        .fg(theme.select_fg)
+                        .add_modifier(Modifier::BOLD),
                 ));
                 temp_text = temp_text[match_end..].to_string();
                 temp_lower = temp_lower[match_end..].to_string();
             }
             if !temp_text.is_empty() {
-                new_spans.push(Span::styled(
-                    temp_text,
-                    span.style,
-                ));
+                new_spans.push(Span::styled(temp_text, span.style));
             }
         } else {
             new_spans.push(span);
@@ -601,7 +632,9 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
     let lines_total: Vec<&str> = content_text.lines().collect();
     let total_count = lines_total.len();
     let page_size = (area.height as usize).saturating_sub(6).max(5);
-    let start_idx = app.github_quickview_scroll.min(total_count.saturating_sub(page_size));
+    let start_idx = app
+        .github_quickview_scroll
+        .min(total_count.saturating_sub(page_size));
     let visible_lines = lines_total.iter().skip(start_idx).take(page_size);
 
     let mut content = vec![Line::from("")];
@@ -610,8 +643,9 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
         let real_line_num = start_idx + idx + 1;
         let line_num_str = format!("{:>4} │ ", real_line_num);
         let highlighted = highlight_line(line, &theme);
-        let filtered_spans = apply_search_highlight(highlighted.spans, &app.github_quickview_search, &theme);
-        
+        let filtered_spans =
+            apply_search_highlight(highlighted.spans, &app.github_quickview_search, &theme);
+
         let mut spans = vec![Span::styled(
             line_num_str,
             Style::default().fg(theme.border),
@@ -623,21 +657,27 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
     content.push(Line::from(""));
     if app.github_quickview_searching {
         content.push(Line::from(vec![
-            Span::styled(" 🔍 SEARCH: ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD)),
-            Span::styled(&app.github_quickview_search, Style::default().fg(theme.fg).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                " 🔍 SEARCH: ",
+                Style::default()
+                    .fg(theme.green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                &app.github_quickview_search,
+                Style::default().fg(theme.fg).add_modifier(Modifier::BOLD),
+            ),
             Span::styled("_", Style::default().fg(theme.green)),
         ]));
     } else {
-        let mut spans = vec![
-            Span::styled(
-                if is_vi {
-                    "[Esc] Đóng  [↑/↓] Cuộn  [/] Tìm kiếm"
-                } else {
-                    "[Esc] Close  [↑/↓] Scroll  [/] Search"
-                },
-                Style::default().fg(theme.border),
-            ),
-        ];
+        let mut spans = vec![Span::styled(
+            if is_vi {
+                "[Esc] Đóng  [↑/↓] Cuộn  [/] Tìm kiếm"
+            } else {
+                "[Esc] Close  [↑/↓] Scroll  [/] Search"
+            },
+            Style::default().fg(theme.border),
+        )];
         if !app.github_quickview_search.is_empty() {
             spans.push(Span::styled(
                 if is_vi {
@@ -649,13 +689,21 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
             ));
             spans.push(Span::styled(
                 format!("  (Active: {})", app.github_quickview_search),
-                Style::default().fg(theme.green).add_modifier(Modifier::ITALIC),
+                Style::default()
+                    .fg(theme.green)
+                    .add_modifier(Modifier::ITALIC),
             ));
         }
         content.push(Line::from(spans));
     }
 
-    let title_text = format!(" 👁 {} (Lines: {} - {} / {}) ", name, start_idx + 1, (start_idx + page_size).min(total_count), total_count);
+    let title_text = format!(
+        " 👁 {} (Lines: {} - {} / {}) ",
+        name,
+        start_idx + 1,
+        (start_idx + page_size).min(total_count),
+        total_count
+    );
 
     let block = Block::default()
         .title(Span::styled(
@@ -745,11 +793,7 @@ pub fn render_github_branch_select(f: &mut Frame, app: &App, area: Rect) {
                 Span::styled("", Style::default())
             };
 
-            let prefix = if is_active {
-                "★ "
-            } else {
-                "☆ "
-            };
+            let prefix = if is_active { "★ " } else { "☆ " };
 
             let prefix_span = Span::styled(
                 prefix,

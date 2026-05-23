@@ -128,7 +128,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::CommitDiff(_) => modals::centered_rect(88, 88, f.size()),
             ActiveModal::MergeConfirm(_) => modals::centered_rect(55, 30, f.size()),
             ActiveModal::NewBranchInput => modals::centered_rect(55, 30, f.size()),
-            ActiveModal::ThemeSelect => modals::centered_rect(42, 23, f.size()),
+            ActiveModal::ThemeSelect => modals::centered_rect(45, 35, f.size()),
             ActiveModal::WorkspaceHistory => modals::centered_rect(60, 50, f.size()),
             ActiveModal::ViewPrompt => modals::centered_rect(80, 80, f.size()),
             ActiveModal::KiloModelSelect => modals::centered_rect(70, 70, f.size()),
@@ -141,6 +141,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubDownloadTargetInput => modals::centered_rect(80, 45, f.size()),
             ActiveModal::GithubQuickView { .. } => modals::centered_rect(95, 90, f.size()),
             ActiveModal::GithubBranchSelect => modals::centered_rect(50, 45, f.size()),
+            ActiveModal::BranchDeleteConfirm(_) => modals::centered_rect(55, 30, f.size()),
             ActiveModal::Settings => modals::centered_rect(55, 38, f.size()),
             ActiveModal::None => f.size(),
         };
@@ -177,6 +178,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubDownloadTargetInput => modals::render_github_download_target_input(f, app, area),
             ActiveModal::GithubQuickView { path, name } => modals::render_github_quick_view(f, app, area, path, name),
             ActiveModal::GithubBranchSelect => modals::render_github_branch_select(f, app, area),
+            ActiveModal::BranchDeleteConfirm(branch_name) => modals::render_branch_delete_confirm(f, app, &branch_name, area),
             ActiveModal::Settings => modals::render_settings(f, app, area),
             ActiveModal::None => {}
         }

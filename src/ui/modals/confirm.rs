@@ -139,26 +139,21 @@ pub fn render_theme_select(f: &mut Frame, app: &App, area: Rect) {
         Line::from(""),
         Line::from(vec![Span::styled(
             if is_vi {
-                "Select application theme:"
-            } else {
                 "Chọn giao diện:"
+            } else {
+                "Select application theme:"
             },
             Style::default().fg(theme.fg).add_modifier(Modifier::ITALIC),
         )]),
         Line::from(""),
     ];
 
-    let items = vec![
-        ("dark", "Dracula (Tối / Dark) 🌌", "[d]"),
-        ("light", "Premium Light (Sáng / Light) ☀️", "[l]"),
-        ("auto", "Auto (Light/Dark) 🌍", "[a]"),
-    ];
+    let items = crate::theme::get_all_themes();
+    let active_theme = &app.theme_id;
 
-    let active_theme = if app.is_light_theme { "light" } else { "dark" };
-
-    for (i, (theme_code, label, shortcut)) in items.into_iter().enumerate() {
+    for (i, t_info) in items.iter().enumerate() {
         let is_hovered = i == app.selected_theme_index;
-        let is_currently_active = active_theme == theme_code;
+        let is_currently_active = active_theme == t_info.id;
 
         let cursor = if is_hovered {
             Span::styled(
@@ -191,10 +186,12 @@ pub fn render_theme_select(f: &mut Frame, app: &App, area: Rect) {
             Style::default().fg(theme.fg)
         };
 
+        let label = if is_vi { t_info.name_vi } else { t_info.name_en };
+
         content.push(Line::from(vec![
             cursor,
             Span::styled(
-                format!("{} ", shortcut),
+                format!("{} ", t_info.shortcut),
                 Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
             ),
             Span::styled(label, item_style),
@@ -609,6 +606,16 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
         },
         Style::default()
             .fg(theme.purple)
+            .add_modifier(Modifier::BOLD),
+    )]));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "Nhấn [d/x] để xóa chi nhánh được chọn."
+        } else {
+            "Press [d/x] to delete the selected branch."
+        },
+        Style::default()
+            .fg(theme.red)
             .add_modifier(Modifier::BOLD),
     )]));
     content.push(Line::from(vec![Span::styled(

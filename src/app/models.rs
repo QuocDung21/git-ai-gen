@@ -1,19 +1,4 @@
-use ratatui::style::Color;
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct AppTheme {
-    pub fg: Color,
-    pub border: Color,
-    pub purple: Color,
-    pub green: Color,
-    pub red: Color,
-    pub yellow: Color,
-    pub cyan: Color,
-    pub orange: Color,
-    pub select_bg: Color,
-    pub select_fg: Color,
-    pub bg: Color,
-}
+// pub use crate;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BranchEntry {
@@ -122,5 +107,6 @@ pub enum ActiveModal {
     GithubDownloadTargetInput,
     GithubQuickView { path: String, name: String },
     GithubBranchSelect,
+    BranchDeleteConfirm(String),
     Settings,
 }

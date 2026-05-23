@@ -1,4 +1,3 @@
-use ratatui::style::Color;
 use std::env;
 use std::process::Command;
 
@@ -10,6 +9,7 @@ pub mod kilo;
 pub mod models;
 
 use models::*;
+use crate::theme::AppTheme;
 
 pub struct App {
     pub status_message: String,
@@ -92,6 +92,7 @@ pub struct App {
     pub auto_push: bool,
     pub auto_stage_all: bool,
     pub kilo_ai_enabled: bool,
+    pub theme_id: String,
     pub selected_setting_index: usize,
 }
 
@@ -108,7 +109,7 @@ impl App {
             "Ready to generate Commit Message! Press Space to stage, Backspace to revert."
         };
 
-        let is_light_theme = {
+        let theme_id = {
             if let Ok(output) = Command::new("git")
                 .args(["config", "--global", "--get", "git-ai.theme"])
                 .output()
@@ -116,19 +117,33 @@ impl App {
                 let text = String::from_utf8_lossy(&output.stdout)
                     .trim()
                     .to_lowercase();
-                if text == "light" {
-                    true
-                } else if text == "dark" {
-                    false
+                if text.is_empty() {
+                    if crate::helper::Helper::get_os_theme() == dark_light::Mode::Light {
+                        "light".to_string()
+                    } else {
+                        "dark".to_string()
+                    }
                 } else {
-                    crate::helper::Helper::get_os_theme() == dark_light::Mode::Light
+                    text
                 }
             } else {
-                crate::helper::Helper::get_os_theme() == dark_light::Mode::Light
+                if crate::helper::Helper::get_os_theme() == dark_light::Mode::Light {
+                    "light".to_string()
+                } else {
+                    "dark".to_string()
+                }
             }
         };
 
-        let selected_theme_index = if is_light_theme { 1 } else { 0 };
+        let is_light_theme = theme_id == "light";
+
+        let selected_theme_index = match theme_id.as_str() {
+            "dark" => 0,
+            "light" => 1,
+            "nord" => 2,
+            "gruvbox" => 3,
+            _ => 0,
+        };
 
         let auto_push = {
             if let Ok(output) = Command::new("git")
@@ -253,6 +268,7 @@ impl App {
             auto_push,
             auto_stage_all,
             kilo_ai_enabled,
+            theme_id,
             selected_setting_index: 0,
         };
         app.load_workspace_history();
@@ -406,34 +422,6 @@ impl App {
     }
 
     pub fn theme(&self) -> AppTheme {
-        if self.is_light_theme {
-            AppTheme {
-                fg: Color::Rgb(40, 42, 54),
-                border: Color::Rgb(140, 140, 140),
-                purple: Color::Rgb(109, 40, 217),
-                green: Color::Rgb(21, 128, 61),
-                red: Color::Rgb(185, 28, 28),
-                yellow: Color::Rgb(161, 98, 7),
-                cyan: Color::Rgb(3, 105, 161),
-                orange: Color::Rgb(194, 65, 12),
-                select_bg: Color::Rgb(220, 224, 232),
-                select_fg: Color::Rgb(17, 24, 39),
-                bg: Color::Rgb(248, 249, 250),
-            }
-        } else {
-            AppTheme {
-                fg: Color::Rgb(248, 248, 242),
-                border: Color::Rgb(98, 114, 164),
-                purple: Color::Rgb(189, 147, 249),
-                green: Color::Rgb(80, 250, 123),
-                red: Color::Rgb(255, 85, 85),
-                yellow: Color::Rgb(241, 250, 140),
-                cyan: Color::Rgb(139, 233, 253),
-                orange: Color::Rgb(255, 184, 108),
-                select_bg: Color::Rgb(68, 71, 90),
-                select_fg: Color::Rgb(248, 248, 242),
-                bg: Color::Rgb(40, 42, 54),
-            }
-        }
+        crate::theme::get_theme(&self.theme_id)
     }
 }

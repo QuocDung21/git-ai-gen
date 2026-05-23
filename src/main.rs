@@ -4,6 +4,7 @@ mod constant;
 mod git;
 mod helper;
 mod ui;
+pub mod theme;
 
 use crate::cli::logger;
 use crate::helper::Helper;

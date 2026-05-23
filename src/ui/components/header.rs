@@ -19,38 +19,37 @@ pub fn render_header(f: &mut Frame, app: &App, header_area: Rect, badge_area: Re
             .border_type(BorderType::Rounded)
     };
 
-    // 1. CHIA HEADER (Logo 70% | System Info 30%)
     let [left_header, right_header] = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
         .areas(header_area);
 
-    // --- LEFT: ASCII LOGO (Đã căn chỉnh tỷ lệ vàng và làm sạch khoảng trắng) ---
+    // 🎯 ĐÃ ĐỔI: Chữ ASCII Art được thiết kế lại thành "GIT-CHILL"
     let brand_lines = vec![
         Line::from(Span::styled(
-            "  ██████  ██ ████████          █████  ██ ",
+            "  ██████  ██ ████████       ██████  ██   ██ ██ ██      ██      ",
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
-            " ██       ██    ██            ██   ██ ██ ",
+            " ██       ██    ██         ██       ██   ██ ██ ██      ██      ",
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
-            " ██  ███  ██    ██    ████    ███████ ██ ",
+            " ██   ███ ██    ██   ████  ██       ███████ ██ ██      ██      ",
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
-            " ██   ██  ██    ██            ██   ██ ██ ",
+            " ██    ██ ██    ██         ██       ██   ██ ██ ██      ██      ",
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
-            "  ██████  ██    ██            ██   ██ ██ ",
+            "  ██████  ██    ██          ██████  ██   ██ ██ ███████ ███████ ",
             Style::default()
                 .fg(theme.yellow)
                 .add_modifier(Modifier::BOLD),
@@ -72,8 +71,9 @@ pub fn render_header(f: &mut Frame, app: &App, header_area: Rect, badge_area: Re
     };
 
     let right_header_text = vec![
+        // 🎯 ĐÃ ĐỔI: Chữ tiêu đề hệ thống góc phải thành GIT-CHILL
         Line::from(Span::styled(
-            " 🤖 ULTIMATE GIT-AI ",
+            " 🤖 ULTIMATE GIT-CHILL ",
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
@@ -184,7 +184,7 @@ pub fn render_header(f: &mut Frame, app: &App, header_area: Rect, badge_area: Re
 
     f.render_widget(
         Paragraph::new(stats_text)
-            .alignment(Alignment::Center) // ĐÃ HOẠT ĐỘNG HOÀN HẢO
+            .alignment(Alignment::Center)
             .block(create_block(theme.cyan)),
         stats_area,
     );
