@@ -162,7 +162,22 @@ impl App {
         } else {
             for entry in &self.github_tree_entries {
                 if self.github_selected_paths.contains(&entry.path) {
-                    items_to_download.push(entry.clone());
+                    let mut has_selected_ancestor = false;
+                    let parts: Vec<&str> = entry.path.split('/').collect();
+                    let mut current = String::new();
+                    for i in 0..(parts.len().saturating_sub(1)) {
+                        if i > 0 {
+                            current.push('/');
+                        }
+                        current.push_str(parts[i]);
+                        if self.github_selected_paths.contains(&current) {
+                            has_selected_ancestor = true;
+                            break;
+                        }
+                    }
+                    if !has_selected_ancestor {
+                        items_to_download.push(entry.clone());
+                    }
                 }
             }
         }
@@ -194,7 +209,7 @@ impl App {
             }
 
             let src_path = temp_dir.join(&entry.path);
-            let dst_path = dst_dir.join(&entry.name);
+            let dst_path = dst_dir.join(&entry.path);
             if entry.is_dir {
                 self.copy_dir_rec(&src_path, &dst_path)?;
             } else {

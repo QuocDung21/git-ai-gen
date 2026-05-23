@@ -139,7 +139,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubDownloadUrlInput => modals::centered_rect(80, 68, f.size()),
             ActiveModal::GithubDownloadTree => modals::centered_rect(85, 80, f.size()),
             ActiveModal::GithubDownloadTargetInput => modals::centered_rect(80, 45, f.size()),
-            ActiveModal::GithubQuickView { .. } => modals::centered_rect(85, 80, f.size()),
+            ActiveModal::GithubQuickView { .. } => modals::centered_rect(95, 90, f.size()),
             ActiveModal::GithubBranchSelect => modals::centered_rect(50, 45, f.size()),
             ActiveModal::Settings => modals::centered_rect(55, 38, f.size()),
             ActiveModal::None => f.size(),

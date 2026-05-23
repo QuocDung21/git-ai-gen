@@ -44,6 +44,7 @@ pub struct Locales {
     pub setting_auto_push: String,
     pub setting_auto_stage_all: String,
     pub setting_kilo_ai: String,
+    pub github_close_all_folders: String,
 }
 
 impl Locales {

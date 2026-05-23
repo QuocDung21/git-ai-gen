@@ -30,6 +30,7 @@ src/
 │       ├── commit_tree.rs
 │       ├── git_log.rs
 │       ├── branch.rs
+│       ├── github_download.rs  # Grouped Github Downloader, Tree, Quick View & Branch modal renderers
 │       └── ...
 ├── git/                       # Pure Git command wrappers (excellent separation)
 │   ├── mod.rs
@@ -69,6 +70,15 @@ src/
 
 8. **Long-running operations**  
    Handle in pre-poll blocks (`if app.active_modal == ...`) before `event::poll`.
+
+9. **Safe Clipboard & Paste operations**  
+   Use `Event::Paste(text)` via Bracketed Paste Mode (`EnableBracketedPaste`) globally in the main event loop to append text to inputs (e.g. `ManualCommit`, `NewBranchInput`), avoiding raw keystroke splitting and newline conflicts. In addition, support Ctrl+V via `arboard::Clipboard` as a fallback.
+
+10. **Syntax Highlighting & Line Numbers in Viewers**  
+    Quick view text modes should use the custom tokenizer (`highlight_line`) and prepend clean formatted line numbers (` 1 │`) for premium aesthetics and maximum readability.
+
+11. **Directory Structure Preservation in Downloads**  
+    Repository downloads must preserve hierarchical folder structures by using `entry.path` instead of `entry.name` when joining directories, and optimize performance by filtering out redundant child paths if their parent directory is already selected.
 
 ## How to Work Efficiently (Token-Saving Rules)
 
@@ -127,4 +137,4 @@ Style::default().fg(theme.green).add_modifier(Modifier::BOLD)
 
 **Update this file** whenever the architecture changes significantly (especially when moving more modals out of `confirm.rs` or introducing new modules like `state/` or `handlers/`).
 
-Last updated: 2026-05-22
+Last updated: 2026-05-23

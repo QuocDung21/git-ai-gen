@@ -1,6 +1,6 @@
+use ratatui::style::Color;
 use std::env;
 use std::process::Command;
-use ratatui::style::Color;
 
 pub mod events;
 pub mod fetch;
@@ -86,6 +86,9 @@ pub struct App {
     pub github_branches: Vec<String>,
     pub selected_github_branch_index: usize,
     pub current_github_branch: String,
+    pub github_quickview_scroll: usize,
+    pub github_quickview_search: String,
+    pub github_quickview_searching: bool,
     pub auto_push: bool,
     pub auto_stage_all: bool,
     pub kilo_ai_enabled: bool,
@@ -110,7 +113,9 @@ impl App {
                 .args(["config", "--global", "--get", "git-ai.theme"])
                 .output()
             {
-                let text = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+                let text = String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .to_lowercase();
                 if text == "light" {
                     true
                 } else if text == "dark" {
@@ -130,7 +135,9 @@ impl App {
                 .args(["config", "--global", "--get", "git-ai.auto-push"])
                 .output()
             {
-                let text = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+                let text = String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .to_lowercase();
                 text != "false"
             } else {
                 true
@@ -142,7 +149,9 @@ impl App {
                 .args(["config", "--global", "--get", "git-ai.auto-stage-all"])
                 .output()
             {
-                let text = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+                let text = String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .to_lowercase();
                 text == "true"
             } else {
                 false
@@ -154,7 +163,9 @@ impl App {
                 .args(["config", "--global", "--get", "git-ai.kilo-ai"])
                 .output()
             {
-                let text = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+                let text = String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .to_lowercase();
                 text != "false"
             } else {
                 true
@@ -236,6 +247,9 @@ impl App {
             github_branches: Vec::new(),
             selected_github_branch_index: 0,
             current_github_branch: String::new(),
+            github_quickview_scroll: 0,
+            github_quickview_search: String::new(),
+            github_quickview_searching: false,
             auto_push,
             auto_stage_all,
             kilo_ai_enabled,
