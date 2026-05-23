@@ -5,7 +5,7 @@ use crate::app::models::ActiveModal;
 use crate::app::App;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
-    style::{Modifier, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
     Frame,
@@ -145,6 +145,28 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::Settings => modals::centered_rect(55, 38, f.size()),
             ActiveModal::None => f.size(),
         };
+
+        if area.width > 2 && area.height > 1 {
+            let shadow_area = ratatui::layout::Rect {
+                x: area.x + 2,
+                y: area.y + 1,
+                width: area.width.saturating_sub(2),
+                height: area.height.saturating_sub(1),
+            };
+            let shadow_bg = if theme.bg == Color::Rgb(248, 249, 250) {
+                Color::Rgb(180, 185, 195)
+            } else if theme.bg == Color::Rgb(46, 52, 64) {
+                Color::Rgb(20, 22, 28)
+            } else if theme.bg == Color::Rgb(40, 40, 40) {
+                Color::Rgb(20, 20, 20)
+            } else {
+                Color::Rgb(10, 10, 15)
+            };
+            f.render_widget(
+                Block::default().style(Style::default().bg(shadow_bg)),
+                shadow_area,
+            );
+        }
 
         f.render_widget(Clear, area);
         f.render_widget(Block::default().style(Style::default().bg(theme.bg)), area);
