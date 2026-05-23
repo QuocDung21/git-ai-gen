@@ -14,37 +14,40 @@ This file provides the **standard context** for AI agents to work on this Rust T
 
 ```
 src/
-├── main.rs
-├── app/
-│   ├── mod.rs                 # App struct + small core methods (keep < 400 LOC if possible)
-│   ├── models.rs              # Data models & enums only (ActiveModal, Entry structs, Steps...)
-│   ├── events.rs              # Main event loop + key routing (avoid putting heavy logic here)
-│   ├── state/                 # (Preferred) Domain-specific state modules
-│   └── handlers/              # (Preferred) Grouped action handlers
-├── ui/
-│   ├── mod.rs
-│   ├── components/            # Reusable UI pieces (header, changes, legend, diff)
-│   └── modals/                # ← Each modal should live in its own file
-│       ├── mod.rs
-│       ├── manual_commit.rs
-│       ├── commit_tree.rs
-│       ├── git_log.rs
-│       ├── branch.rs
-│       ├── github_download.rs  # Grouped Github Downloader, Tree, Quick View & Branch modal renderers
-│       └── ...
-├── git/                       # Pure Git command wrappers (excellent separation)
+├── main.rs                    # Binary entry point (always builds full TUI)
+├── lib.rs                     # Library root — uses Cargo feature "tui"
+├── ffi.rs                     # C ABI layer (#[no_mangle] exports) — always compiled
+│
+├── constant/                  # Pure constants (prompts, markers) — always public
+├── git/                       # Pure Git command wrappers — always public
 │   ├── mod.rs
 │   ├── status.rs
 │   ├── commit.rs
-│   ├── branch.rs
 │   ├── remote.rs
+│   ├── branch.rs
 │   └── stash.rs
-├── cli/
-├── helper/
-└── constant/
+├── helper/                    # Helper utilities (get_ai_language, get_locales, ...) — always public
+├── locales.rs                 # i18n (struct Locales + new()) — top-level for FFI + helper
+├── models/                    # All data models (BranchEntry, ActiveModal, ...) — top-level shared
+├── theme/                     # Theme definitions (AppTheme, palettes) — always public
+│
+├── app/                       # Heavy TUI state & logic (only when "tui" feature)
+│   ├── mod.rs
+│   ├── events.rs
+│   └── ...
+├── ui/                        # Ratatui rendering + modals (only when "tui" feature)
+├── cli/                       # Interactive CLI commands (only when "tui" feature)
 ```
 
-**Key Principle**: Keep files small and focused. One concept = one file when reasonable.
+**Cargo Feature Split (Critical for FFI)**
+
+- `default = ["tui"]`
+- `cargo build` (or for the binary) → full TUI included
+- `cargo build --no-default-features` → **slim FFI library only** (constant + git + helper + locales + models + theme + ffi). No ratatui, no console, no interactive code.
+
+This allows building a tiny staticlib/rlib for Swift, Kotlin, Node, etc. without pulling the entire dashboard.
+
+**Key Principle**: Keep files small and focused. One concept = one file when reasonable. Pure/shared logic lives at the top level (`models/`, `locales.rs`, `git/`, `helper/`). Heavy interactive code lives behind the `tui` feature.
 
 ## Critical Rules (Always Follow)
 
@@ -135,6 +138,17 @@ Style::default().fg(theme.green).add_modifier(Modifier::BOLD)
 
 ---
 
-**Update this file** whenever the architecture changes significantly (especially when moving more modals out of `confirm.rs` or introducing new modules like `state/` or `handlers/`).
+**Update this file** whenever the architecture changes significantly (especially when introducing top-level modules like `models/` / `locales.rs`, or changing the `tui` feature split).
+
+### Working with FFI / Slim Library
+
+When modifying code that must work for FFI consumers:
+
+- Always test both:
+  - `cargo check`                    (full TUI)
+  - `cargo check --no-default-features` (slim FFI mode)
+- New pure logic (Git wrappers, helpers, data types, i18n) **must** live in the always-compiled modules (`git/`, `helper/`, `models/`, `locales.rs`, `constant/`, `theme/`).
+- Never add `use crate::app::...` or `use crate::ui::...` or `use crate::cli::...` from FFI-reachable code.
+- The blanket `#![allow(dead_code)]` was removed from lib.rs root. TUI modules carry their own scoped allow when the feature is active.
 
 Last updated: 2026-05-23

@@ -1,7 +1,7 @@
 pub mod components;
 pub mod modals;
 
-use crate::app::models::ActiveModal;
+use crate::models::ActiveModal;
 use crate::app::App;
 use ratatui::{
     layout::{Constraint, Direction, Layout},

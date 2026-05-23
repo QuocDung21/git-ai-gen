@@ -3,6 +3,14 @@ name = "git-ai"
 version = "3.0.0"
 edition = "2021"
 
+[lib]
+name = "git_ai_core"
+crate-type = ["staticlib", "rlib"]
+
+[features]
+default = ["tui"]
+tui = []
+
 [profile.dev]
 opt-level = 0
 debug = true
@@ -28,3 +36,4 @@ enigo = "0.2"
 tempfile = "3.27.0"
 chrono = "0.4.44"
 cli-log = "2.1.0"
+serde_json = "1.0.100"

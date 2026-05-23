@@ -1,4 +1,4 @@
-use crate::cli::Locales;
+use crate::locales::Locales;
 use std::process::Command;
 
 pub struct Helper;

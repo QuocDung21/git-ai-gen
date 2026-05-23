@@ -1,5 +1,5 @@
 use super::App;
-use crate::app::models::GithubTreeEntry;
+use crate::models::GithubTreeEntry;
 
 impl App {
     pub fn visit_repo_dir(&mut self) -> std::io::Result<()> {

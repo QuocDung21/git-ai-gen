@@ -1,8 +1,11 @@
 mod app;
 mod cli;
 mod constant;
+mod ffi;
 mod git;
 mod helper;
+mod locales;
+mod models;
 mod ui;
 pub mod theme;
 

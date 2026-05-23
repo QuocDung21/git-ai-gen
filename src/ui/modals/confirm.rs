@@ -1,4 +1,4 @@
-use crate::app::models::{AmendStep, GoStep, StashAction, StashStep};
+use crate::models::{AmendStep, GoStep, StashAction, StashStep};
 use crate::app::App;
 
 use ratatui::{

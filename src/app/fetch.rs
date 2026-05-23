@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use super::App;
-use crate::app::models::{AmendStep, CommitLogEntry, FeatureGroup, StashEntry, StashStep};
+use crate::models::{AmendStep, CommitLogEntry, FeatureGroup, StashEntry, StashStep};
 
 impl App {
     pub fn fetch_commit_logs(&mut self) {

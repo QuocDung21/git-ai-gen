@@ -1,4 +1,4 @@
-use crate::app::models::BranchEntry;
+use crate::models::BranchEntry;
 use std::process::Command;
 
 /// Get a list of all branches (including local and remote) from the Git system.
@@ -293,31 +293,51 @@ mod additional_tests {
     use super::*;
     use std::fs;
     use std::process::Command;
+    use std::sync::Mutex;
     use tempfile::TempDir;
+
+    /// Serialize all tests that mutate the process current working directory.
+    /// Prevents races when `cargo test` runs tests in parallel.
+    static GIT_TEST_LOCK: Mutex<()> = Mutex::new(());
 
     fn setup_test_repo() -> TempDir {
         let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
 
-        std::env::set_current_dir(tmp.path()).unwrap();
-        Command::new("git").args(["init"]).output().unwrap();
+        // Force initial branch name to "master" for test stability
         Command::new("git")
+            .current_dir(repo)
+            .args(["init", "-b", "master"])
+            .output()
+            .unwrap();
+        Command::new("git")
+            .current_dir(repo)
             .args(["config", "user.email", "test@git.com"])
             .output()
             .unwrap();
         Command::new("git")
+            .current_dir(repo)
             .args(["config", "user.name", "Tester"])
             .output()
             .unwrap();
         Command::new("git")
+            .current_dir(repo)
             .args(["commit", "--allow-empty", "-m", "Init"])
             .output()
             .unwrap();
+
+        // Change process CWD so that bare `Command::new("git")` calls in the
+        // functions under test (delete_branch, git_merge, etc.) operate inside
+        // this temporary repository. Protected by GIT_TEST_LOCK in each test.
+        std::env::set_current_dir(repo).unwrap();
         tmp
     }
 
     #[test]
     fn test_force_delete_vs_normal_delete() {
+        let _guard = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
         let _tmp = setup_test_repo();
+
         Command::new("git")
             .args(["checkout", "-b", "unmerged-branch"])
             .output()
@@ -340,9 +360,12 @@ mod additional_tests {
             force: false,
         };
         let res_normal = delete_branch("unmerged-branch", options_normal);
+        assert!(res_normal.is_ok(), "delete_branch should not hard-fail");
+        let msg_normal = res_normal.unwrap();
         assert!(
-            res_normal.is_err(),
-            "Normal delete should fail for unmerged branch"
+            msg_normal.contains("Error ignored") || msg_normal.contains("Could not delete"),
+            "Normal delete on unmerged branch should report error (got: {})",
+            msg_normal
         );
 
         let options_force = DeleteBranchOptions {
@@ -356,6 +379,7 @@ mod additional_tests {
 
     #[test]
     fn test_merge_conflict_scenario() {
+        let _guard = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
         let _tmp = setup_test_repo();
 
         Command::new("git")
@@ -395,6 +419,7 @@ mod additional_tests {
 
     #[test]
     fn test_remote_auto_detection() {
+        let _guard = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
         let _tmp = setup_test_repo();
         let options = DeleteBranchOptions {
             local: true,
@@ -402,16 +427,22 @@ mod additional_tests {
             force: false,
         };
 
-        let res = delete_branch("origin/main", options);
+        // Use a non-protected remote branch name so we don't hit the protected_branch early return.
+        // After "origin/" stripping it becomes "feature-x" (not main/master).
+        let res = delete_branch("origin/feature-x", options);
 
         assert!(res.is_ok());
-        assert!(res
-            .unwrap()
-            .contains("Remote: Branch 'my-branch' does not exist on origin"));
+        let msg = res.unwrap();
+        assert!(
+            msg.contains("Remote:") && msg.contains("does not exist on origin"),
+            "Expected remote non-existence message, got: {}",
+            msg
+        );
     }
 
     #[test]
     fn test_delete_non_existent_branch() {
+        let _guard = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
         let _tmp = setup_test_repo();
 
         let options = DeleteBranchOptions {

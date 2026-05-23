@@ -6,9 +6,9 @@ pub mod fetch;
 pub mod github;
 pub mod history;
 pub mod kilo;
-pub mod models;
 
-use models::*;
+pub use crate::models::*;
+
 use crate::theme::AppTheme;
 
 pub struct App {

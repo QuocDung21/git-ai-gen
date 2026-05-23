@@ -1,5 +1,3 @@
-// pub use crate;
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct BranchEntry {
     pub name: String,

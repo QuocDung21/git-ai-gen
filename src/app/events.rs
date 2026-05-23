@@ -11,7 +11,7 @@ use ratatui::{
 use std::process::Command;
 use std::{io, time::Duration};
 
-use crate::app::models::{ActiveModal, AmendStep, GoStep, StashAction, StashStep};
+use crate::models::{ActiveModal, AmendStep, GoStep, StashAction, StashStep};
 use crate::app::App;
 use crate::git::branch::{checkout_branch, create_and_checkout_branch, git_merge};
 use crate::git::commit::{amend_commit, commit};

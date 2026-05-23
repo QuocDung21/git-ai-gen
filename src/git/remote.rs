@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::process::Command;
 
-use crate::app::models::RemoteEntry;
+use crate::models::RemoteEntry;
 
 pub fn get_remote_url() -> String {
     if let Ok(out) = Command::new("git")
