@@ -34,6 +34,8 @@ pub use github_download::{
     render_github_download_url_input,
     render_github_download_tree,
     render_github_download_target_input,
+    render_github_quick_view,
+    render_github_branch_select,
 };
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};

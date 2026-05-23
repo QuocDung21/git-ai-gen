@@ -293,20 +293,22 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
         if is_vi {
-            "  [Khoảng trắng] Chọn/Bỏ chọn  [◀/▶] Đóng/Mở thư mục  [↑/↓] Di chuyển  [Enter] Xác nhận lưu & tải  [Esc] Quay lại"
+            "  [B] Chọn branch  [V] Xem nhanh  [Space] Chọn/Bỏ chọn  [◀/▶] Đóng/Mở thư mục  [↑/↓] Di chuyển  [Enter] Xác nhận lưu & tải  [Esc] Quay lại"
         } else {
-            "  [Space] Select/Deselect  [◀/▶] Collapse/Expand Folder  [↑/↓] Navigate  [Enter] Confirm & Download  [Esc] Back"
+            "  [B] Branch  [V] Quick View  [Space] Select/Deselect  [◀/▶] Collapse/Expand Folder  [↑/↓] Navigate  [Enter] Confirm & Download  [Esc] Back"
         },
         Style::default().fg(theme.border),
     )]));
 
+    let title_text = if is_vi {
+        format!(" 📁 CHỌN MỤC TẢI VỀ (Nhánh: {}) ", app.current_github_branch)
+    } else {
+        format!(" 📁 SELECT ITEM TO DOWNLOAD (Branch: {}) ", app.current_github_branch)
+    };
+
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 📁 CHỌN MỤC TẢI VỀ "
-            } else {
-                " 📁 SELECT ITEM TO DOWNLOAD "
-            },
+            title_text,
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
@@ -416,5 +418,205 @@ pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect)
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
         .block(block);
+    f.render_widget(paragraph, area);
+}
+
+pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str, name: &str) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let temp_dir = if let Some(ref dir) = app.github_temp_dir {
+        dir.path()
+    } else {
+        return;
+    };
+    let file_path = temp_dir.join(path);
+    let content_text = if file_path.exists() {
+        std::fs::read_to_string(&file_path).unwrap_or_else(|_| {
+            if is_vi {
+                "❌ Không thể đọc file".to_string()
+            } else {
+                "❌ Cannot read file".to_string()
+            }
+        })
+    } else {
+        if is_vi {
+            "❌ File không tồn tại".to_string()
+        } else {
+            "❌ File not found".to_string()
+        }
+    };
+
+    let lines: Vec<&str> = content_text.lines().take(100).collect();
+    let mut content = vec![Line::from("")];
+
+    for line in lines {
+        content.push(Line::from(vec![Span::styled(
+            line,
+            Style::default().fg(theme.fg),
+        )]));
+    }
+
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "[Esc] Đóng  [↑/↓] Cuộn"
+        } else {
+            "[Esc] Close  [↑/↓] Scroll"
+        },
+        Style::default().fg(theme.border),
+    )]));
+
+    let block = Block::default()
+        .title(Span::styled(
+            format!(" 👁 {} ", name),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .block(block);
+    f.render_widget(paragraph, area);
+}
+
+pub fn render_github_branch_select(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let mut content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "🌿 DANH SÁCH CHI NHÁNH GITHUB (BRANCHES) 🌿"
+            } else {
+                "🌿 GITHUB BRANCH SELECTOR 🌿"
+            },
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+    ];
+
+    if app.github_branches.is_empty() {
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "Không tìm thấy chi nhánh nào."
+            } else {
+                "No branches found."
+            },
+            Style::default()
+                .fg(theme.border)
+                .add_modifier(Modifier::ITALIC),
+        )]));
+    } else {
+        for (i, branch) in app.github_branches.iter().enumerate() {
+            let is_selected = i == app.selected_github_branch_index;
+            let is_active = branch == &app.current_github_branch;
+            let cursor = if is_selected {
+                Span::styled(
+                    " ▶ ",
+                    Style::default()
+                        .fg(theme.purple)
+                        .add_modifier(Modifier::BOLD),
+                )
+            } else {
+                Span::styled("   ", Style::default())
+            };
+
+            let branch_style = if is_selected {
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.select_bg)
+                    .add_modifier(Modifier::BOLD)
+            } else if is_active {
+                Style::default()
+                    .fg(theme.green)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(theme.fg)
+            };
+
+            let active_badge = if is_active {
+                Span::styled(
+                    if is_vi {
+                        " (Đang xem) "
+                    } else {
+                        " (Viewing) "
+                    },
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::ITALIC),
+                )
+            } else {
+                Span::styled("", Style::default())
+            };
+
+            let prefix = if is_active {
+                "★ "
+            } else {
+                "☆ "
+            };
+
+            let prefix_span = Span::styled(
+                prefix,
+                if is_active {
+                    Style::default().fg(theme.green)
+                } else {
+                    Style::default().fg(theme.border)
+                },
+            );
+
+            content.push(Line::from(vec![
+                cursor,
+                prefix_span,
+                Span::styled(branch.clone(), branch_style),
+                active_badge,
+            ]));
+        }
+    }
+
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "Dùng ↑/↓ hoặc j/k để di chuyển, [Enter] để chuyển branch."
+        } else {
+            "Use ↑/↓ or j/k to navigate, [Enter] to switch branch."
+        },
+        Style::default()
+            .fg(theme.orange)
+            .add_modifier(Modifier::BOLD),
+    )]));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "Nhấn [Esc] hoặc [q] để HỦY."
+        } else {
+            "Press [Esc] or [q] to CANCEL."
+        },
+        Style::default().fg(theme.border),
+    )]));
+
+    let block = Block::default()
+        .title(Span::styled(
+            if is_vi {
+                " 🌿 CHỌN CHI NHÁNH GITHUB "
+            } else {
+                " 🌿 SELECT GITHUB BRANCH "
+            },
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.cyan))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Center)
+        .block(block);
+
     f.render_widget(paragraph, area);
 }

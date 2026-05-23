@@ -67,7 +67,8 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 app.go_step = GoStep::Done(if is_vi {
                                     "✅ Commit & Push thành công! Code đã lên mây ☁️".to_string()
                                 } else {
-                                    "✅ Commit & Push successful! Code is in the cloud ☁️".to_string()
+                                    "✅ Commit & Push successful! Code is in the cloud ☁️"
+                                        .to_string()
                                 });
                             }
                             Err(err) => {
@@ -143,19 +144,51 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
         }
 
         if app.github_cloning {
-            let temp_dir = std::path::Path::new(&app.current_dir).join(".git_ai_download_temp");
-            if temp_dir.exists() {
-                let _ = std::fs::remove_dir_all(&temp_dir);
-            }
+            let temp_dir = match tempfile::Builder::new()
+                .prefix("git_ai_download_")
+                .tempdir()
+            {
+                Ok(dir) => dir,
+                Err(e) => {
+                    app.github_cloning_error = Some(format!("Không thể tạo thư mục tạm: {}", e));
+                    app.github_cloning = false;
+                    continue;
+                }
+            };
+            let temp_path = temp_dir.path().to_path_buf();
             let output = Command::new("git")
-                .args(["clone", "--depth", "1", "--filter=blob:none", "--no-checkout", &app.github_download_url, temp_dir.to_str().unwrap_or_default()])
+                .args([
+                    "clone",
+                    "--depth",
+                    "1",
+                    "--filter=blob:none",
+                    "--no-checkout",
+                    &app.github_download_url,
+                    temp_path.to_str().unwrap_or_default(),
+                ])
                 .output();
-
             match output {
                 Ok(out) if out.status.success() => {
+                    app.github_temp_dir = Some(temp_dir);
+                    if let Some(ref dir) = app.github_temp_dir {
+                        if let Ok(output) = Command::new("git")
+                            .args(["symbolic-ref", "--short", "HEAD"])
+                            .current_dir(dir.path())
+                            .output()
+                        {
+                            if output.status.success() {
+                                app.current_github_branch = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                            } else {
+                                app.current_github_branch = "main".to_string();
+                            }
+                        } else {
+                            app.current_github_branch = "main".to_string();
+                        }
+                    }
                     if let Err(e) = app.visit_repo_dir() {
                         app.github_cloning_error = Some(format!("{}", e));
                         app.github_cloning = false;
+                        app.github_temp_dir = None;
                         app.active_modal = ActiveModal::GithubDownloadUrlInput;
                     } else {
                         let url = app.github_download_url.trim().to_string();
@@ -170,11 +203,13 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
                     app.github_cloning_error = Some(stderr);
                     app.github_cloning = false;
+                    app.github_temp_dir = None;
                     app.active_modal = ActiveModal::GithubDownloadUrlInput;
                 }
                 Err(err) => {
                     app.github_cloning_error = Some(format!("{}", err));
                     app.github_cloning = false;
+                    app.github_temp_dir = None;
                     app.active_modal = ActiveModal::GithubDownloadUrlInput;
                 }
             }
@@ -362,21 +397,38 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                             .args(["config", "--global", "git-ai.auto-push", &val])
                                             .output();
                                         app.status_message = if is_vi {
-                                            format!("⚙️ Tự động Push: {}", if app.auto_push { "BẬT" } else { "TẮT" })
+                                            format!(
+                                                "⚙️ Tự động Push: {}",
+                                                if app.auto_push { "BẬT" } else { "TẮT" }
+                                            )
                                         } else {
-                                            format!("⚙️ Auto Push: {}", if app.auto_push { "ON" } else { "OFF" })
+                                            format!(
+                                                "⚙️ Auto Push: {}",
+                                                if app.auto_push { "ON" } else { "OFF" }
+                                            )
                                         };
                                     }
                                     1 => {
                                         app.auto_stage_all = !app.auto_stage_all;
                                         let val = app.auto_stage_all.to_string();
                                         let _ = Command::new("git")
-                                            .args(["config", "--global", "git-ai.auto-stage-all", &val])
+                                            .args([
+                                                "config",
+                                                "--global",
+                                                "git-ai.auto-stage-all",
+                                                &val,
+                                            ])
                                             .output();
                                         app.status_message = if is_vi {
-                                            format!("⚙️ Tự động Stage tất cả: {}", if app.auto_stage_all { "BẬT" } else { "TẮT" })
+                                            format!(
+                                                "⚙️ Tự động Stage tất cả: {}",
+                                                if app.auto_stage_all { "BẬT" } else { "TẮT" }
+                                            )
                                         } else {
-                                            format!("⚙️ Auto Stage All: {}", if app.auto_stage_all { "ON" } else { "OFF" })
+                                            format!(
+                                                "⚙️ Auto Stage All: {}",
+                                                if app.auto_stage_all { "ON" } else { "OFF" }
+                                            )
                                         };
                                     }
                                     2 => {
@@ -386,9 +438,19 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                             .args(["config", "--global", "git-ai.kilo-ai", &val])
                                             .output();
                                         app.status_message = if is_vi {
-                                            format!("⚙️ Kilo AI: {}", if app.kilo_ai_enabled { "BẬT" } else { "TẮT" })
+                                            format!(
+                                                "⚙️ Kilo AI: {}",
+                                                if app.kilo_ai_enabled {
+                                                    "BẬT"
+                                                } else {
+                                                    "TẮT"
+                                                }
+                                            )
                                         } else {
-                                            format!("⚙️ Kilo AI Generation: {}", if app.kilo_ai_enabled { "ON" } else { "OFF" })
+                                            format!(
+                                                "⚙️ Kilo AI Generation: {}",
+                                                if app.kilo_ai_enabled { "ON" } else { "OFF" }
+                                            )
                                         };
                                     }
                                     _ => {}
@@ -807,9 +869,11 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                 KeyCode::Char('k') | KeyCode::Char('K') => {
                                     if !app.kilo_ai_enabled {
                                         app.kilo_generation_status = if app.current_lang == "vi" {
-                                            "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!".to_string()
+                                            "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!"
+                                                .to_string()
                                         } else {
-                                            "⚠️ Kilo AI Generation is disabled in Settings!".to_string()
+                                            "⚠️ Kilo AI Generation is disabled in Settings!"
+                                                .to_string()
                                         };
                                     } else if app.last_staged_diff.trim().is_empty() {
                                         app.kilo_generation_status = if app.current_lang == "vi" {
@@ -1148,9 +1212,11 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         // AI Commit & Push
                                         if !app.kilo_ai_enabled {
                                             app.status_message = if app.current_lang == "vi" {
-                                                "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!".to_string()
+                                                "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!"
+                                                    .to_string()
                                             } else {
-                                                "⚠️ Kilo AI Generation is disabled in Settings!".to_string()
+                                                "⚠️ Kilo AI Generation is disabled in Settings!"
+                                                    .to_string()
                                             };
                                         } else {
                                             let clipboard_msg =
@@ -1165,7 +1231,8 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                                         "(Chưa có commit message trong clipboard)"
                                                             .to_string()
                                                     } else {
-                                                        "(No commit message in clipboard)".to_string()
+                                                        "(No commit message in clipboard)"
+                                                            .to_string()
                                                     }
                                                 } else {
                                                     clipboard_msg.trim().to_string()
@@ -1187,42 +1254,42 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         app.active_modal = ActiveModal::AmendCommit;
                                     }
                                     3 => {
-                                         // Fetch
-                                         app.status_message = if app.current_lang == "vi" {
-                                             "⏳ Đang tải thông tin mới từ Remote (Fetch)..."
-                                         } else {
-                                             "⏳ Fetching new updates from Remote..."
-                                         }
-                                         .to_string();
-                                         terminal.draw(|f| crate::ui::ui(f, app))?;
-                                         let _ = crate::git::remote::git_fetch();
-                                         app.status_message = if app.current_lang == "vi" {
-                                             "✅ Fetch hoàn tất"
-                                         } else {
-                                             "✅ Fetch completed"
-                                         }
-                                         .to_string();
-                                         app.active_modal = ActiveModal::None;
-                                         app.refresh_git_status();
+                                        // Fetch
+                                        app.status_message = if app.current_lang == "vi" {
+                                            "⏳ Đang tải thông tin mới từ Remote (Fetch)..."
+                                        } else {
+                                            "⏳ Fetching new updates from Remote..."
+                                        }
+                                        .to_string();
+                                        terminal.draw(|f| crate::ui::ui(f, app))?;
+                                        let _ = crate::git::remote::git_fetch();
+                                        app.status_message = if app.current_lang == "vi" {
+                                            "✅ Fetch hoàn tất"
+                                        } else {
+                                            "✅ Fetch completed"
+                                        }
+                                        .to_string();
+                                        app.active_modal = ActiveModal::None;
+                                        app.refresh_git_status();
                                     }
                                     4 => {
-                                         // Pull
-                                         app.status_message = if app.current_lang == "vi" {
-                                             "⏳ Đang cập nhật thay đổi từ Remote (Pull)..."
-                                         } else {
-                                             "⏳ Pulling changes from Remote..."
-                                         }
-                                         .to_string();
-                                         terminal.draw(|f| crate::ui::ui(f, app))?;
-                                         let _ = crate::git::remote::git_pull();
-                                         app.status_message = if app.current_lang == "vi" {
-                                             "✅ Pull hoàn tất"
-                                         } else {
-                                             "✅ Pull completed"
-                                         }
-                                         .to_string();
-                                         app.active_modal = ActiveModal::None;
-                                         app.refresh_git_status();
+                                        // Pull
+                                        app.status_message = if app.current_lang == "vi" {
+                                            "⏳ Đang cập nhật thay đổi từ Remote (Pull)..."
+                                        } else {
+                                            "⏳ Pulling changes from Remote..."
+                                        }
+                                        .to_string();
+                                        terminal.draw(|f| crate::ui::ui(f, app))?;
+                                        let _ = crate::git::remote::git_pull();
+                                        app.status_message = if app.current_lang == "vi" {
+                                            "✅ Pull hoàn tất"
+                                        } else {
+                                            "✅ Pull completed"
+                                        }
+                                        .to_string();
+                                        app.active_modal = ActiveModal::None;
+                                        app.refresh_git_status();
                                     }
                                     5 => {
                                         // Push
@@ -1344,7 +1411,10 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     }
                     ActiveModal::FeatureCommit => {
                         match key.code {
-                            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('e') | KeyCode::Char('E') => {
+                            KeyCode::Esc
+                            | KeyCode::Char('q')
+                            | KeyCode::Char('e')
+                            | KeyCode::Char('E') => {
                                 app.active_modal = ActiveModal::None;
                             }
                             KeyCode::Up | KeyCode::Char('k') => {
@@ -1415,16 +1485,22 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             KeyCode::Up | KeyCode::Char('k') | KeyCode::Char('K') => {
                                 if !app.github_history.is_empty() {
                                     if app.selected_github_history_index.is_none() {
-                                        app.github_download_url_temp = app.github_download_url.clone();
-                                        app.selected_github_history_index = Some(app.github_history.len() - 1);
-                                        app.github_download_url = app.github_history[app.github_history.len() - 1].clone();
+                                        app.github_download_url_temp =
+                                            app.github_download_url.clone();
+                                        app.selected_github_history_index =
+                                            Some(app.github_history.len() - 1);
+                                        app.github_download_url = app.github_history
+                                            [app.github_history.len() - 1]
+                                            .clone();
                                     } else if let Some(idx) = app.selected_github_history_index {
                                         if idx > 0 {
                                             app.selected_github_history_index = Some(idx - 1);
-                                            app.github_download_url = app.github_history[idx - 1].clone();
+                                            app.github_download_url =
+                                                app.github_history[idx - 1].clone();
                                         } else {
                                             app.selected_github_history_index = None;
-                                            app.github_download_url = app.github_download_url_temp.clone();
+                                            app.github_download_url =
+                                                app.github_download_url_temp.clone();
                                         }
                                     }
                                 }
@@ -1432,16 +1508,19 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             KeyCode::Down | KeyCode::Char('j') | KeyCode::Char('J') => {
                                 if !app.github_history.is_empty() {
                                     if app.selected_github_history_index.is_none() {
-                                        app.github_download_url_temp = app.github_download_url.clone();
+                                        app.github_download_url_temp =
+                                            app.github_download_url.clone();
                                         app.selected_github_history_index = Some(0);
                                         app.github_download_url = app.github_history[0].clone();
                                     } else if let Some(idx) = app.selected_github_history_index {
                                         if idx < app.github_history.len() - 1 {
                                             app.selected_github_history_index = Some(idx + 1);
-                                            app.github_download_url = app.github_history[idx + 1].clone();
+                                            app.github_download_url =
+                                                app.github_history[idx + 1].clone();
                                         } else {
                                             app.selected_github_history_index = None;
-                                            app.github_download_url = app.github_download_url_temp.clone();
+                                            app.github_download_url =
+                                                app.github_download_url_temp.clone();
                                         }
                                     }
                                 }
@@ -1451,9 +1530,12 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                     app.remove_from_github_history(idx);
                                     if app.github_history.is_empty() {
                                         app.selected_github_history_index = None;
-                                        app.github_download_url = app.github_download_url_temp.clone();
-                                    } else if let Some(new_idx) = app.selected_github_history_index {
-                                        app.github_download_url = app.github_history[new_idx].clone();
+                                        app.github_download_url =
+                                            app.github_download_url_temp.clone();
+                                    } else if let Some(new_idx) = app.selected_github_history_index
+                                    {
+                                        app.github_download_url =
+                                            app.github_history[new_idx].clone();
                                     }
                                 } else {
                                     app.github_download_url.pop();
@@ -1469,13 +1551,13 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         }
                         continue;
                     }
+
+                    // TODO: [KEYMAP] Github Download Tree Navigation
+                    // SEARCH_TAG: #github_modal_logic #navigation
                     ActiveModal::GithubDownloadTree => {
                         match key.code {
                             KeyCode::Esc => {
-                                let temp_dir = std::path::Path::new(&app.current_dir).join(".git_ai_download_temp");
-                                if temp_dir.exists() {
-                                    let _ = std::fs::remove_dir_all(&temp_dir);
-                                }
+                                app.github_temp_dir = None;
                                 app.active_modal = ActiveModal::GithubDownloadUrlInput;
                             }
                             KeyCode::Up | KeyCode::Char('k') => {
@@ -1501,6 +1583,26 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             KeyCode::Char(' ') => {
                                 app.toggle_github_tree_selection(app.selected_github_tree_index);
                             }
+                            KeyCode::Char('v') | KeyCode::Char('V') => {
+                                let visible = app.get_visible_github_tree_entries();
+                                if !visible.is_empty()
+                                    && app.selected_github_tree_index < visible.len()
+                                {
+                                    let entry = visible[app.selected_github_tree_index].clone();
+                                    if !entry.is_dir {
+                                        if let Some(ref dir) = app.github_temp_dir {
+                                            let _ = Command::new("git")
+                                                .args(["checkout", "HEAD", &entry.path])
+                                                .current_dir(dir.path())
+                                                .output();
+                                        }
+                                        app.active_modal = ActiveModal::GithubQuickView {
+                                            path: entry.path.clone(),
+                                            name: entry.name.clone(),
+                                        };
+                                    }
+                                }
+                            }
                             KeyCode::Right => {
                                 let entry = {
                                     let visible = app.get_visible_github_tree_entries();
@@ -1515,7 +1617,8 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         app.github_expanded_dirs.insert(entry.path.clone());
                                         let next_len = app.get_visible_github_tree_entries().len();
                                         if app.selected_github_tree_index >= next_len {
-                                            app.selected_github_tree_index = next_len.saturating_sub(1);
+                                            app.selected_github_tree_index =
+                                                next_len.saturating_sub(1);
                                         }
                                     }
                                 }
@@ -1534,11 +1637,13 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         if app.github_expanded_dirs.contains(&entry.path) {
                                             app.github_expanded_dirs.remove(&entry.path);
                                             let prefix = format!("{}/", entry.path);
-                                            app.github_expanded_dirs.retain(|k| !k.starts_with(&prefix));
+                                            app.github_expanded_dirs
+                                                .retain(|k| !k.starts_with(&prefix));
                                         }
                                         let next_len = app.get_visible_github_tree_entries().len();
                                         if app.selected_github_tree_index >= next_len {
-                                            app.selected_github_tree_index = next_len.saturating_sub(1);
+                                            app.selected_github_tree_index =
+                                                next_len.saturating_sub(1);
                                         }
                                     }
                                 }
@@ -1565,6 +1670,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                         }
                         continue;
                     }
+
                     ActiveModal::GithubDownloadTargetInput => {
                         match key.code {
                             KeyCode::Esc => {
@@ -1616,10 +1722,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         } else {
                                             format!("✅ Downloaded successfully: {}", selected_name)
                                         };
-                                        let temp_dir = std::path::Path::new(&app.current_dir).join(".git_ai_download_temp");
-                                        if temp_dir.exists() {
-                                            let _ = std::fs::remove_dir_all(&temp_dir);
-                                        }
+                                        app.github_temp_dir = None;
                                         app.active_modal = ActiveModal::None;
                                         app.refresh_git_status();
                                     }
@@ -1629,6 +1732,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         } else {
                                             format!("❌ Save error: {}", err)
                                         };
+                                        app.github_temp_dir = None;
                                     }
                                 }
                             }
@@ -1637,6 +1741,15 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                             }
                             KeyCode::Char(c) => {
                                 app.github_download_target_path.push(c);
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+                    ActiveModal::GithubQuickView { .. } => {
+                        match key.code {
+                            KeyCode::Esc | KeyCode::Enter => {
+                                app.active_modal = ActiveModal::GithubDownloadTree;
                             }
                             _ => {}
                         }
@@ -2062,7 +2175,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                                         "⚠️ No files staged! Please press [Space] to select files before pressing 'd'.".to_string()
                                     };
                                 } else {
-                                     app.diff_added_lines = diff_str
+                                    app.diff_added_lines = diff_str
                                         .lines()
                                         .filter(|l| l.starts_with('+') && !l.starts_with("++"))
                                         .count();

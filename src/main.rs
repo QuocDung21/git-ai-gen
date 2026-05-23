@@ -54,6 +54,8 @@ enum Commands {
 // =========================================================================
 
 fn main() -> Result<()> {
+    cli_log::init_cli_log!();
+
     let cli = Cli::parse();
     let locales = Helper::get_locales();
 

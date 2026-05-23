@@ -106,11 +106,11 @@ pub enum ActiveModal {
     StashList,
     RemoteInfo,
     AmendCommit,
-    CommitDiff(String), // commit hash
+    CommitDiff(String),   // commit hash
     MergeConfirm(String), // Branch name to merge into current branch
-    NewBranchInput, // Text input modal to create and checkout a new branch
-    ThemeSelect, // Interactive theme selection modal
-    WorkspaceHistory, // Workspace history selector modal
+    NewBranchInput,       // Text input modal to create and checkout a new branch
+    ThemeSelect,          // Interactive theme selection modal
+    WorkspaceHistory,     // Workspace history selector modal
     ViewPrompt,
     KiloModelSelect,
     ManualCommit,
@@ -120,5 +120,7 @@ pub enum ActiveModal {
     GithubDownloadUrlInput,
     GithubDownloadTree,
     GithubDownloadTargetInput,
+    GithubQuickView { path: String, name: String },
+    GithubBranchSelect,
     Settings,
 }

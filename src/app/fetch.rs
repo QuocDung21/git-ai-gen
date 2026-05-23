@@ -1,9 +1,7 @@
 use std::process::Command;
 
 use super::App;
-use crate::app::models::{
-    AmendStep, CommitLogEntry, FeatureGroup, StashEntry, StashStep,
-};
+use crate::app::models::{AmendStep, CommitLogEntry, FeatureGroup, StashEntry, StashStep};
 
 impl App {
     pub fn fetch_commit_logs(&mut self) {
@@ -153,11 +151,7 @@ impl App {
 
     pub fn fetch_prompt(&mut self) {
         let ai_lang = crate::helper::Helper::get_ai_language_name();
-        self.prompt_text = format!(
-            "{}{}.",
-            crate::constant::Constant::PROMPT_EXPERT,
-            ai_lang
-        );
+        self.prompt_text = format!("{}{}.", crate::constant::Constant::PROMPT_EXPERT, ai_lang);
     }
 
     pub fn fetch_amend_msg(&mut self) {
