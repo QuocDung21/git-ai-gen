@@ -94,7 +94,10 @@ pub struct App {
     pub kilo_ai_enabled: bool,
     pub theme_id: String,
     pub selected_setting_index: usize,
+    pub show_splash: bool,
+    pub splash_enabled: bool,
 }
+
 
 impl App {
     pub fn new() -> Self {
@@ -176,6 +179,20 @@ impl App {
         let kilo_ai_enabled = {
             if let Ok(output) = Command::new("git")
                 .args(["config", "--global", "--get", "git-ai.kilo-ai"])
+                .output()
+            {
+                let text = String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .to_lowercase();
+                text != "false"
+            } else {
+                true
+            }
+        };
+
+        let splash_enabled = {
+            if let Ok(output) = Command::new("git")
+                .args(["config", "--global", "--get", "git-ai.splash"])
                 .output()
             {
                 let text = String::from_utf8_lossy(&output.stdout)
@@ -270,6 +287,8 @@ impl App {
             kilo_ai_enabled,
             theme_id,
             selected_setting_index: 0,
+            show_splash: splash_enabled,
+            splash_enabled,
         };
         app.load_workspace_history();
         app.load_github_history();

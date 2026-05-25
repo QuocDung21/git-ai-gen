@@ -18,35 +18,37 @@ pub fn ui(f: &mut Frame, app: &App) {
 
     let is_vi = app.current_lang == "vi";
 
+    if app.show_splash {
+        components::render_splash_screen(f, app);
+        return;
+    }
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
         .constraints(
             [
-                Constraint::Length(8), // Upgraded Header / Banner to fit 6 lines of ASCII logo!
-                Constraint::Length(3), // Workspace Badge Bar
-                Constraint::Min(0),    // Main workspace area
-                Constraint::Length(3), // Status message bar
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(3),
             ]
             .as_ref(),
         )
         .split(f.size());
 
-    // 1 & 2. RENDER HEADER & BADGE BAR
-    components::render_header(f, app, chunks[0], chunks[1]);
+    components::render_badge_bar(f, app, chunks[0]);
 
-    // Split the main content area into 3 columns horizontally
     let main_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
             [
-                Constraint::Percentage(28), // Left: Changes list
-                Constraint::Percentage(48), // Middle: Live Diff view
-                Constraint::Percentage(24), // Right: Commands Legend
+                Constraint::Percentage(28),
+                Constraint::Percentage(48),
+                Constraint::Percentage(24),
             ]
             .as_ref(),
         )
-        .split(chunks[2]);
+        .split(chunks[1]);
 
     // 3. LEFT COLUMN: 📂 CHANGES
     components::render_changes(f, app, main_chunks[0]);
@@ -110,7 +112,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             .border_style(Style::default().fg(status_color))
             .border_type(ratatui::widgets::BorderType::Rounded),
     );
-    f.render_widget(status_widget, chunks[3]);
+    f.render_widget(status_widget, chunks[2]);
 
     // 7. RENDER FLOATING MODAL OVERLAYS (LAST IN CANVAS LAYERS)
     if app.active_modal != ActiveModal::None {
@@ -142,7 +144,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubQuickView { .. } => modals::centered_rect(95, 90, f.size()),
             ActiveModal::GithubBranchSelect => modals::centered_rect(50, 45, f.size()),
             ActiveModal::BranchDeleteConfirm(_) => modals::centered_rect(55, 30, f.size()),
-            ActiveModal::Settings => modals::centered_rect(55, 38, f.size()),
+            ActiveModal::Settings => modals::centered_rect(55, 43, f.size()),
             ActiveModal::None => f.size(),
         };
 

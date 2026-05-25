@@ -140,11 +140,11 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                     if app.selected_setting_index > 0 {
                         app.selected_setting_index -= 1;
                     } else {
-                        app.selected_setting_index = 2;
+                        app.selected_setting_index = 3;
                     }
                 }
                 KeyCode::Down | KeyCode::Char('j') => {
-                    if app.selected_setting_index < 2 {
+                    if app.selected_setting_index < 3 {
                         app.selected_setting_index += 1;
                     } else {
                         app.selected_setting_index = 0;
@@ -203,6 +203,28 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                             format!(
                                 "⚙️ Kilo AI Generation: {}",
                                 if app.kilo_ai_enabled { "ON" } else { "OFF" }
+                            )
+                        };
+                    }
+                    3 => {
+                        app.splash_enabled = !app.splash_enabled;
+                        let val = app.splash_enabled.to_string();
+                        let _ = Command::new("git")
+                            .args(["config", "--global", "git-ai.splash", &val])
+                            .output();
+                        app.status_message = if is_vi {
+                            format!(
+                                "⚙️ Hiển thị Splash: {}",
+                                if app.splash_enabled {
+                                    "BẬT"
+                                } else {
+                                    "TẮT"
+                                }
+                            )
+                        } else {
+                            format!(
+                                "⚙️ Show Splash Screen: {}",
+                                if app.splash_enabled { "ON" } else { "OFF" }
                             )
                         };
                     }

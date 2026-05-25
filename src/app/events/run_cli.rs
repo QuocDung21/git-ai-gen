@@ -6,6 +6,8 @@ use crossterm::{
 use ratatui::backend::Backend;
 use ratatui::Terminal;
 
+use std::io::Write;
+
 pub fn run_cli_command<B: Backend + std::io::Write, F>(
     terminal: &mut Terminal<B>,
     mut cmd: F,
@@ -13,15 +15,23 @@ pub fn run_cli_command<B: Backend + std::io::Write, F>(
 where
     F: FnMut() -> Result<()>,
 {
-    disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),
         LeaveAlternateScreen,
         crossterm::event::DisableBracketedPaste
     )?;
     terminal.show_cursor()?;
+    std::io::Write::flush(terminal.backend_mut())?;
 
-    print!("{}[2J{}[1;1H", 27 as char, 27 as char);
+    disable_raw_mode()?;
+
+    let mut stdout = std::io::stdout();
+    execute!(
+        stdout,
+        crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+        crossterm::cursor::MoveTo(0, 0)
+    )?;
+    stdout.flush()?;
 
     if let Err(e) = cmd() {
         println!("❌ Error: {}", e);

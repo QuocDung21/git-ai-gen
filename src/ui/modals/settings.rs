@@ -53,6 +53,14 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
                 "Enable Kilo AI for Commit Messages"
             },
         ),
+        (
+            app.splash_enabled,
+            if is_vi {
+                "Hiển thị màn hình chào mừng (Splash)"
+            } else {
+                "Show startup splash screen"
+            },
+        ),
     ];
 
     for (i, (enabled, text)) in options.iter().enumerate() {

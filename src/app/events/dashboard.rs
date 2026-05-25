@@ -30,13 +30,14 @@ pub fn run_dashboard() -> Result<()> {
 
     let res = run_app(&mut terminal, &mut app);
 
-    disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),
         LeaveAlternateScreen,
         crossterm::event::DisableBracketedPaste
     )?;
     terminal.show_cursor()?;
+    let _ = std::io::Write::flush(terminal.backend_mut());
+    let _ = disable_raw_mode();
 
     res?;
     Ok(())
@@ -68,6 +69,13 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
         if event::poll(Duration::from_millis(250))? {
             match event::read()? {
                 Event::Key(key) => {
+                    if app.show_splash {
+                        if key.code == event::KeyCode::Char('q') || key.code == event::KeyCode::Char('Q') {
+                            std::process::exit(0);
+                        }
+                        app.show_splash = false;
+                        continue;
+                    }
                     if handlers::dispatch_modal_key(app, &key) {
                         continue;
                     }
