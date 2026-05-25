@@ -1,7 +1,7 @@
+use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::process::Command;
-use serde::Serialize;
 
 fn setup_env_path() {
     static INITIALIZED: std::sync::Once = std::sync::Once::new();
@@ -28,7 +28,6 @@ fn setup_env_path() {
         std::env::set_var("PATH", fallback);
     });
 }
-
 
 #[derive(Serialize)]
 struct ChangedFileJson {
@@ -217,15 +216,15 @@ pub extern "C" fn git_ai_set_current_dir(path: *const c_char) -> bool {
         Ok(s) => s,
         Err(_) => return false,
     };
-    
+
     if std::env::set_current_dir(new_path).is_err() {
         return false;
     }
-    
+
     let output = Command::new("git")
         .args(["rev-parse", "--is-inside-work-tree"])
         .output();
-        
+
     match output {
         Ok(out) => out.status.success(),
         Err(_) => false,
@@ -235,9 +234,7 @@ pub extern "C" fn git_ai_set_current_dir(path: *const c_char) -> bool {
 #[no_mangle]
 pub extern "C" fn git_ai_get_global_diff() -> *mut c_char {
     setup_env_path();
-    let output = Command::new("git")
-        .args(["diff", "HEAD"])
-        .output();
+    let output = Command::new("git").args(["diff", "HEAD"]).output();
     let res = match output {
         Ok(out) => {
             if out.status.success() {
@@ -365,3 +362,9 @@ pub extern "C" fn git_ai_remove_from_workspace_history(path: *const c_char) {
         .output();
 }
 
+#[no_mangle]
+pub extern "C" fn get_ai_test() -> *mut c_char {
+    let message = "Calling";
+    let c_str = CString::new(message).unwrap();
+    c_str.into_raw()
+}

@@ -1,6 +1,6 @@
-use anyhow::Result;
-use crate::cli::logger;
 use crate::cli::clean_profile_file;
+use crate::cli::logger;
+use anyhow::Result;
 
 #[cfg(target_family = "unix")]
 use crate::cli::get_active_unix_profile;
@@ -9,7 +9,6 @@ use crate::cli::get_windows_profile;
 
 pub fn handle_uninstall() -> Result<()> {
     logger::warn("🗑️  Uninstalling configuration from system...");
-
     #[cfg(target_family = "unix")]
     {
         let profile = get_active_unix_profile();

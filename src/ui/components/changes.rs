@@ -65,7 +65,6 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
                         .add_modifier(Modifier::BOLD),
                 ) // Yellow Unstaged
             };
-
             let cursor_span = if is_selected {
                 Span::styled(
                     " ▶ ",
