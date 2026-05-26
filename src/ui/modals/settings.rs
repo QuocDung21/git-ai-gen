@@ -119,6 +119,41 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(vec![Span::styled(
         if is_vi {
+            "  📂 THƯ MỤC CẤU HÌNH & LỊCH SỬ:"
+        } else {
+            "  📂 CONFIG & HISTORY PATHS:"
+        },
+        Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+    )]));
+
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| "~".to_string());
+
+    content.push(Line::from(vec![
+        Span::styled(
+            if is_vi { "  • Cấu hình: " } else { "  • Config: " },
+            Style::default().fg(theme.border),
+        ),
+        Span::styled(
+            format!("{}/.gitconfig [git-ai]", home),
+            Style::default().fg(theme.green),
+        ),
+    ]));
+    content.push(Line::from(vec![
+        Span::styled(
+            if is_vi { "  • Lịch sử:  " } else { "  • History: " },
+            Style::default().fg(theme.border),
+        ),
+        Span::styled(
+            format!("{}/.git-chill/", home),
+            Style::default().fg(theme.green),
+        ),
+    ]));
+    content.push(Line::from(""));
+
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
             "  [↑/↓] Di chuyển  [Space/Enter] Bật/Tắt/Chọn  [Esc] Đóng"
         } else {
             "  [↑/↓] Navigate   [Space/Enter] Toggle/Select  [Esc] Close"

@@ -269,21 +269,7 @@ pub extern "C" fn git_ai_get_ai_prompt() -> *mut c_char {
 #[no_mangle]
 pub extern "C" fn git_ai_get_workspace_history() -> *mut c_char {
     setup_env_path();
-    let mut history = Vec::new();
-    if let Ok(output) = Command::new("git")
-        .args(["config", "--global", "--get", "git-ai.workspace-history"])
-        .output()
-    {
-        let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        if !text.is_empty() {
-            for entry in text.split('|') {
-                let trimmed = entry.trim().to_string();
-                if !trimmed.is_empty() {
-                    history.push(trimmed);
-                }
-            }
-        }
-    }
+    let history = crate::helper::Helper::load_history_file("workspace_history.txt");
     let json = serde_json::to_string(&history).unwrap_or_else(|_| "[]".to_string());
     CString::new(json).unwrap().into_raw()
 }
@@ -302,28 +288,11 @@ pub extern "C" fn git_ai_add_to_workspace_history(path: *const c_char) {
     if folder_path.is_empty() {
         return;
     }
-    let mut history = Vec::new();
-    if let Ok(output) = Command::new("git")
-        .args(["config", "--global", "--get", "git-ai.workspace-history"])
-        .output()
-    {
-        let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        if !text.is_empty() {
-            for entry in text.split('|') {
-                let trimmed = entry.trim().to_string();
-                if !trimmed.is_empty() {
-                    history.push(trimmed);
-                }
-            }
-        }
-    }
+    let mut history = crate::helper::Helper::load_history_file("workspace_history.txt");
     history.retain(|p| p != &folder_path);
     history.insert(0, folder_path);
     history.truncate(10);
-    let value = history.join("|");
-    let _ = Command::new("git")
-        .args(["config", "--global", "git-ai.workspace-history", &value])
-        .output();
+    let _ = crate::helper::Helper::save_history_file("workspace_history.txt", &history);
 }
 
 #[no_mangle]
@@ -340,26 +309,9 @@ pub extern "C" fn git_ai_remove_from_workspace_history(path: *const c_char) {
     if folder_path.is_empty() {
         return;
     }
-    let mut history = Vec::new();
-    if let Ok(output) = Command::new("git")
-        .args(["config", "--global", "--get", "git-ai.workspace-history"])
-        .output()
-    {
-        let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        if !text.is_empty() {
-            for entry in text.split('|') {
-                let trimmed = entry.trim().to_string();
-                if !trimmed.is_empty() {
-                    history.push(trimmed);
-                }
-            }
-        }
-    }
+    let mut history = crate::helper::Helper::load_history_file("workspace_history.txt");
     history.retain(|p| p != &folder_path);
-    let value = history.join("|");
-    let _ = Command::new("git")
-        .args(["config", "--global", "git-ai.workspace-history", &value])
-        .output();
+    let _ = crate::helper::Helper::save_history_file("workspace_history.txt", &history);
 }
 
 #[no_mangle]

@@ -144,7 +144,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubQuickView { .. } => modals::centered_rect(95, 90, f.size()),
             ActiveModal::GithubBranchSelect => modals::centered_rect(50, 45, f.size()),
             ActiveModal::BranchDeleteConfirm(_) => modals::centered_rect(55, 30, f.size()),
-            ActiveModal::Settings => modals::centered_rect(55, 43, f.size()),
+            ActiveModal::Settings => modals::centered_rect(55, 58, f.size()),
             ActiveModal::EditorSelect => modals::centered_rect(45, 36, f.size()),
             ActiveModal::None => f.size(),
         };

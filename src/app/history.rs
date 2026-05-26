@@ -2,28 +2,11 @@ use super::App;
 
 impl App {
     pub fn load_workspace_history(&mut self) {
-        self.workspace_history.clear();
-        if let Ok(output) = std::process::Command::new("git")
-            .args(["config", "--global", "--get", "git-ai.workspace-history"])
-            .output()
-        {
-            let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !text.is_empty() {
-                for entry in text.split('|') {
-                    let trimmed = entry.trim().to_string();
-                    if !trimmed.is_empty() {
-                        self.workspace_history.push(trimmed);
-                    }
-                }
-            }
-        }
+        self.workspace_history = crate::helper::Helper::load_history_file("workspace_history.txt");
     }
 
     pub fn save_workspace_history(&self) {
-        let value = self.workspace_history.join("|");
-        let _ = std::process::Command::new("git")
-            .args(["config", "--global", "git-ai.workspace-history", &value])
-            .output();
+        let _ = crate::helper::Helper::save_history_file("workspace_history.txt", &self.workspace_history);
     }
 
     pub fn add_to_workspace_history(&mut self, path: &str) {
@@ -46,29 +29,13 @@ impl App {
     }
 
     pub fn load_github_history(&mut self) {
-        self.github_history.clear();
-        if let Ok(output) = std::process::Command::new("git")
-            .args(["config", "--global", "--get", "git-ai.github-history"])
-            .output()
-        {
-            let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !text.is_empty() {
-                for entry in text.split('|') {
-                    let trimmed = entry.trim().to_string();
-                    if !trimmed.is_empty() {
-                        self.github_history.push(trimmed);
-                    }
-                }
-            }
-        }
+        self.github_history = crate::helper::Helper::load_history_file("github_history.txt");
     }
 
     pub fn save_github_history(&self) {
-        let value = self.github_history.join("|");
-        let _ = std::process::Command::new("git")
-            .args(["config", "--global", "git-ai.github-history", &value])
-            .output();
+        let _ = crate::helper::Helper::save_history_file("github_history.txt", &self.github_history);
     }
+
 
     pub fn add_to_github_history(&mut self, url: &str) {
         self.github_history.retain(|u| u != url);

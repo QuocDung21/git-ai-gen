@@ -33,5 +33,17 @@ pub fn handle_uninstall() -> Result<()> {
             logger::info("No PowerShell Profile configuration found to remove.");
         }
     }
+
+    let _ = std::process::Command::new("git")
+        .args(["config", "--global", "--remove-section", "git-ai"])
+        .output();
+    logger::success("Cleaned up all git-ai configurations in Git Config.");
+
+    let chill_dir = crate::helper::Helper::get_git_chill_dir();
+    if chill_dir.exists() {
+        let _ = std::fs::remove_dir_all(&chill_dir);
+        logger::success("Cleaned up ~/.git-chill history directory.");
+    }
+
     Ok(())
 }
