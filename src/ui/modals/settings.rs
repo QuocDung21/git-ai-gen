@@ -87,11 +87,41 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
         content.push(Line::from(""));
     }
 
+    let is_selected_4 = app.selected_setting_index == 4;
+    let prefix_4 = if is_selected_4 { " ➜ " } else { "   " };
+    let style_4 = if is_selected_4 {
+        Style::default()
+            .fg(theme.select_fg)
+            .bg(theme.select_bg)
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(theme.fg)
+    };
+    let editor_friendly_name = match app.editor.as_str() {
+        "code" => "VS Code",
+        "cursor" => "Cursor",
+        "zed" => "Zed",
+        "subl" => "Sublime Text",
+        _ => if is_vi { "Mặc định hệ thống" } else { "System Default" },
+    };
+    let editor_text = if is_vi {
+        format!("Trình biên dịch mặc định: [{}]", editor_friendly_name)
+    } else {
+        format!("Default Editor: [{}]", editor_friendly_name)
+    };
+
+    content.push(Line::from(vec![
+        Span::styled(prefix_4, Style::default().fg(theme.purple).add_modifier(Modifier::BOLD)),
+        Span::styled("⚙️  ", Style::default().fg(theme.purple).add_modifier(Modifier::BOLD)),
+        Span::styled(editor_text, style_4),
+    ]));
+    content.push(Line::from(""));
+
     content.push(Line::from(vec![Span::styled(
         if is_vi {
-            "  [↑/↓] Di chuyển  [Space/Enter] Bật/Tắt  [Esc] Đóng"
+            "  [↑/↓] Di chuyển  [Space/Enter] Bật/Tắt/Chọn  [Esc] Đóng"
         } else {
-            "  [↑/↓] Navigate   [Space/Enter] Toggle   [Esc] Close"
+            "  [↑/↓] Navigate   [Space/Enter] Toggle/Select  [Esc] Close"
         },
         Style::default().fg(theme.border),
     )]));

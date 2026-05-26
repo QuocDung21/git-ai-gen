@@ -145,6 +145,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubBranchSelect => modals::centered_rect(50, 45, f.size()),
             ActiveModal::BranchDeleteConfirm(_) => modals::centered_rect(55, 30, f.size()),
             ActiveModal::Settings => modals::centered_rect(55, 43, f.size()),
+            ActiveModal::EditorSelect => modals::centered_rect(45, 36, f.size()),
             ActiveModal::None => f.size(),
         };
 
@@ -204,6 +205,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubBranchSelect => modals::render_github_branch_select(f, app, area),
             ActiveModal::BranchDeleteConfirm(branch_name) => modals::render_branch_delete_confirm(f, app, &branch_name, area),
             ActiveModal::Settings => modals::render_settings(f, app, area),
+            ActiveModal::EditorSelect => modals::render_editor_select(f, app, area),
             ActiveModal::None => {}
         }
     }

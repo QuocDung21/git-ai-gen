@@ -140,11 +140,11 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                     if app.selected_setting_index > 0 {
                         app.selected_setting_index -= 1;
                     } else {
-                        app.selected_setting_index = 3;
+                        app.selected_setting_index = 4;
                     }
                 }
                 KeyCode::Down | KeyCode::Char('j') => {
-                    if app.selected_setting_index < 3 {
+                    if app.selected_setting_index < 4 {
                         app.selected_setting_index += 1;
                     } else {
                         app.selected_setting_index = 0;
@@ -228,8 +228,74 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                             )
                         };
                     }
+                    4 => {
+                        app.active_modal = crate::models::ActiveModal::EditorSelect;
+                        app.selected_editor_index = match app.editor.as_str() {
+                            "code" => 0,
+                            "cursor" => 1,
+                            "zed" => 2,
+                            "subl" => 3,
+                            _ => 4,
+                        };
+                    }
                     _ => {}
                 },
+                _ => {}
+            }
+        }
+        crate::models::ActiveModal::EditorSelect => {
+            let is_vi = app.current_lang == "vi";
+            match key.code {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    app.active_modal = crate::models::ActiveModal::Settings;
+                }
+                KeyCode::Up | KeyCode::Char('k') => {
+                    if app.selected_editor_index > 0 {
+                        app.selected_editor_index -= 1;
+                    } else {
+                        app.selected_editor_index = 4;
+                    }
+                }
+                KeyCode::Down | KeyCode::Char('j') => {
+                    if app.selected_editor_index < 4 {
+                        app.selected_editor_index += 1;
+                    } else {
+                        app.selected_editor_index = 0;
+                    }
+                }
+                KeyCode::Char('1') => { app.selected_editor_index = 0; }
+                KeyCode::Char('2') => { app.selected_editor_index = 1; }
+                KeyCode::Char('3') => { app.selected_editor_index = 2; }
+                KeyCode::Char('4') => { app.selected_editor_index = 3; }
+                KeyCode::Char('5') => { app.selected_editor_index = 4; }
+                KeyCode::Char(' ') | KeyCode::Enter => {
+                    let selection = match app.selected_editor_index {
+                        0 => "code",
+                        1 => "cursor",
+                        2 => "zed",
+                        3 => "subl",
+                        _ => crate::app::DEFAULT_OPEN_CMD,
+                    };
+                    app.editor = selection.to_string();
+                    let _ = Command::new("git")
+                        .args(["config", "--global", "git-ai.editor", selection])
+                        .output();
+
+                    let friendly_name = match selection {
+                        "code" => "VS Code",
+                        "cursor" => "Cursor",
+                        "zed" => "Zed",
+                        "subl" => "Sublime Text",
+                        _ => "System Default",
+                    };
+
+                    app.status_message = if is_vi {
+                        format!("⚙️ Trình biên dịch mặc định: {}", friendly_name)
+                    } else {
+                        format!("⚙️ Default Editor: {}", friendly_name)
+                    };
+                    app.active_modal = crate::models::ActiveModal::Settings;
+                }
                 _ => {}
             }
         }

@@ -3,6 +3,26 @@ use crossterm::event::{KeyCode, KeyEvent};
 use crate::app::App;
 
 pub fn handle_diff_result(app: &mut App, key: &KeyEvent) {
+    match key.code {
+        KeyCode::Up => {
+            app.diff_snapshot_scroll = app.diff_snapshot_scroll.saturating_sub(1);
+            return;
+        }
+        KeyCode::Down => {
+            app.diff_snapshot_scroll = app.diff_snapshot_scroll.saturating_add(1);
+            return;
+        }
+        KeyCode::PageUp => {
+            app.diff_snapshot_scroll = app.diff_snapshot_scroll.saturating_sub(10);
+            return;
+        }
+        KeyCode::PageDown => {
+            app.diff_snapshot_scroll = app.diff_snapshot_scroll.saturating_add(10);
+            return;
+        }
+        _ => {}
+    }
+
     if !app.diff_kilo_generated.is_empty() {
         match key.code {
             KeyCode::Char('c') | KeyCode::Char('C') => {

@@ -96,8 +96,20 @@ pub struct App {
     pub selected_setting_index: usize,
     pub show_splash: bool,
     pub splash_enabled: bool,
+    pub editor: String,
+    pub selected_editor_index: usize,
+    pub diff_captured_unstaged: bool,
+    pub diff_copy_failed: bool,
+    pub diff_snapshot_scroll: usize,
 }
 
+
+#[cfg(target_os = "windows")]
+pub const DEFAULT_OPEN_CMD: &str = "explorer";
+#[cfg(target_os = "macos")]
+pub const DEFAULT_OPEN_CMD: &str = "open";
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub const DEFAULT_OPEN_CMD: &str = "xdg-open";
 
 impl App {
     pub fn new() -> Self {
@@ -204,6 +216,32 @@ impl App {
             }
         };
 
+        let editor = {
+            if let Ok(output) = Command::new("git")
+                .args(["config", "--global", "--get", "git-ai.editor"])
+                .output()
+            {
+                let text = String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .to_string();
+                if text.is_empty() {
+                    "code".to_string()
+                } else {
+                    text
+                }
+            } else {
+                "code".to_string()
+            }
+        };
+
+        let selected_editor_index = match editor.as_str() {
+            "code" => 0,
+            "cursor" => 1,
+            "zed" => 2,
+            "subl" => 3,
+            _ => 4,
+        };
+
         let mut app = App {
             status_message: init_msg.to_string(),
             git_status_lines: Vec::new(),
@@ -289,6 +327,11 @@ impl App {
             selected_setting_index: 0,
             show_splash: splash_enabled,
             splash_enabled,
+            editor,
+            selected_editor_index,
+            diff_captured_unstaged: false,
+            diff_copy_failed: false,
+            diff_snapshot_scroll: 0,
         };
         app.load_workspace_history();
         app.load_github_history();

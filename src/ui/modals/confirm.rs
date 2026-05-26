@@ -653,72 +653,96 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
+    let header_color = if app.diff_copy_failed { theme.yellow } else { theme.cyan };
+    let header_text = if app.diff_copy_failed {
+        if is_vi {
+            "⚠️ LỖI CLIPBOARD - ĐÃ LƯU .git-ai-prompt.txt ⚠️"
+        } else {
+            "⚠️ CLIPBOARD FAILED - SAVED TO .git-ai-prompt.txt ⚠️"
+        }
+    } else {
+        if is_vi {
+            "🤖 SNAPSHOT DIFF ĐÃ COPY VÀO CLIPBOARD 🤖"
+        } else {
+            "🤖 DIFF SNAPSHOT COPIED TO CLIPBOARD 🤖"
+        }
+    };
+
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🤖 SNAPSHOT DIFF ĐÃ COPY VÀO CLIPBOARD 🤖"
-            } else {
-                "🤖 DIFF SNAPSHOT COPIED TO CLIPBOARD 🤖"
-            },
-            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
-        )]),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled(
-                "  ➕ ",
-                Style::default()
-                    .fg(theme.green)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                format!("{} lines added", app.diff_added_lines),
-                Style::default()
-                    .fg(theme.green)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                "     ➖ ",
-                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                format!("{} lines removed", app.diff_removed_lines),
-                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
-            ),
-        ]),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("  🤖 Model: ", Style::default().fg(theme.border)),
-            Span::styled(
-                if app.current_kilo_model.is_empty() {
-                    if is_vi {
-                        "Mặc định (Kilo config)"
-                    } else {
-                        "Default (Kilo config)"
-                    }
-                    .to_string()
-                } else {
-                    app.current_kilo_model.clone()
-                },
-                Style::default()
-                    .fg(theme.green)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled("   [M] Đổi", Style::default().fg(theme.cyan)),
-        ]),
-        Line::from(""),
-        Line::from(vec![Span::styled(
-            if is_vi {
-                "  ── PREVIEW (40 dòng đầu) ──"
-            } else {
-                "  ── DIFF PREVIEW (first 40 lines) ──"
-            },
-            Style::default()
-                .fg(theme.border)
-                .add_modifier(Modifier::ITALIC),
+            header_text,
+            Style::default().fg(header_color).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
     ];
+
+    if app.diff_captured_unstaged {
+        content.push(Line::from(vec![Span::styled(
+            if is_vi {
+                "  💡 [Chú ý]: Không tìm thấy file staged, đã tự động chụp các thay đổi chưa stage."
+            } else {
+                "  💡 [Notice]: No staged files found, automatically captured unstaged changes."
+            },
+            Style::default().fg(theme.orange).add_modifier(Modifier::ITALIC),
+        )]));
+        content.push(Line::from(""));
+    }
+
+    content.push(Line::from(vec![
+        Span::styled(
+            "  ➕ ",
+            Style::default()
+                .fg(theme.green)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            format!("{} lines added", app.diff_added_lines),
+            Style::default()
+                .fg(theme.green)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            "     ➖ ",
+            Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            format!("{} lines removed", app.diff_removed_lines),
+            Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
+        ),
+    ]));
+    content.push(Line::from(""));
+    content.push(Line::from(vec![
+        Span::styled("  🤖 Model: ", Style::default().fg(theme.border)),
+        Span::styled(
+            if app.current_kilo_model.is_empty() {
+                if is_vi {
+                    "Mặc định (Kilo config)"
+                } else {
+                    "Default (Kilo config)"
+                }
+                .to_string()
+            } else {
+                app.current_kilo_model.clone()
+            },
+            Style::default()
+                .fg(theme.green)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled("   [M] Đổi", Style::default().fg(theme.cyan)),
+    ]));
+    content.push(Line::from(""));
+    content.push(Line::from(vec![Span::styled(
+        if is_vi {
+            "  ── PREVIEW (40 dòng đầu) ──"
+        } else {
+            "  ── DIFF PREVIEW (first 40 lines) ──"
+        },
+        Style::default()
+            .fg(theme.border)
+            .add_modifier(Modifier::ITALIC),
+    )]));
+    content.push(Line::from(""));
 
     let preview_limit = if !app.diff_kilo_generated.is_empty() {
         6
@@ -726,7 +750,11 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         22
     };
 
-    for line in app.diff_snapshot.lines().take(preview_limit) {
+    let total_lines = app.diff_snapshot.lines().count();
+    let max_scroll = total_lines.saturating_sub(preview_limit);
+    let scroll = app.diff_snapshot_scroll.min(max_scroll);
+
+    for line in app.diff_snapshot.lines().skip(scroll).take(preview_limit) {
         let (styled_line, color) = if line.starts_with('+') && !line.starts_with("+++") {
             (line, theme.green)
         } else if line.starts_with('-') && !line.starts_with("---") {
@@ -758,19 +786,31 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     }
 
     content.push(Line::from(""));
+    let status_icon = if app.diff_copy_failed { "  ⚠️ " } else { "  ✅ " };
+    let status_color = if app.diff_copy_failed { theme.yellow } else { theme.green };
+    let status_text = if app.diff_copy_failed {
+        if is_vi {
+            "Lỗi Clipboard! Hãy dán từ file hoặc chạy 'cat .git-ai-prompt.txt' 💡"
+        } else {
+            "Clipboard failed! Paste from file or run 'cat .git-ai-prompt.txt' 💡"
+        }
+    } else {
+        if is_vi {
+            "Prompt + Diff đã được copy! Dán vào AI ngay. 🚀"
+        } else {
+            "Prompt + Diff copied! Paste into your AI now. 🚀"
+        }
+    };
+
     content.push(Line::from(vec![
         Span::styled(
-            "  ✅ ",
+            status_icon,
             Style::default()
-                .fg(theme.green)
+                .fg(status_color)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
-            if is_vi {
-                "Prompt + Diff đã được copy! Dán vào AI ngay. 🚀"
-            } else {
-                "Prompt + Diff copied! Paste into your AI now. 🚀"
-            },
+            status_text,
             Style::default()
                 .fg(theme.yellow)
                 .add_modifier(Modifier::BOLD),
@@ -850,9 +890,9 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
         if is_vi {
-            "  Nhấn [Enter] hoặc [Esc] để đóng."
+            "  Nhấn [↑/↓] để cuộn, [Enter] hoặc [Esc] để đóng."
         } else {
-            "  Press [Enter] or [Esc] to close."
+            "  Press [↑/↓] to scroll, [Enter] or [Esc] to close."
         },
         Style::default().fg(theme.border),
     )]));

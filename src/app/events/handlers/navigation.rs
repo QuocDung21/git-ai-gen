@@ -161,22 +161,32 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
         KeyCode::Char('d') => {
             handle_diff_capture(app);
         }
-        KeyCode::Char('o') => match Command::new("code").arg(".").spawn() {
-            Ok(_) => {
-                app.status_message = if app.current_lang == "vi" {
-                    "🚀 Đã mở dự án bằng VS Code!".to_string()
-                } else {
-                    "🚀 Opened project in VS Code!".to_string()
-                };
+        KeyCode::Char('o') => {
+            let cmd = &app.editor;
+            let friendly_name = match cmd.as_str() {
+                "code" => "VS Code",
+                "cursor" => "Cursor",
+                "zed" => "Zed",
+                "subl" => "Sublime Text",
+                _ => if app.current_lang == "vi" { "Mặc định hệ thống" } else { "System Default" },
+            };
+            match Command::new(cmd).arg(".").spawn() {
+                Ok(_) => {
+                    app.status_message = if app.current_lang == "vi" {
+                        format!("🚀 Đã mở dự án bằng {}!", friendly_name)
+                    } else {
+                        format!("🚀 Opened project in {}!", friendly_name)
+                    };
+                }
+                Err(_) => {
+                    app.status_message = if app.current_lang == "vi" {
+                        format!("❌ Lỗi: Không tìm thấy lệnh '{}'.", cmd)
+                    } else {
+                        format!("❌ Error: '{}' command not found.", cmd)
+                    };
+                }
             }
-            Err(_) => {
-                app.status_message = if app.current_lang == "vi" {
-                    "❌ Lỗi: Không tìm thấy lệnh 'code'.".to_string()
-                } else {
-                    "❌ Error: 'code' command not found.".to_string()
-                };
-            }
-        },
+        }
         KeyCode::Char('g') => {
             app.selected_git_action = 0;
             app.active_modal = crate::models::ActiveModal::GitMenu;
@@ -357,32 +367,91 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
     Ok(())
 }
 
+fn filter_diff(diff: &str) -> String {
+    let mut filtered_diffs = Vec::new();
+    let sections = diff.split("diff --git ");
+    for section in sections {
+        if section.trim().is_empty() {
+            continue;
+        }
+        let full_section = format!("diff --git {}", section);
+        let first_line = full_section.lines().next().unwrap_or("");
+        
+        let is_lockfile = first_line.contains("Cargo.lock")
+            || first_line.contains("package-lock.json")
+            || first_line.contains("yarn.lock")
+            || first_line.contains("pnpm-lock.yaml")
+            || first_line.contains("composer.lock");
+            
+        if is_lockfile {
+            let mut headers = Vec::new();
+            for line in full_section.lines() {
+                if line.starts_with("diff --git") 
+                    || line.starts_with("index") 
+                    || line.starts_with("---") 
+                    || line.starts_with("+++") 
+                {
+                    headers.push(line);
+                } else if line.starts_with("@@") {
+                    headers.push(line);
+                    break;
+                }
+            }
+            headers.push(" [Modified lockfile diff content omitted for brevity to save AI tokens] ");
+            filtered_diffs.push(headers.join("\n"));
+        } else {
+            filtered_diffs.push(full_section);
+        }
+    }
+    
+    if filtered_diffs.is_empty() {
+        diff.to_string()
+    } else {
+        filtered_diffs.join("\n")
+    }
+}
+
 fn handle_diff_capture(app: &mut App) {
-    let diff_output = Command::new("git").args(["diff", "--cached"]).output();
+    let mut is_unstaged = false;
+    let mut diff_output = Command::new("git").args(["diff", "--cached"]).output();
+    
+    if let Ok(ref out) = diff_output {
+        let staged_diff = String::from_utf8_lossy(&out.stdout).to_string();
+        if staged_diff.trim().is_empty() {
+            // Fallback to unstaged changes
+            diff_output = Command::new("git").args(["diff"]).output();
+            is_unstaged = true;
+        }
+    }
 
     match diff_output {
         Ok(out) => {
             let diff_str = String::from_utf8_lossy(&out.stdout).to_string();
             if diff_str.trim().is_empty() {
                 app.status_message = if app.current_lang == "vi" {
-                    "⚠️ Bạn chưa chọn (stage) file nào! Hãy nhấn [Space] để chọn file trước khi bấm 'd'.".to_string()
+                    "⚠️ Không phát hiện thay đổi nào (cả staged lẫn unstaged)! Hãy sửa file trước khi bấm 'd'.".to_string()
                 } else {
-                    "⚠️ No files staged! Please press [Space] to select files before pressing 'd'."
+                    "⚠️ No changes detected (neither staged nor unstaged)! Please edit files before pressing 'd'."
                         .to_string()
                 };
             } else {
-                app.diff_added_lines = diff_str
+                app.diff_captured_unstaged = is_unstaged;
+                
+                // Perform smart token filtering on lockfiles
+                let clean_diff = filter_diff(&diff_str);
+
+                app.diff_added_lines = clean_diff
                     .lines()
                     .filter(|l| l.starts_with('+') && !l.starts_with("++"))
                     .count();
-                app.diff_removed_lines = diff_str
+                app.diff_removed_lines = clean_diff
                     .lines()
                     .filter(|l| l.starts_with('-') && !l.starts_with("--"))
                     .count();
 
-                let preview: String = diff_str.lines().take(40).collect::<Vec<_>>().join("\n");
-                app.diff_snapshot = preview;
-                app.last_staged_diff = diff_str.clone();
+                app.diff_snapshot = clean_diff.clone();
+                app.diff_snapshot_scroll = 0;
+                app.last_staged_diff = clean_diff.clone();
                 app.diff_kilo_generated.clear();
 
                 let ai_lang = crate::helper::Helper::get_ai_language_name();
@@ -390,16 +459,89 @@ fn handle_diff_capture(app: &mut App) {
                     "{} {}.\n\nDiff:\n\n{}",
                     crate::constant::Constant::PROMPT_EXPERT,
                     ai_lang,
-                    diff_str
+                    clean_diff
                 );
+                
+                let mut copy_failed = false;
                 if let Ok(mut cb) = arboard::Clipboard::new() {
-                    let _ = cb.set_text(prompt);
+                    if cb.set_text(prompt.clone()).is_err() {
+                        copy_failed = true;
+                    }
+                } else {
+                    copy_failed = true;
                 }
+                
+                app.diff_copy_failed = copy_failed;
+                if copy_failed {
+                    let _ = std::fs::write(".git-ai-prompt.txt", &prompt);
+                    app.status_message = if app.current_lang == "vi" {
+                        "⚠️ Clipboard không khả dụng! Đã lưu prompt vào file .git-ai-prompt.txt.".to_string()
+                    } else {
+                        "⚠️ Clipboard unavailable! Saved prompt to .git-ai-prompt.txt.".to_string()
+                    };
+                } else {
+                    app.status_message = if app.current_lang == "vi" {
+                        if is_unstaged {
+                            "✨ [HỆ THỐNG]: Chưa stage file. Đã tự động chụp thay đổi chưa stage thành công!".to_string()
+                        } else {
+                            "✨ [HỆ THỐNG]: Đã chụp snapshot staged diff thành công!".to_string()
+                        }
+                    } else {
+                        if is_unstaged {
+                            "✨ [SYSTEM]: No staged changes. Captured unstaged changes instead!".to_string()
+                        } else {
+                            "✨ [SYSTEM]: Staged diff snapshot captured successfully!".to_string()
+                        }
+                    };
+                }
+                
                 app.active_modal = crate::models::ActiveModal::DiffResult;
             }
         }
         Err(e) => {
             app.status_message = format!("❌ Error capturing diff: {}", e);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filter_diff_strips_lockfiles() {
+        let diff = r#"diff --git a/src/app/mod.rs b/src/app/mod.rs
+index 123456..789012 100644
+--- a/src/app/mod.rs
++++ b/src/app/mod.rs
+@@ -1,3 +1,4 @@
+ pub struct App {
++    pub foo: bool,
+ }
+diff --git a/Cargo.lock b/Cargo.lock
+index abcdef..fedcba 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1,20 +1,25 @@
+ [[package]]
+ name = "anyhow"
+-version = "1.0.80"
++version = "1.0.81"
+ [[package]]
+ name = "git-ai"
+-version = "3.0.0"
++version = "3.0.1""#;
+
+        let filtered = filter_diff(diff);
+        
+        // App.rs changes should be kept fully intact
+        assert!(filtered.contains("pub struct App {"));
+        assert!(filtered.contains("+    pub foo: bool,"));
+        
+        // Cargo.lock changes should have the diff hunk content stripped out
+        assert!(filtered.contains("diff --git a/Cargo.lock b/Cargo.lock"));
+        assert!(filtered.contains(" [Modified lockfile diff content omitted for brevity to save AI tokens] "));
+        assert!(!filtered.contains("name = \"anyhow\""));
+        assert!(!filtered.contains("version = \"3.0.1\""));
     }
 }

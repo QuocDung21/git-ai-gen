@@ -124,6 +124,12 @@ fn test_merge_conflict_scenario() {
     let res = git_ai_core::git::branch::git_merge("branch-b");
 
     assert!(res.is_err(), "Merge should fail due to conflict");
+    let err_msg = res.unwrap_err().to_string();
+    assert!(
+        err_msg.contains("CONFLICT") || err_msg.contains("conflict"),
+        "Error message should contain conflict details, got: {}",
+        err_msg
+    );
 }
 
 #[test]

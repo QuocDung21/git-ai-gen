@@ -107,4 +107,5 @@ pub enum ActiveModal {
     GithubBranchSelect,
     BranchDeleteConfirm(String),
     Settings,
+    EditorSelect,
 }

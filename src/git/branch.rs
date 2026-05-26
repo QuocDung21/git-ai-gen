@@ -50,7 +50,21 @@ pub fn git_merge(branch: &str) -> Result<String, std::io::Error> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
-        let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let err = if stderr.is_empty() {
+            if stdout.is_empty() {
+                "Unknown merge error".to_string()
+            } else {
+                stdout
+            }
+        } else {
+            if stdout.is_empty() {
+                stderr
+            } else {
+                format!("{}\n{}", stderr, stdout)
+            }
+        };
         Err(std::io::Error::new(std::io::ErrorKind::Other, err))
     }
 }
