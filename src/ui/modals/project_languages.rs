@@ -10,17 +10,12 @@ use crate::app::App;
 
 pub fn render_project_languages(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  📊 TỶ LỆ NGÔN NGỮ DỰ ÁN 📊"
-            } else {
-                "  📊 PROJECT LANGUAGE COMPOSITION 📊"
-            },
+            app.tr("  📊 TỶ LỆ NGÔN NGỮ DỰ ÁN 📊", "  📊 PROJECT LANGUAGE COMPOSITION 📊"),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
@@ -30,11 +25,7 @@ pub fn render_project_languages(f: &mut Frame, app: &App, area: Rect) {
 
     if app.language_stats.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  (Chưa tải dữ liệu ngôn ngữ)"
-            } else {
-                "  (Language data not loaded yet)"
-            },
+            app.tr("  (Chưa tải dữ liệu ngôn ngữ)", "  (Language data not loaded yet)"),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -108,11 +99,7 @@ pub fn render_project_languages(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  Nhấn [Esc] hoặc [q] để ĐÓNG màn hình thống kê."
-        } else {
-            "  Press [Esc] or [q] to CLOSE statistics screen."
-        },
+        app.tr("  Nhấn [Esc] hoặc [q] để ĐÓNG màn hình thống kê.", "  Press [Esc] or [q] to CLOSE statistics screen."),
         Style::default()
             .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
@@ -120,11 +107,7 @@ pub fn render_project_languages(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 📊 THỐNG KÊ NGÔN NGỮ "
-            } else {
-                " 📊 LANGUAGE STATS "
-            },
+            app.tr(" 📊 THỐNG KÊ NGÔN NGỮ ", " 📊 LANGUAGE STATS "),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),

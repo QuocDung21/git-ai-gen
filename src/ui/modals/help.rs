@@ -1,3 +1,4 @@
+use crate::app::App;
 use ratatui::{
     layout::Rect,
     style::{Modifier, Style},
@@ -5,7 +6,6 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
 };
-use crate::app::App;
 
 pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
     let is_vi = app.current_lang == "vi";
@@ -18,9 +18,7 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "🤖 SYSTEM MANUAL & KEYBOARD LEGEND 🤖"
             },
-            Style::default()
-                .fg(theme.cyan)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
     ];
@@ -248,9 +246,7 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .title(Span::styled(
             " SYSTEM MANUAL ",
-            Style::default()
-                .fg(theme.cyan)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.cyan))

@@ -7,11 +7,13 @@ pub mod settings;
 pub mod branch_delete;
 pub mod editor_select;
 pub mod project_languages;
+pub mod handle_test;
 
 pub use settings::render_settings;
 pub use branch_delete::render_branch_delete_confirm;
 pub use editor_select::render_editor_select;
 pub use project_languages::render_project_languages;
+pub use handle_test::render_handle_test;
 
 pub use help::render_help_modal;
 pub use confirm::{

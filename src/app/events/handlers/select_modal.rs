@@ -418,6 +418,54 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
             }
             _ => {}
         }
+        crate::models::ActiveModal::HandleTest => match key.code {
+            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => {
+                app.active_modal = crate::models::ActiveModal::None;
+            }
+            KeyCode::Char('1') => {
+                app.is_light_theme = !app.is_light_theme;
+                app.theme_id = if app.is_light_theme { "light".to_string() } else { "vscode".to_string() };
+            }
+            KeyCode::Char('2') => {
+                app.status_message = app.tr(
+                    "🔔 [DEV]: Đã kích hoạt cảnh báo thử nghiệm thành công!",
+                    "🔔 [DEV]: Mock alert status triggered successfully!"
+                ).to_string();
+            }
+            KeyCode::Char('3') => {
+                app.language_stats.clear();
+                app.status_message = app.tr(
+                    "🧹 [DEV]: Đã dọn dẹp dữ liệu thống kê ngôn ngữ!",
+                    "🧹 [DEV]: Cleared language stats data successfully!"
+                ).to_string();
+            }
+            KeyCode::Char('4') => {
+                app.status_message = app.tr(
+                    "⚡ [DEV]: Đã quét thử nghiệm mã nguồn, đã tối ưu hóa tệp tin lockfile!",
+                    "⚡ [DEV]: Executed mock diff scan, lockfiles successfully optimized!"
+                ).to_string();
+            }
+            KeyCode::Char('5') => {
+                let history = crate::helper::Helper::load_history_file("workspace_history.txt");
+                app.status_message = format!("JSON: {:?}", history);
+            }
+            KeyCode::Char('6') => {
+                app.has_conflicts = !app.has_conflicts;
+                app.conflict_count = if app.has_conflicts { 3 } else { 0 };
+                app.status_message = app.tr(
+                    "⚡ [DEV]: Đã bật/tắt cảnh báo xung đột (3 xung đột)!",
+                    "⚡ [DEV]: Toggled mock merge conflicts (3 conflicts)!"
+                ).to_string();
+            }
+            KeyCode::Char('7') => {
+                app.current_lang = if app.current_lang == "vi" { "en".to_string() } else { "vi".to_string() };
+                app.status_message = app.tr(
+                    "🌐 [DEV]: Đã chuyển ngôn ngữ giao diện sang Tiếng Việt!",
+                    "🌐 [DEV]: Switched interface language to English!"
+                ).to_string();
+            }
+            _ => {}
+        }
         crate::models::ActiveModal::GitLog => match key.code {
             KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('v') | KeyCode::Char('V') => {
                 app.active_modal = crate::models::ActiveModal::None;

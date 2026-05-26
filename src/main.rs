@@ -6,8 +6,8 @@ mod git;
 mod helper;
 mod locales;
 mod models;
-mod ui;
 pub mod theme;
+mod ui;
 
 use crate::cli::logger;
 use crate::helper::Helper;

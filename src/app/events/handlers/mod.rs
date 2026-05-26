@@ -61,6 +61,7 @@ pub fn dispatch_modal_key(app: &mut App, key: &KeyEvent) -> bool {
         | ActiveModal::BranchDeleteConfirm(_)
         | ActiveModal::GithubBranchSelect
         | ActiveModal::ProjectLanguages
+        | ActiveModal::HandleTest
         | ActiveModal::GithubQuickView { .. } => {
             select_modal::handle_select_modal_keys(app, key);
             true

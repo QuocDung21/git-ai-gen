@@ -118,4 +118,5 @@ pub enum ActiveModal {
     EditorSelect,
     WorkspacePathInput,
     ProjectLanguages,
+    HandleTest,
 }

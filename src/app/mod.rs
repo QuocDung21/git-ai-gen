@@ -115,6 +115,14 @@ pub const DEFAULT_OPEN_CMD: &str = "open";
 pub const DEFAULT_OPEN_CMD: &str = "xdg-open";
 
 impl App {
+    pub fn tr<'a>(&self, vi: &'a str, en: &'a str) -> &'a str {
+        if self.current_lang == "vi" {
+            vi
+        } else {
+            en
+        }
+    }
+
     pub fn new() -> Self {
         let current_dir = env::current_dir()
             .map(|p| p.display().to_string())

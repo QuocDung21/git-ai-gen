@@ -368,6 +368,15 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             app.selected_theme_index = if app.is_light_theme { 1 } else { 0 };
             app.active_modal = crate::models::ActiveModal::ThemeSelect;
         }
+        KeyCode::Char('y') | KeyCode::Char('Y') => {
+            let is_vi = app.current_lang == "vi";
+            app.status_message = if is_vi {
+                "🛠️ Đã mở cửa sổ thử nghiệm Dev".to_string()
+            } else {
+                "🛠️ Opened Developer Test Panel".to_string()
+            };
+            app.active_modal = crate::models::ActiveModal::HandleTest;
+        }
         KeyCode::Char(',') => {
             app.selected_setting_index = 0;
             app.active_modal = crate::models::ActiveModal::Settings;
