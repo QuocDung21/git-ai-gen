@@ -157,3 +157,39 @@ pub fn detect_project_languages<P: AsRef<Path>>(dir: P) -> Vec<LanguageStat> {
     stats.sort_by(|a, b| b.percentage.partial_cmp(&a.percentage).unwrap());
     stats
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_project_languages() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let project_path = temp_dir.path();
+
+        let rs_file = project_path.join("main.rs");
+        let md_file = project_path.join("README.md");
+        let a_file = project_path.join("lib.a");
+        let node_dir = project_path.join("node_modules");
+        std::fs::create_dir(&node_dir).unwrap();
+        let js_file = node_dir.join("index.js");
+
+        std::fs::write(&rs_file, "fn main() {}").unwrap();
+        std::fs::write(&md_file, "# Readme").unwrap();
+        std::fs::write(&a_file, "binary data here which is huge").unwrap();
+        std::fs::write(&js_file, "console.log()").unwrap();
+
+        let stats = detect_project_languages(&project_path);
+
+        assert_eq!(stats.len(), 2);
+
+        let rust_stat = stats.iter().find(|s| s.name == "Rust").unwrap();
+        let md_stat = stats.iter().find(|s| s.name == "Markdown").unwrap();
+
+        assert_eq!(rust_stat.bytes, 12);
+        assert_eq!(md_stat.bytes, 8);
+
+        assert!((rust_stat.percentage - 60.0).abs() < 0.001);
+        assert!((md_stat.percentage - 40.0).abs() < 0.001);
+    }
+}
