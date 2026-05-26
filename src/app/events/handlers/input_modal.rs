@@ -262,6 +262,59 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                 _ => {}
             }
         }
+        crate::models::ActiveModal::WorkspacePathInput => match key.code {
+            KeyCode::Esc => {
+                app.active_modal = crate::models::ActiveModal::WorkspaceHistory;
+            }
+            KeyCode::Enter => {
+                let is_vi = app.current_lang == "vi";
+                let selected_path = app.workspace_path_input.trim().to_string();
+                if !selected_path.is_empty() {
+                    if std::env::set_current_dir(&selected_path).is_ok() {
+                        app.current_dir = selected_path.clone();
+                        app.add_to_workspace_history(&selected_path);
+                        app.refresh_git_status();
+                        app.status_message = if is_vi {
+                            format!("🔄 Đã chuyển sang Project: {}", selected_path)
+                        } else {
+                            format!("🔄 Switched to project: {}", selected_path)
+                        };
+                        app.active_modal = crate::models::ActiveModal::None;
+                        app.workspace_path_input.clear();
+                    } else {
+                        app.status_message = if is_vi {
+                            "❌ Lỗi: Không thể truy cập thư mục này.".to_string()
+                        } else {
+                            "❌ Error: Cannot access this folder.".to_string()
+                        };
+                    }
+                } else {
+                    app.status_message = if is_vi {
+                        "❌ Đường dẫn không được để trống!".to_string()
+                    } else {
+                        "❌ Path cannot be empty!".to_string()
+                    };
+                }
+            }
+            KeyCode::Backspace => {
+                app.workspace_path_input.pop();
+            }
+            KeyCode::Char('v') | KeyCode::Char('V')
+                if key
+                    .modifiers
+                    .contains(crossterm::event::KeyModifiers::CONTROL) =>
+            {
+                if let Ok(mut cb) = arboard::Clipboard::new() {
+                    if let Ok(text) = cb.get_text() {
+                        app.workspace_path_input.push_str(&text);
+                    }
+                }
+            }
+            KeyCode::Char(c) => {
+                app.workspace_path_input.push(c);
+            }
+            _ => {}
+        }
         _ => {}
     }
 }

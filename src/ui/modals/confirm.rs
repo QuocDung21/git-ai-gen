@@ -345,9 +345,9 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
         Line::from(""),
         Line::from(vec![Span::styled(
             if is_vi {
-                "🌿 LỊCH SỬ COMMIT WORKSPACE 🌿"
+                "  🌿 LỊCH SỬ COMMIT WORKSPACE 🌿"
             } else {
-                "🌿 WORKSPACE COMMIT HISTORY 🌿"
+                "  🌿 WORKSPACE COMMIT HISTORY 🌿"
             },
             Style::default()
                 .fg(theme.green)
@@ -359,86 +359,105 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
     if app.commit_logs.is_empty() {
         content.push(Line::from(vec![Span::styled(
             if is_vi {
-                "Không tìm thấy commit nào."
+                "  (Không tìm thấy commit nào trong lịch sử)"
             } else {
-                "No commits found."
+                "  (No commits found in history)"
             },
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
         )]));
     } else {
+        content.push(Line::from(vec![
+            Span::styled("    ", Style::default()),
+            Span::styled(
+                "HASH     ",
+                Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                if is_vi { "THỜI GIAN         " } else { "DATE             " },
+                Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                if is_vi { "TÁC GIẢ         " } else { "AUTHOR          " },
+                Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                if is_vi { "NỘI DUNG COMMIT" } else { "COMMIT SUBJECT" },
+                Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+            ),
+        ]));
+
+        let sep_width = (area.width as usize).saturating_sub(8).min(120);
+        content.push(Line::from(vec![
+            Span::styled(format!("    {}", "─".repeat(sep_width)), Style::default().fg(theme.border)),
+        ]));
+
         for (i, entry) in app.commit_logs.iter().enumerate() {
             let is_selected = i == app.selected_log_index;
-            let bullet = if is_selected {
-                Span::styled(
-                    "  ▶ ● ",
-                    Style::default()
-                        .fg(theme.purple)
-                        .add_modifier(Modifier::BOLD),
-                )
+            let bg_style = if is_selected { theme.select_bg } else { theme.bg };
+            let style_base = if is_selected {
+                Style::default().fg(theme.select_fg).bg(theme.select_bg).add_modifier(Modifier::BOLD)
             } else {
-                Span::styled("    ● ", Style::default().fg(theme.border))
+                Style::default().fg(theme.fg).bg(theme.bg)
             };
+
+            let pointer = if is_selected { "  ➜ " } else { "    " };
+            let pointer_span = Span::styled(
+                pointer,
+                Style::default().fg(theme.cyan).bg(bg_style).add_modifier(Modifier::BOLD),
+            );
+
+            let short_hash = &entry.short_hash;
+            let hash_str = format!("{:<9}", short_hash);
             let hash_span = Span::styled(
-                format!("[{}]", &entry.hash[..7.min(entry.hash.len())]),
-                Style::default()
-                    .fg(theme.yellow)
-                    .add_modifier(Modifier::BOLD),
+                hash_str,
+                Style::default().fg(theme.yellow).bg(bg_style).add_modifier(Modifier::BOLD),
             );
 
-            let author_span = Span::styled(
-                format!(" ({})", entry.author),
-                Style::default().fg(theme.purple),
-            );
-
+            let time_truncated: String = entry.time.chars().take(17).collect();
+            let time_str = format!("{:<17}", time_truncated);
             let time_span = Span::styled(
-                format!(" - {}", entry.time),
-                Style::default()
-                    .fg(theme.cyan)
-                    .add_modifier(Modifier::ITALIC),
+                time_str,
+                Style::default().fg(theme.cyan).bg(bg_style).add_modifier(Modifier::ITALIC),
             );
 
-            let max_width = 80;
+            let author_truncated: String = entry.author.chars().take(15).collect();
+            let author_str = format!("{:<16}", author_truncated);
+            let author_span = Span::styled(
+                author_str,
+                Style::default().fg(theme.purple).bg(bg_style),
+            );
+
+            let max_sub_width = (area.width as usize).saturating_sub(52).min(65);
             let subject_text = &entry.subject;
-            let display_subject = if subject_text.chars().count() > max_width {
-                let truncated: String = subject_text.chars().take(max_width).collect();
-                format!(" : {}...", truncated)
+            let subject_str = if subject_text.chars().count() > max_sub_width {
+                let truncated: String = subject_text.chars().take(max_sub_width.saturating_sub(3)).collect();
+                format!("{}...", truncated)
             } else {
-                format!(" : {}", subject_text)
+                subject_text.clone()
             };
-            let subject_style = if is_selected {
-                Style::default()
-                    .fg(theme.fg)
-                    .bg(theme.select_bg)
-                    .add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(theme.fg)
-            };
-            let subject_span = Span::styled(display_subject, subject_style);
+            let subject_span = Span::styled(
+                subject_str,
+                style_base,
+            );
+
             content.push(Line::from(vec![
-                bullet,
+                pointer_span,
                 hash_span,
-                author_span,
                 time_span,
+                author_span,
                 subject_span,
             ]));
-
-            if i < app.commit_logs.len() - 1 {
-                content.push(Line::from(vec![Span::styled(
-                    "    │",
-                    Style::default().fg(theme.border),
-                )]));
-            }
         }
     }
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
         if is_vi {
-            "   Dùng ↑/↓ hoặc j/k để di chuyển, nhấn [Esc] hoặc [q] để ĐÓNG."
+            "  [Enter] Chi tiết (Diff)  [↑/↓] Di chuyển  [Esc/q] Đóng"
         } else {
-            "   Use ↑/↓ or j/k to navigate, press [Esc] or [q] to CLOSE."
+            "  [Enter] View Details (Diff)  [↑/↓] Navigate  [Esc/q] Close"
         },
         Style::default()
             .fg(theme.orange)
@@ -448,9 +467,9 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .title(Span::styled(
             if is_vi {
-                " 🌿 LỊCH SỬ COMMIT "
+                format!(" 🌿 LỊCH SỬ COMMIT ({}) ", app.commit_logs.len())
             } else {
-                " 🌿 COMMIT LOGS "
+                format!(" 🌿 COMMIT LOGS ({}) ", app.commit_logs.len())
             },
             Style::default()
                 .fg(theme.green)
@@ -464,7 +483,6 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
         .block(block);
-
     f.render_widget(paragraph, area);
 }
 
@@ -1913,6 +1931,82 @@ pub fn render_new_branch_input(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(paragraph, area);
 }
 
+pub fn render_workspace_path_input(f: &mut Frame, app: &App, area: Rect) {
+    let theme = app.theme();
+    let is_vi = app.current_lang == "vi";
+    f.render_widget(Clear, area);
+
+    let display_msg = if app.workspace_path_input.len() > 70 {
+        format!("{}...", &app.workspace_path_input[..67])
+    } else {
+        app.workspace_path_input.clone()
+    };
+
+    let content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "📂 NHẬP ĐƯỜNG DẪN THƯ MỤC PROJECT"
+            } else {
+                "📂 ENTER PROJECT FOLDER PATH"
+            },
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "  Nhập đường dẫn tuyệt đối đến thư mục bên dưới:"
+            } else {
+                "  Enter absolute path to directory below:"
+            },
+            Style::default().fg(theme.border),
+        )]),
+        Line::from(vec![
+            Span::styled("  ┌─── ", Style::default().fg(theme.purple)),
+            Span::styled(
+                format!("{}_", display_msg),
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.bg)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            if is_vi {
+                "  Nhập đường dẫn, [Enter] để chuyển, [Esc] để hủy"
+            } else {
+                "  Type path, [Enter] to switch, [Esc] to cancel"
+            },
+            Style::default().fg(theme.border),
+        )]),
+    ];
+
+    let block = Block::default()
+        .title(Span::styled(
+            if is_vi {
+                " 📂 ĐƯỜNG DẪN WORKSPACE "
+            } else {
+                " 📂 WORKSPACE PATH "
+            },
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.purple))
+        .border_type(BorderType::Double)
+        .style(Style::default().bg(theme.bg));
+
+    let paragraph = Paragraph::new(content)
+        .alignment(ratatui::layout::Alignment::Left)
+        .block(block);
+    f.render_widget(paragraph, area);
+}
+
+
 pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
     let is_vi = app.current_lang == "vi";
@@ -2027,9 +2121,9 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
         if is_vi {
-            "  [Enter] Mở  [n] Folder mới  [x] Xóa  [Esc] Đóng"
+            "  [Enter] Mở  [n] Folder mới  [p] Nhập path  [x] Xóa  [Esc] Đóng"
         } else {
-            "  [Enter] Open  [n] New Folder  [x] Remove  [Esc] Close"
+            "  [Enter] Open  [n] New Folder  [p] Type Path  [x] Remove  [Esc] Close"
         },
         Style::default()
             .fg(theme.orange)

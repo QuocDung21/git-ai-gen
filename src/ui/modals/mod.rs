@@ -25,6 +25,7 @@ pub use confirm::{
     render_commit_diff,
     render_merge_confirm,
     render_new_branch_input,
+    render_workspace_path_input,
     render_theme_select,
     render_workspace_history,
     render_view_prompt,

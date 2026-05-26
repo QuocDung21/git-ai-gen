@@ -75,7 +75,8 @@ pub fn dispatch_modal_key(app: &mut App, key: &KeyEvent) -> bool {
         ActiveModal::ManualCommit
         | ActiveModal::NewBranchInput
         | ActiveModal::GithubDownloadUrlInput
-        | ActiveModal::GithubDownloadTargetInput => {
+        | ActiveModal::GithubDownloadTargetInput
+        | ActiveModal::WorkspacePathInput => {
             input_modal::handle_input_modal_keys(app, key);
             true
         }

@@ -14,13 +14,13 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
     app: &mut App,
     terminal: &mut Terminal<B>,
     key: &crossterm::event::KeyEvent,
-) -> Result<(), anyhow::Error> {
+) -> Result<bool, anyhow::Error> {
     // Handle diff-focus mode keys first
     if app.focus_diff {
         match key.code {
             KeyCode::Char('q') => {
                 // Quit always works regardless of focus
-                std::process::exit(0);
+                return Ok(true);
             }
             KeyCode::Down | KeyCode::Char('j') => {
                 app.diff_scroll_offset = app.diff_scroll_offset.saturating_add(1);
@@ -72,13 +72,13 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             }
             _ => {}
         }
-        return Ok(());
+        return Ok(false);
     }
 
     match key.code {
         KeyCode::Char('q') => {
             // Graceful quit: return to caller
-            std::process::exit(0);
+            return Ok(true);
         }
         KeyCode::Up | KeyCode::Char('k') => {
             if !app.files.is_empty() {
@@ -364,7 +364,7 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
         }
         _ => {}
     }
-    Ok(())
+    Ok(false)
 }
 
 fn filter_diff(diff: &str) -> String {

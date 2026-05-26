@@ -341,39 +341,53 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                     }
                 }
                 KeyCode::Char('n') | KeyCode::Char('N') => {
-                    let dialog_title = if is_vi {
-                        "Chọn thư mục Project mới"
+                    #[cfg(target_os = "linux")]
+                    let is_headless = std::env::var("DISPLAY").is_err() && std::env::var("WAYLAND_DISPLAY").is_err();
+                    #[cfg(not(target_os = "linux"))]
+                    let is_headless = false;
+
+                    if is_headless {
+                        app.workspace_path_input.clear();
+                        app.active_modal = crate::models::ActiveModal::WorkspacePathInput;
                     } else {
-                        "Select New Project Folder"
-                    };
-                    if let Some(folder) =
-                        rfd::FileDialog::new().set_title(dialog_title).pick_folder()
-                    {
-                        if std::env::set_current_dir(&folder).is_ok() {
-                            let folder_str = folder.display().to_string();
-                            app.current_dir = folder_str.clone();
-                            app.add_to_workspace_history(&folder_str);
-                            app.refresh_git_status();
-                            app.status_message = if is_vi {
-                                "🔄 Đã tải Project mới thành công!".to_string()
+                        let dialog_title = if is_vi {
+                            "Chọn thư mục Project mới"
+                        } else {
+                            "Select New Project Folder"
+                        };
+                        if let Some(folder) =
+                            rfd::FileDialog::new().set_title(dialog_title).pick_folder()
+                        {
+                            if std::env::set_current_dir(&folder).is_ok() {
+                                let folder_str = folder.display().to_string();
+                                app.current_dir = folder_str.clone();
+                                app.add_to_workspace_history(&folder_str);
+                                app.refresh_git_status();
+                                app.status_message = if is_vi {
+                                    "🔄 Đã tải Project mới thành công!".to_string()
+                                } else {
+                                    "🔄 Loaded new Project successfully!".to_string()
+                                };
+                                app.active_modal = crate::models::ActiveModal::None;
                             } else {
-                                "🔄 Loaded new Project successfully!".to_string()
-                            };
-                            app.active_modal = crate::models::ActiveModal::None;
+                                app.status_message = if is_vi {
+                                    "❌ Lỗi: Không thể truy cập thư mục này.".to_string()
+                                } else {
+                                    "❌ Error: Cannot access this folder.".to_string()
+                                };
+                            }
                         } else {
                             app.status_message = if is_vi {
-                                "❌ Lỗi: Không thể truy cập thư mục này.".to_string()
+                                "ℹ️ Đã hủy chọn Project.".to_string()
                             } else {
-                                "❌ Error: Cannot access this folder.".to_string()
+                                "ℹ️ Project selection cancelled.".to_string()
                             };
                         }
-                    } else {
-                        app.status_message = if is_vi {
-                            "ℹ️ Đã hủy chọn Project.".to_string()
-                        } else {
-                            "ℹ️ Project selection cancelled.".to_string()
-                        };
                     }
+                }
+                KeyCode::Char('p') | KeyCode::Char('P') => {
+                    app.workspace_path_input.clear();
+                    app.active_modal = crate::models::ActiveModal::WorkspacePathInput;
                 }
                 KeyCode::Char('x') | KeyCode::Char('X') => {
                     if !app.workspace_history.is_empty() {

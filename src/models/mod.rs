@@ -108,4 +108,5 @@ pub enum ActiveModal {
     BranchDeleteConfirm(String),
     Settings,
     EditorSelect,
+    WorkspacePathInput,
 }

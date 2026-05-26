@@ -71,7 +71,7 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                 Event::Key(key) => {
                     if app.show_splash {
                         if key.code == event::KeyCode::Char('q') || key.code == event::KeyCode::Char('Q') {
-                            std::process::exit(0);
+                            return Ok(());
                         }
                         app.show_splash = false;
                         continue;
@@ -81,7 +81,9 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                     }
 
                     // --- Standard controls (no modal or unhandled modal key) ---
-                    handlers::navigation::handle_standard_keys(app, terminal, &key)?;
+                    if handlers::navigation::handle_standard_keys(app, terminal, &key)? {
+                        return Ok(());
+                    }
                 }
                 Event::Paste(text) => {
                     handlers::paste::handle_paste(app, &text);
