@@ -3,6 +3,7 @@ use std::process::Command;
 use crossterm::event::KeyCode;
 use ratatui::backend::Backend;
 use ratatui::Terminal;
+use rust_i18n::t;
 
 use crate::app::App;
 use crate::git::remote::{git_fetch, git_pull};
@@ -15,11 +16,9 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
     terminal: &mut Terminal<B>,
     key: &crossterm::event::KeyEvent,
 ) -> Result<bool, anyhow::Error> {
-    // Handle diff-focus mode keys first
     if app.focus_diff {
         match key.code {
             KeyCode::Char('q') => {
-                // Quit always works regardless of focus
                 return Ok(true);
             }
             KeyCode::Down | KeyCode::Char('j') => {
@@ -46,29 +45,17 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
 
                     if is_staged {
                         let _ = unstage_file(&path);
-                        app.status_message = if app.current_lang == "vi" {
-                            format!("➖ Đã unstage: {}", path)
-                        } else {
-                            format!("➖ Unstaged: {}", path)
-                        };
+                        app.status_message = t!("nav_unstaged", path = path).to_string();
                     } else {
                         let _ = stage_file(&path);
-                        app.status_message = if app.current_lang == "vi" {
-                            format!("➕ Đã stage: {}", path)
-                        } else {
-                            format!("➕ Staged: {}", path)
-                        };
+                        app.status_message = t!("nav_staged", path = path).to_string();
                     }
                     app.refresh_git_status();
                 }
             }
             KeyCode::Tab | KeyCode::Esc | KeyCode::Left => {
                 app.focus_diff = false;
-                app.status_message = if app.current_lang == "vi" {
-                    "📂 Đã quay lại Danh sách tập tin".to_string()
-                } else {
-                    "📂 Returned to Files list".to_string()
-                };
+                app.status_message = t!("nav_returned_files").to_string();
             }
             _ => {}
         }
@@ -77,7 +64,6 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
 
     match key.code {
         KeyCode::Char('q') => {
-            // Graceful quit: return to caller
             return Ok(true);
         }
         KeyCode::Up | KeyCode::Char('k') => {
@@ -110,18 +96,10 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
 
                 if is_staged {
                     let _ = unstage_file(&path);
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("➖ Đã unstage: {}", path)
-                    } else {
-                        format!("➖ Unstaged: {}", path)
-                    };
+                    app.status_message = t!("nav_unstaged", path = path).to_string();
                 } else {
                     let _ = stage_file(&path);
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("➕ Đã stage: {}", path)
-                    } else {
-                        format!("➕ Staged: {}", path)
-                    };
+                    app.status_message = t!("nav_staged", path = path).to_string();
                 }
                 app.refresh_git_status();
             }
@@ -143,11 +121,7 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
         KeyCode::Tab | KeyCode::Right => {
             if !app.files.is_empty() {
                 app.focus_diff = true;
-                app.status_message = if app.current_lang == "vi" {
-                    "📄 Đã chuyển focus sang Diff. Nhấn j/k để cuộn dòng, d/u để cuộn trang, Tab/Esc để quay lại.".to_string()
-                } else {
-                    "📄 Focused Diff view. Press j/k to line scroll, d/u to page scroll, Tab/Esc to return.".to_string()
-                };
+                app.status_message = t!("nav_diff_focused").to_string();
             }
         }
         KeyCode::Char('[') => {
@@ -168,22 +142,14 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
                 "cursor" => "Cursor",
                 "zed" => "Zed",
                 "subl" => "Sublime Text",
-                _ => if app.current_lang == "vi" { "Mặc định hệ thống" } else { "System Default" },
+                _ => &t!("nav_system_default").to_string(),
             };
             match Command::new(cmd).arg(".").spawn() {
                 Ok(_) => {
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("🚀 Đã mở dự án bằng {}!", friendly_name)
-                    } else {
-                        format!("🚀 Opened project in {}!", friendly_name)
-                    };
+                    app.status_message = t!("nav_open_ok", name = friendly_name).to_string();
                 }
                 Err(_) => {
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("❌ Lỗi: Không tìm thấy lệnh '{}'.", cmd)
-                    } else {
-                        format!("❌ Error: '{}' command not found.", cmd)
-                    };
+                    app.status_message = t!("nav_open_err", cmd = cmd.clone()).to_string();
                 }
             }
         }
@@ -206,11 +172,7 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             let locales = crate::cli::Locales::new(&app.current_lang);
             run_cli_command(terminal, || crate::cli::system::handle_restore(&locales))?;
             app.refresh_git_status();
-            app.status_message = if app.current_lang == "vi" {
-                "🔄 Đã reset cấu hình hệ thống.".to_string()
-            } else {
-                "🔄 System configuration reset.".to_string()
-            };
+            app.status_message = t!("nav_reset_ok").to_string();
         }
         KeyCode::Char('l') => {
             let raw_lang = if let Ok(output) = Command::new("git")
@@ -238,34 +200,18 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
         KeyCode::Char('a') | KeyCode::Char('A') => {
             let success = stage_all().is_ok();
             if success {
-                app.status_message = if app.current_lang == "vi" {
-                    "➕ Đã stage toàn bộ thay đổi!".to_string()
-                } else {
-                    "➕ Staged all changes!".to_string()
-                };
+                app.status_message = t!("nav_stage_all_ok").to_string();
             } else {
-                app.status_message = if app.current_lang == "vi" {
-                    "❌ Lỗi: Không thể stage toàn bộ.".to_string()
-                } else {
-                    "❌ Error: Failed to stage all.".to_string()
-                };
+                app.status_message = t!("nav_stage_all_err").to_string();
             }
             app.refresh_git_status();
         }
         KeyCode::Char('u') | KeyCode::Char('U') => {
             let success = unstage_all().is_ok();
             if success {
-                app.status_message = if app.current_lang == "vi" {
-                    "➖ Đã unstage toàn bộ thay đổi!".to_string()
-                } else {
-                    "➖ Unstaged all changes!".to_string()
-                };
+                app.status_message = t!("nav_unstage_all_ok").to_string();
             } else {
-                app.status_message = if app.current_lang == "vi" {
-                    "❌ Lỗi: Không thể unstage toàn bộ.".to_string()
-                } else {
-                    "❌ Error: Failed to unstage all.".to_string()
-                };
+                app.status_message = t!("nav_unstage_all_err").to_string();
             }
             app.refresh_git_status();
         }
@@ -279,53 +225,27 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             app.fetch_branches();
         }
         KeyCode::Char('f') | KeyCode::Char('F') => {
-            let is_vi = app.current_lang == "vi";
-            app.status_message = if is_vi {
-                "⏳ Đang tải thông tin mới từ Remote (Fetch)...".to_string()
-            } else {
-                "⏳ Fetching new updates from Remote...".to_string()
-            };
+            app.status_message = t!("nav_fetch_start").to_string();
             terminal.draw(|f| crate::ui::ui(f, app))?;
             match git_fetch() {
                 Ok(_) => {
-                    app.status_message = if is_vi {
-                        "✅ Đã tìm nạp (git fetch) thành công!".to_string()
-                    } else {
-                        "✅ Git fetch completed successfully!".to_string()
-                    };
+                    app.status_message = t!("nav_fetch_ok").to_string();
                 }
                 Err(err) => {
-                    app.status_message = if is_vi {
-                        format!("❌ Lỗi git fetch: {}", err)
-                    } else {
-                        format!("❌ git fetch failed: {}", err)
-                    };
+                    app.status_message = t!("nav_fetch_err", err = err.to_string()).to_string();
                 }
             }
             app.refresh_git_status();
         }
         KeyCode::Char('p') | KeyCode::Char('P') => {
-            let is_vi = app.current_lang == "vi";
-            app.status_message = if is_vi {
-                "⏳ Đang cập nhật thay đổi từ Remote (Pull)...".to_string()
-            } else {
-                "⏳ Pulling changes from Remote...".to_string()
-            };
+            app.status_message = t!("nav_pull_start").to_string();
             terminal.draw(|f| crate::ui::ui(f, app))?;
             match git_pull() {
                 Ok(_) => {
-                    app.status_message = if is_vi {
-                        "✅ Đã cập nhật (git pull) thành công!".to_string()
-                    } else {
-                        "✅ Git pull completed successfully!".to_string()
-                    };
+                    app.status_message = t!("nav_pull_ok").to_string();
                 }
                 Err(err) => {
-                    app.status_message = if is_vi {
-                        format!("❌ Lỗi git pull: {}", err)
-                    } else {
-                        format!("❌ git pull failed: {}", err)
-                    };
+                    app.status_message = t!("nav_pull_err", err = err.to_string()).to_string();
                 }
             }
             app.refresh_git_status();
@@ -350,12 +270,7 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             app.active_modal = crate::models::ActiveModal::AmendCommit;
         }
         KeyCode::Char('e') | KeyCode::Char('E') => {
-            let is_vi = app.current_lang == "vi";
-            app.status_message = if is_vi {
-                "⏳ Đang phân tích ngôn ngữ dự án...".to_string()
-            } else {
-                "⏳ Analyzing project languages...".to_string()
-            };
+            app.status_message = t!("nav_lang_analyze_start").to_string();
             app.language_analysis_pending = true;
             app.active_modal = crate::models::ActiveModal::ProjectLanguages;
         }
@@ -369,12 +284,7 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             app.active_modal = crate::models::ActiveModal::ThemeSelect;
         }
         KeyCode::Char('y') | KeyCode::Char('Y') => {
-            let is_vi = app.current_lang == "vi";
-            app.status_message = if is_vi {
-                "🛠️ Đã mở cửa sổ thử nghiệm Dev".to_string()
-            } else {
-                "🛠️ Opened Developer Test Panel".to_string()
-            };
+            app.status_message = t!("nav_dev_opened").to_string();
             app.active_modal = crate::models::ActiveModal::HandleTest;
         }
         KeyCode::Char(',') => {
@@ -437,7 +347,6 @@ fn handle_diff_capture(app: &mut App) {
     if let Ok(ref out) = diff_output {
         let staged_diff = String::from_utf8_lossy(&out.stdout).to_string();
         if staged_diff.trim().is_empty() {
-            // Fallback to unstaged changes
             diff_output = Command::new("git").args(["diff"]).output();
             is_unstaged = true;
         }
@@ -447,16 +356,10 @@ fn handle_diff_capture(app: &mut App) {
         Ok(out) => {
             let diff_str = String::from_utf8_lossy(&out.stdout).to_string();
             if diff_str.trim().is_empty() {
-                app.status_message = if app.current_lang == "vi" {
-                    "⚠️ Không phát hiện thay đổi nào (cả staged lẫn unstaged)! Hãy sửa file trước khi bấm 'd'.".to_string()
-                } else {
-                    "⚠️ No changes detected (neither staged nor unstaged)! Please edit files before pressing 'd'."
-                        .to_string()
-                };
+                app.status_message = t!("diff_no_changes").to_string();
             } else {
                 app.diff_captured_unstaged = is_unstaged;
                 
-                // Perform smart token filtering on lockfiles
                 let clean_diff = filter_diff(&diff_str);
 
                 app.diff_added_lines = clean_diff
@@ -493,24 +396,12 @@ fn handle_diff_capture(app: &mut App) {
                 app.diff_copy_failed = copy_failed;
                 if copy_failed {
                     let _ = std::fs::write(".git-ai-prompt.txt", &prompt);
-                    app.status_message = if app.current_lang == "vi" {
-                        "⚠️ Clipboard không khả dụng! Đã lưu prompt vào file .git-ai-prompt.txt.".to_string()
-                    } else {
-                        "⚠️ Clipboard unavailable! Saved prompt to .git-ai-prompt.txt.".to_string()
-                    };
+                    app.status_message = t!("diff_clipboard_fail").to_string();
                 } else {
-                    app.status_message = if app.current_lang == "vi" {
-                        if is_unstaged {
-                            "✨ [HỆ THỐNG]: Chưa stage file. Đã tự động chụp thay đổi chưa stage thành công!".to_string()
-                        } else {
-                            "✨ [HỆ THỐNG]: Đã chụp snapshot staged diff thành công!".to_string()
-                        }
+                    app.status_message = if is_unstaged {
+                        t!("diff_captured_unstaged").to_string()
                     } else {
-                        if is_unstaged {
-                            "✨ [SYSTEM]: No staged changes. Captured unstaged changes instead!".to_string()
-                        } else {
-                            "✨ [SYSTEM]: Staged diff snapshot captured successfully!".to_string()
-                        }
+                        t!("diff_captured_staged").to_string()
                     };
                 }
                 
@@ -528,12 +419,7 @@ pub fn handle_language_analysis(app: &mut App) -> bool {
         return false;
     }
     app.language_stats = crate::helper::Helper::detect_project_languages(&app.current_dir);
-    let is_vi = app.current_lang == "vi";
-    app.status_message = if is_vi {
-        "✅ Đã phân tích xong!".to_string()
-    } else {
-        "✅ Project languages analyzed successfully!".to_string()
-    };
+    app.status_message = t!("nav_lang_analyze_ok").to_string();
     app.language_analysis_pending = false;
     true
 }
@@ -568,11 +454,9 @@ index abcdef..fedcba 100644
 
         let filtered = filter_diff(diff);
         
-        // App.rs changes should be kept fully intact
         assert!(filtered.contains("pub struct App {"));
         assert!(filtered.contains("+    pub foo: bool,"));
         
-        // Cargo.lock changes should have the diff hunk content stripped out
         assert!(filtered.contains("diff --git a/Cargo.lock b/Cargo.lock"));
         assert!(filtered.contains(" [Modified lockfile diff content omitted for brevity to save AI tokens] "));
         assert!(!filtered.contains("name = \"anyhow\""));

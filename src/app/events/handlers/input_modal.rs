@@ -1,4 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
+use rust_i18n::t;
 
 use crate::app::App;
 
@@ -11,35 +12,19 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
             KeyCode::Enter => {
                 let msg = app.manual_commit_message.trim().to_string();
                 if msg.is_empty() {
-                    app.status_message = if app.current_lang == "vi" {
-                        "❌ Commit message không được để trống!".to_string()
-                    } else {
-                        "❌ Commit message cannot be empty!".to_string()
-                    };
+                    app.status_message = t!("input_commit_empty").to_string();
                 } else if app.staged_count == 0 {
-                    app.status_message = if app.current_lang == "vi" {
-                        "⚠️ Chưa có file nào staged! Hãy nhấn [Space] để stage trước.".to_string()
-                    } else {
-                        "⚠️ No files staged! Press [Space] to stage first.".to_string()
-                    };
+                    app.status_message = t!("input_no_staged").to_string();
                 } else {
                     match crate::git::commit::commit(&msg) {
                         Ok(_) => {
-                            app.status_message = if app.current_lang == "vi" {
-                                format!("✅ Đã commit thủ công: {}", msg)
-                            } else {
-                                format!("✅ Manual commit successful: {}", msg)
-                            };
+                            app.status_message = t!("input_commit_ok", msg = msg.clone()).to_string();
                             app.active_modal = crate::models::ActiveModal::None;
                             app.manual_commit_message.clear();
                             app.refresh_git_status();
                         }
                         Err(e) => {
-                            app.status_message = if app.current_lang == "vi" {
-                                format!("❌ Commit thất bại: {}", e)
-                            } else {
-                                format!("❌ Commit failed: {}", e)
-                            };
+                            app.status_message = t!("input_commit_err", err = e.to_string()).to_string();
                         }
                     }
                 }
@@ -70,36 +55,20 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
             KeyCode::Enter => {
                 let branch_name = app.new_branch_name.trim().to_string();
                 if !branch_name.is_empty() {
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("⚡ Đang tạo chi nhánh {}...", branch_name)
-                    } else {
-                        format!("⚡ Creating branch {}...", branch_name)
-                    };
+                    app.status_message = t!("input_branch_creating", name = branch_name.clone()).to_string();
                     match crate::git::branch::create_and_checkout_branch(&branch_name) {
                         Ok(_) => {
-                            app.status_message = if app.current_lang == "vi" {
-                                format!("🌿 Đã tạo và chuyển sang chi nhánh mới: {}", branch_name)
-                            } else {
-                                format!("🌿 Created and checked out new branch: {}", branch_name)
-                            };
+                            app.status_message = t!("input_branch_ok", name = branch_name.clone()).to_string();
                             app.active_modal = crate::models::ActiveModal::None;
                         }
                         Err(err) => {
-                            app.status_message = if app.current_lang == "vi" {
-                                format!("❌ Lỗi tạo chi nhánh: {}", err)
-                            } else {
-                                format!("❌ Failed to create branch: {}", err)
-                            };
+                            app.status_message = t!("input_branch_err", err = err.to_string()).to_string();
                             app.active_modal = crate::models::ActiveModal::BranchSelect;
                         }
                     }
                     app.refresh_git_status();
                 } else {
-                    app.status_message = if app.current_lang == "vi" {
-                        "❌ Tên chi nhánh không được để trống!".to_string()
-                    } else {
-                        "❌ Branch name cannot be empty!".to_string()
-                    };
+                    app.status_message = t!("input_branch_empty").to_string();
                 }
             }
             KeyCode::Backspace => {
@@ -117,11 +86,7 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
             KeyCode::Enter => {
                 let url = app.github_download_url.trim().to_string();
                 if !url.is_empty() {
-                    app.status_message = if app.current_lang == "vi" {
-                        "⏳ Đang tải thông tin repository từ GitHub...".to_string()
-                    } else {
-                        "⏳ Fetching repository metadata from GitHub...".to_string()
-                    };
+                    app.status_message = t!("input_github_fetching").to_string();
                     app.github_cloning = true;
                     app.github_cloning_error = None;
                 }
@@ -201,7 +166,6 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                     }
                 }
                 KeyCode::Enter => {
-                    let is_vi = app.current_lang == "vi";
                     let current = std::path::Path::new(&app.current_dir);
                     let target = std::path::Path::new(&app.github_download_target_path);
                     let current_canon = current
@@ -211,21 +175,11 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                         .canonicalize()
                         .unwrap_or_else(|_| target.to_path_buf());
                     if target_canon.starts_with(&current_canon) || target.starts_with(&current) {
-                        app.status_message = if is_vi {
-                            "⚠️ Không thể tải vào dự án hiện tại để tránh xung đột file!"
-                                .to_string()
-                        } else {
-                            "⚠️ Cannot download into the current project to avoid file conflicts!"
-                                .to_string()
-                        };
+                        app.status_message = t!("input_download_conflict").to_string();
                         return;
                     }
                     match {
-                        app.status_message = if is_vi {
-                            "⏳ Đang sao chép tập tin từ GitHub...".to_string()
-                        } else {
-                            "⏳ Copying files from GitHub...".to_string()
-                        };
+                        app.status_message = t!("input_download_copying").to_string();
                         app.copy_github_download_item()
                     } {
                         Ok(_) => {
@@ -234,21 +188,13 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                                 .get(app.selected_github_tree_index)
                                 .map(|e| e.name.clone())
                                 .unwrap_or_default();
-                            app.status_message = if is_vi {
-                                format!("✅ Đã tải thành công: {}", selected_name)
-                            } else {
-                                format!("✅ Downloaded successfully: {}", selected_name)
-                            };
+                            app.status_message = t!("input_download_ok", name = selected_name).to_string();
                             app.github_temp_dir = None;
                             app.active_modal = crate::models::ActiveModal::None;
                             app.refresh_git_status();
                         }
                         Err(err) => {
-                            app.status_message = if is_vi {
-                                format!("❌ Lỗi lưu tập tin: {}", err)
-                            } else {
-                                format!("❌ Save error: {}", err)
-                            };
+                            app.status_message = t!("input_download_err", err = err.to_string()).to_string();
                             app.github_temp_dir = None;
                         }
                     }
@@ -267,33 +213,20 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                 app.active_modal = crate::models::ActiveModal::WorkspaceHistory;
             }
             KeyCode::Enter => {
-                let is_vi = app.current_lang == "vi";
                 let selected_path = app.workspace_path_input.trim().to_string();
                 if !selected_path.is_empty() {
                     if std::env::set_current_dir(&selected_path).is_ok() {
                         app.current_dir = selected_path.clone();
                         app.add_to_workspace_history(&selected_path);
                         app.refresh_git_status();
-                        app.status_message = if is_vi {
-                            format!("🔄 Đã chuyển sang Project: {}", selected_path)
-                        } else {
-                            format!("🔄 Switched to project: {}", selected_path)
-                        };
+                        app.status_message = t!("input_workspace_ok", path = selected_path.clone()).to_string();
                         app.active_modal = crate::models::ActiveModal::None;
                         app.workspace_path_input.clear();
                     } else {
-                        app.status_message = if is_vi {
-                            "❌ Lỗi: Không thể truy cập thư mục này.".to_string()
-                        } else {
-                            "❌ Error: Cannot access this folder.".to_string()
-                        };
+                        app.status_message = t!("input_workspace_err").to_string();
                     }
                 } else {
-                    app.status_message = if is_vi {
-                        "❌ Đường dẫn không được để trống!".to_string()
-                    } else {
-                        "❌ Path cannot be empty!".to_string()
-                    };
+                    app.status_message = t!("input_workspace_empty").to_string();
                 }
             }
             KeyCode::Backspace => {

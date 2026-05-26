@@ -15,7 +15,7 @@ pub fn render_project_languages(f: &mut Frame, app: &App, area: Rect) {
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            app.tr("  📊 TỶ LỆ NGÔN NGỮ DỰ ÁN 📊", "  📊 PROJECT LANGUAGE COMPOSITION 📊"),
+            app.locales.lang_stats_heading.clone(),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
@@ -25,7 +25,7 @@ pub fn render_project_languages(f: &mut Frame, app: &App, area: Rect) {
 
     if app.language_stats.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            app.tr("  (Chưa tải dữ liệu ngôn ngữ)", "  (Language data not loaded yet)"),
+            app.locales.lang_stats_empty.clone(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -99,7 +99,7 @@ pub fn render_project_languages(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        app.tr("  Nhấn [Esc] hoặc [q] để ĐÓNG màn hình thống kê.", "  Press [Esc] or [q] to CLOSE statistics screen."),
+        app.locales.lang_stats_close.clone(),
         Style::default()
             .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
@@ -107,7 +107,7 @@ pub fn render_project_languages(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            app.tr(" 📊 THỐNG KÊ NGÔN NGỮ ", " 📊 LANGUAGE STATS "),
+            app.locales.lang_stats_title.clone(),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),

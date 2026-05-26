@@ -1,5 +1,4 @@
 use crate::app::App;
-
 use ratatui::{
     layout::Rect,
     style::{Modifier, Style},
@@ -7,20 +6,16 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
+use rust_i18n::t;
 
 pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
-    let is_vi = app.current_lang == "vi";
     let theme = app.theme();
     let mut change_lines = vec![Line::from("")];
     if app.files.is_empty() {
         change_lines.push(Line::from(vec![
             Span::styled("   ✨ ", Style::default().fg(theme.green)),
             Span::styled(
-                if is_vi {
-                    "Không có thay đổi!"
-                } else {
-                    "No changes detected!"
-                },
+                t!("changes_empty").to_string(),
                 Style::default()
                     .fg(theme.green)
                     .add_modifier(Modifier::BOLD),
@@ -30,7 +25,6 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
         for (i, file) in app.files.iter().enumerate() {
             let is_selected = i == app.selected_index;
 
-            // Check status to determine color badge
             let first_char = file.status.chars().next().unwrap_or(' ');
             let second_char = file.status.chars().nth(1).unwrap_or(' ');
 
@@ -44,26 +38,26 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
                     Style::default()
                         .fg(theme.green)
                         .add_modifier(Modifier::BOLD),
-                ) // Green Staged
+                )
             } else if is_untracked {
                 (
                     " [?] ",
                     Style::default()
                         .fg(theme.purple)
                         .add_modifier(Modifier::BOLD),
-                ) // Purple Untracked
+                )
             } else if is_deleted {
                 (
                     " [D] ",
                     Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
-                ) // Red Deleted
+                )
             } else {
                 (
                     " [U] ",
                     Style::default()
                         .fg(theme.yellow)
                         .add_modifier(Modifier::BOLD),
-                ) // Yellow Unstaged
+                )
             };
             let cursor_span = if is_selected {
                 Span::styled(
@@ -93,11 +87,7 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
         }
     }
 
-    let left_title = if is_vi {
-        " 📂 THAY ĐỔI (CHANGES) "
-    } else {
-        " 📂 WORKSPACE CHANGES "
-    };
+    let left_title = t!("changes_title");
     let changes_border_color = if app.focus_diff {
         theme.border
     } else {
@@ -107,7 +97,7 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
     let changes_widget = Paragraph::new(change_lines).block(
         Block::default()
             .title(Span::styled(
-                left_title,
+                left_title.as_ref(),
                 Style::default()
                     .fg(changes_border_color)
                     .add_modifier(Modifier::BOLD),

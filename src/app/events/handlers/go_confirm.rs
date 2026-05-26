@@ -1,6 +1,7 @@
 use crate::app::App;
 use crate::models::GoStep;
 use crossterm::event::{KeyCode, KeyEvent};
+use rust_i18n::t;
 
 pub fn handle_go_confirm(app: &mut App, key: &KeyEvent) {
     match app.go_step.clone() {
@@ -13,11 +14,7 @@ pub fn handle_go_confirm(app: &mut App, key: &KeyEvent) {
             }
             KeyCode::Enter => {
                 if app.staged_count == 0 {
-                    app.status_message = if app.current_lang == "vi" {
-                        "⚠️ Không thể tiến hành! Hãy nhấn [Space] để chọn file.".to_string()
-                    } else {
-                        "⚠️ Cannot proceed! Please stage at least 1 file.".to_string()
-                    };
+                    app.status_message = t!("go_no_stage").to_string();
                     app.active_modal = crate::models::ActiveModal::None;
                 } else {
                     let msg = if app.commit_input_mode {
@@ -66,54 +63,29 @@ pub fn handle_go_confirm(app: &mut App, key: &KeyEvent) {
     }
 }
 
-/// Handle GoStep::Pushing in the pre-poll phase.
-/// Returns true if pushing was in progress.
 pub fn handle_go_pushing(app: &mut App) -> bool {
     if app.active_modal != crate::models::ActiveModal::GoConfirm {
         return false;
     }
     if let GoStep::Pushing = &app.go_step {
-        let is_vi = app.current_lang == "vi";
         let msg = app.commit_message_preview.clone();
 
         let commit_ok = crate::git::commit::commit(&msg).is_ok();
 
         if !commit_ok {
-            app.go_step = GoStep::Done(if is_vi {
-                "❌ Lỗi: git commit thất bại. Hãy chắc chắn bạn đã chọn file cần commit."
-                    .to_string()
-            } else {
-                "❌ Error: git commit failed. Make sure you have staged files to commit."
-                    .to_string()
-            });
+            app.go_step = GoStep::Done(t!("go_commit_fail").to_string());
         } else {
             if app.auto_push {
                 match crate::git::remote::git_push() {
                     Ok(_) => {
-                        app.go_step = GoStep::Done(if is_vi {
-                            "✅ Commit & Push thành công! Code đã lên mây ☁️".to_string()
-                        } else {
-                            "✅ Commit & Push successful! Code is in the cloud ☁️".to_string()
-                        });
+                        app.go_step = GoStep::Done(t!("go_push_ok").to_string());
                     }
                     Err(err) => {
-                        app.go_step = GoStep::Done(format!(
-                            "{} {}",
-                            if is_vi {
-                                "❌ Push thất bại:"
-                            } else {
-                                "❌ Push failed:"
-                            },
-                            err
-                        ));
+                        app.go_step = GoStep::Done(t!("go_push_fail", err = err.to_string()).to_string());
                     }
                 }
             } else {
-                app.go_step = GoStep::Done(if is_vi {
-                    "✅ Commit thành công (Đã bỏ qua Tự động Push)!".to_string()
-                } else {
-                    "✅ Commit successful (Auto Push disabled)!".to_string()
-                });
+                app.go_step = GoStep::Done(t!("go_commit_only_ok").to_string());
             }
         }
         return true;
@@ -121,7 +93,6 @@ pub fn handle_go_pushing(app: &mut App) -> bool {
     false
 }
 
-/// Handle AmendStep::Edit (input mode) keys
 pub fn handle_amend_edit(app: &mut App, key: &KeyEvent) {
     use crate::models::AmendStep;
     match app.amend_step.clone() {
@@ -154,22 +125,15 @@ pub fn handle_amend_edit(app: &mut App, key: &KeyEvent) {
     }
 }
 
-/// Handle AmendStep::Pushing in the pre-poll phase.
-/// Returns true if amend pushing was in progress.
 pub fn handle_amend_pushing(app: &mut App) -> bool {
     use crate::models::AmendStep;
     if app.active_modal != crate::models::ActiveModal::AmendCommit {
         return false;
     }
     if let AmendStep::Pushing = &app.amend_step {
-        let is_vi = app.current_lang == "vi";
         let msg = app.amend_message.clone();
         app.amend_step = match crate::git::commit::amend_commit(&msg) {
-            Ok(_) => AmendStep::Done(if is_vi {
-                "✅ Đã sửa commit cuối! (Amend thành công)".to_string()
-            } else {
-                "✅ Last commit amended successfully!".to_string()
-            }),
+            Ok(_) => AmendStep::Done(t!("go_amend_ok").to_string()),
             Err(err) => AmendStep::Done(format!("❌ Amend failed: {}", err)),
         };
         return true;

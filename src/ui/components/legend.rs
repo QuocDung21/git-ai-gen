@@ -6,38 +6,26 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
 };
+use rust_i18n::t;
 
 pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
-    let is_vi = app.current_lang == "vi";
     let theme = app.theme();
     let mut legend_lines = vec![Line::from("")];
     let nav_items = if app.focus_diff {
         vec![
             (
                 "↑/↓ / j/k",
-                if is_vi {
-                    "Cuộn dòng diff"
-                } else {
-                    "Line scroll diff"
-                },
+                t!("legend_nav_line_scroll"),
                 theme.yellow,
             ),
             (
                 "d / u",
-                if is_vi {
-                    "Cuộn trang diff"
-                } else {
-                    "Page scroll diff"
-                },
+                t!("legend_nav_page_scroll"),
                 theme.yellow,
             ),
             (
                 "Tab / Esc",
-                if is_vi {
-                    "Quay lại thay đổi"
-                } else {
-                    "Return to changes"
-                },
+                t!("legend_nav_return"),
                 theme.purple,
             ),
         ]
@@ -45,29 +33,17 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
         vec![
             (
                 "↑/↓ / j/k",
-                if is_vi {
-                    "Chọn tập tin"
-                } else {
-                    "Select file"
-                },
+                t!("legend_nav_select"),
                 theme.purple,
             ),
             (
                 "Tab / l / →",
-                if is_vi {
-                    "Cuộn chi tiết diff"
-                } else {
-                    "Focus Diff scroll"
-                },
+                t!("legend_nav_focus_diff"),
                 theme.yellow,
             ),
             (
                 "[ / ]",
-                if is_vi {
-                    "Cuộn nhanh diff"
-                } else {
-                    "Quick scroll diff"
-                },
+                t!("legend_nav_quick_scroll"),
                 theme.cyan,
             ),
         ]
@@ -80,107 +56,67 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
             vec![
                 (
                     "Space",
-                    "Stage/Unstage",
+                    t!("legend_git_stage_all"),
                     theme.green,
                 ),
                 (
                     "Backspace",
-                    if is_vi {
-                        "Revert / Xóa"
-                    } else {
-                        "Revert / Delete"
-                    },
+                    t!("legend_git_revert"),
                     theme.red,
                 ),
                 (
                     "A",
-                    if is_vi {
-                        "Stage tất cả"
-                    } else {
-                        "Stage all"
-                    },
+                    t!("legend_git_stage_all"),
                     theme.green,
                 ),
                 (
                     "U",
-                    if is_vi {
-                        "Unstage tất cả"
-                    } else {
-                        "Unstage all"
-                    },
+                    t!("legend_git_unstage_all"),
                     theme.red,
                 ),
                 (
                     "B",
-                    if is_vi {
-                        "Quản lý nhánh (Đổi/Trộn/Tạo)"
-                    } else {
-                        "Manage branch (Switch/Merge/New)"
-                    },
+                    t!("legend_git_branch"),
                     theme.cyan,
                 ),
                 (
                     "V",
-                    if is_vi {
-                        "Xem Lịch sử"
-                    } else {
-                        "Commit history"
-                    },
+                    t!("legend_git_history"),
                     theme.yellow,
                 ),
                 (
                     "F",
-                    if is_vi {
-                        "Tìm nạp (Fetch)"
-                    } else {
-                        "Git Fetch"
-                    },
+                    t!("legend_git_fetch"),
                     theme.cyan,
                 ),
                 (
                     "P",
-                    if is_vi {
-                        "Cập nhật (Pull)"
-                    } else {
-                        "Git Pull"
-                    },
+                    t!("legend_git_pull"),
                     theme.cyan,
                 ),
                 (
                     "I",
-                    if is_vi {
-                        "Thông tin & danh sách Remote"
-                    } else {
-                        "Remote info & list"
-                    },
+                    t!("legend_git_remote"),
                     theme.cyan,
                 ),
                 (
                     "D",
-                    "Copy diff -> AI",
+                    t!("legend_git_view_prompt"),
                     theme.yellow,
                 ),
                 (
                     "X",
-                    if is_vi {
-                        "Xem prompt AI đã thiết lập"
-                    } else {
-                        "View configured AI prompt"
-                    },
+                    t!("legend_git_view_prompt"),
                     theme.yellow,
                 ),
                 (
                     "G",
-                    "Git Menu (Add/Commit/Fetch/Pull/Remote...)",
+                    t!("legend_git_stage_all"),
                     theme.green,
                 ),
                 (
                     "N",
-                    if is_vi {
-                        "Tải tập tin từ GitHub"
-                    } else {
-                        "Download from GitHub"
-                    },
+                    t!("legend_git_download"),
                     theme.cyan,
                 ),
             ],
@@ -190,79 +126,47 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
             vec![
                 (
                     "O",
-                    if is_vi { "Mở VS Ide" } else { "Open VS Ide" },
+                    t!("legend_sys_vscode"),
                     theme.purple,
                 ),
                 (
                     "W",
-                    if is_vi {
-                        "Chọn Project"
-                    } else {
-                        "Select Project"
-                    },
+                    t!("legend_sys_workspace"),
                     theme.cyan,
                 ),
                 (
                     "E",
-                    if is_vi {
-                        "Thống kê ngôn ngữ"
-                    } else {
-                        "Language stats"
-                    },
+                    t!("legend_sys_lang_stats"),
                     theme.purple,
                 ),
                 (
                     "L",
-                    if is_vi {
-                        "Đổi ngôn ngữ"
-                    } else {
-                        "Toggle lang"
-                    },
+                    t!("legend_sys_lang"),
                     theme.purple,
                 ),
                 (
                     "T",
-                    if is_vi {
-                        "Chọn giao diện"
-                    } else {
-                        "Select theme"
-                    },
+                    t!("legend_sys_theme"),
                     theme.purple,
                 ),
                 (
                     ",",
-                    if is_vi {
-                        "Cài đặt hệ thống"
-                    } else {
-                        "System settings"
-                    },
+                    t!("legend_sys_settings"),
                     theme.purple,
                 ),
                 (
                     "R",
-                    if is_vi {
-                        "Reset cài đặt"
-                    } else {
-                        "Reset settings"
-                    },
+                    t!("legend_sys_reset"),
                     theme.red,
                 ),
                 (
                     "? / H",
-                    if is_vi {
-                        "Mở hướng dẫn"
-                    } else {
-                        "Open manual"
-                    },
+                    t!("legend_sys_manual"),
                     theme.cyan,
                 ),
                 (
                     "Q",
-                    if is_vi {
-                        "Thoát TUI panel"
-                    } else {
-                        "Exit TUI panel"
-                    },
+                    t!("legend_sys_quit"),
                     theme.border,
                 ),
             ],
@@ -285,14 +189,11 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
         legend_lines.push(Line::from(""));
     }
 
+    let legend_title = t!("legend_title");
     let legend_widget = Paragraph::new(legend_lines).block(
         Block::default()
             .title(Span::styled(
-                if is_vi {
-                    " ⚡ BẢNG PHÍM TẮT "
-                } else {
-                    " ⚡ CONTROL LEGEND "
-                },
+                legend_title.as_ref(),
                 Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
             ))
             .borders(Borders::ALL)

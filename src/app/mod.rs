@@ -72,6 +72,7 @@ pub struct App {
     pub workspace_history: Vec<String>,
     pub language_stats: Vec<crate::models::LanguageStat>,
     pub language_analysis_pending: bool,
+    pub locales: crate::locales::Locales,
     pub selected_workspace_index: usize,
     pub prompt_text: String,
     pub github_download_url: String,
@@ -121,6 +122,10 @@ impl App {
         } else {
             en
         }
+    }
+
+    pub fn refresh_locales(&mut self) {
+        self.locales = crate::locales::Locales::new(&self.current_lang);
     }
 
     pub fn new() -> Self {
@@ -256,7 +261,7 @@ impl App {
         let mut app = App {
             status_message: init_msg.to_string(),
             git_status_lines: Vec::new(),
-            current_lang,
+            current_lang: current_lang.clone(),
             current_dir,
             files: Vec::new(),
             selected_index: 0,
@@ -314,6 +319,7 @@ impl App {
             workspace_history: Vec::new(),
             language_stats: Vec::new(),
             language_analysis_pending: false,
+            locales: crate::locales::Locales::new(&current_lang),
             selected_workspace_index: 0,
             prompt_text: String::new(),
             github_download_url: String::new(),

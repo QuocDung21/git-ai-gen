@@ -1,4 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
+use rust_i18n::t;
 
 use crate::app::App;
 use crate::models::{StashAction, StashStep};
@@ -27,13 +28,7 @@ pub fn handle_stash(app: &mut App, key: &KeyEvent) {
             }
             KeyCode::Char('n') | KeyCode::Char('N') => {
                 app.status_message = match crate::git::stash::stash_push() {
-                    Ok(_) => {
-                        if app.current_lang == "vi" {
-                            "✅ Đã stash thay đổi!".to_string()
-                        } else {
-                            "✅ Changes stashed!".to_string()
-                        }
-                    }
+                    Ok(_) => t!("stash_push_ok").to_string(),
                     Err(_) => "❌ Stash failed.".to_string(),
                 };
                 app.fetch_stash();
@@ -69,30 +64,11 @@ pub fn handle_stash(app: &mut App, key: &KeyEvent) {
                         StashAction::Apply => crate::git::stash::stash_apply(&ref_str),
                         StashAction::Drop => crate::git::stash::stash_drop(&ref_str),
                     };
-                    let is_vi = app.current_lang == "vi";
                     app.status_message = match result {
                         Ok(_) => match action {
-                            StashAction::Pop => {
-                                if is_vi {
-                                    "✅ Đã pop stash!".to_string()
-                                } else {
-                                    "✅ Stash popped!".to_string()
-                                }
-                            }
-                            StashAction::Apply => {
-                                if is_vi {
-                                    "✅ Đã apply stash!".to_string()
-                                } else {
-                                    "✅ Stash applied!".to_string()
-                                }
-                            }
-                            StashAction::Drop => {
-                                if is_vi {
-                                    "🗑️ Đã xóa stash!".to_string()
-                                } else {
-                                    "🗑️ Stash dropped!".to_string()
-                                }
-                            }
+                            StashAction::Pop => t!("stash_pop_ok").to_string(),
+                            StashAction::Apply => t!("stash_apply_ok").to_string(),
+                            StashAction::Drop => t!("stash_drop_ok").to_string(),
                         },
                         Err(_) => "❌ Stash operation failed.".to_string(),
                     };

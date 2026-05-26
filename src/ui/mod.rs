@@ -10,13 +10,12 @@ use ratatui::{
     widgets::{Block, Borders, Clear, Paragraph},
     Frame,
 };
+use rust_i18n::t;
 
 pub fn ui(f: &mut Frame, app: &App) {
     let theme = app.theme();
     let root_bg = Block::default().style(Style::default().bg(theme.bg));
     f.render_widget(root_bg, f.size());
-
-    let is_vi = app.current_lang == "vi";
 
     if app.show_splash {
         components::render_splash_screen(f, app);
@@ -87,11 +86,7 @@ pub fn ui(f: &mut Frame, app: &App) {
 
     let status_text = Line::from(vec![
         Span::styled(
-            if is_vi {
-                "  🔔  THÔNG BÁO HỆ THỐNG  "
-            } else {
-                "  🔔  SYSTEM NOTIFICATION  "
-            },
+            t!("ui_notification_label").to_string(),
             Style::default()
                 .fg(theme.bg)
                 .bg(status_color)

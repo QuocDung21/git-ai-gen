@@ -8,16 +8,11 @@ use ratatui::{
 };
 
 pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
-    let is_vi = app.current_lang == "vi";
     let theme = app.theme();
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🤖 BẢNG HƯỚNG DẪN PHÍM TẮT HỆ THỐNG 🤖"
-            } else {
-                "🤖 SYSTEM MANUAL & KEYBOARD LEGEND 🤖"
-            },
+            app.locales.help_modal_header.clone(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -25,185 +20,101 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
 
     let shortcut_groups = vec![
         (
-            "Navigation ",
+            app.locales.help_group_navigation.as_str(),
             vec![
                 (
                     "↑/↓ / j/k",
-                    if is_vi {
-                        "Chọn tập tin trong danh sách"
-                    } else {
-                        "Navigate/Select file in change list"
-                    },
+                    app.locales.help_nav_select.as_str(),
                 ),
                 (
                     "PgUp/PgDn",
-                    if is_vi {
-                        "Cuộn xem Diff chi tiết"
-                    } else {
-                        "Scroll detailed code diff viewer"
-                    },
+                    app.locales.help_nav_scroll.as_str(),
                 ),
             ],
         ),
         (
-            "Git Operations ",
+            app.locales.help_group_git.as_str(),
             vec![
                 (
                     "Space",
-                    if is_vi {
-                        "Stage / Unstage (git add / restore)"
-                    } else {
-                        "Stage / Unstage file (git add / restore)"
-                    },
+                    app.locales.help_git_stage.as_str(),
                 ),
                 (
                     "Backspace",
-                    if is_vi {
-                        "Khôi phục / Xóa bỏ thay đổi (git restore)"
-                    } else {
-                        "Revert / Delete changes (git restore)"
-                    },
+                    app.locales.help_git_revert.as_str(),
                 ),
                 (
                     "a",
-                    if is_vi {
-                        "Stage toàn bộ thay đổi (git add .)"
-                    } else {
-                        "Stage all changes (git add .)"
-                    },
+                    app.locales.help_git_stage_all.as_str(),
                 ),
                 (
                     "u",
-                    if is_vi {
-                        "Unstage toàn bộ thay đổi (git reset)"
-                    } else {
-                        "Unstage all changes (git reset)"
-                    },
+                    app.locales.help_git_unstage_all.as_str(),
                 ),
                 (
                     "b",
-                    if is_vi {
-                        "Quản lý chi nhánh ([m] merge, [c] tạo chi nhánh mới)"
-                    } else {
-                        "Manage branches ([m] merge, [c] create new branch)"
-                    },
+                    app.locales.help_git_branch.as_str(),
                 ),
                 (
                     "v",
-                    if is_vi {
-                        "Xem lịch sử commit timeline"
-                    } else {
-                        "View timeline of last 15 commits"
-                    },
+                    app.locales.help_git_timeline.as_str(),
                 ),
                 (
                     "f",
-                    if is_vi {
-                        "Tìm nạp toàn bộ metadata từ máy chủ (git fetch)"
-                    } else {
-                        "Fetch all remote branch metadata (git fetch)"
-                    },
+                    app.locales.help_git_fetch.as_str(),
                 ),
                 (
                     "p",
-                    if is_vi {
-                        "Cập nhật thay đổi từ máy chủ về máy (git pull)"
-                    } else {
-                        "Pull latest changes from remote (git pull)"
-                    },
+                    app.locales.help_git_pull.as_str(),
                 ),
                 (
                     "i",
-                    if is_vi {
-                        "Hiển thị thông tin tracking & danh sách remote"
-                    } else {
-                        "Show remote tracking info & remotes list"
-                    },
+                    app.locales.help_git_remote.as_str(),
                 ),
                 (
                     "d",
-                    if is_vi {
-                        "Chụp ảnh Diff chuyển qua AI Clipboard"
-                    } else {
-                        "Capture & Copy code diff to AI Clipboard"
-                    },
+                    app.locales.help_git_copy_diff.as_str(),
                 ),
                 (
                     "x",
-                    if is_vi {
-                        "Xem prompt AI đã thiết lập (base prompt)"
-                    } else {
-                        "View the configured AI prompt (base)"
-                    },
+                    app.locales.help_git_ai_prompt.as_str(),
                 ),
                 (
                     "g",
-                    if is_vi {
-                        "Đóng gói toàn bộ, tự động commit & push (Go)"
-                    } else {
-                        "Commit & Push changes auto (Go)"
-                    },
+                    app.locales.help_git_go.as_str(),
                 ),
             ],
         ),
         (
-            "System Operations ",
+            app.locales.help_group_sys.as_str(),
             vec![
                 (
                     "o",
-                    if is_vi {
-                        "Mở thư mục hiện tại bằng VS Code"
-                    } else {
-                        "Open workspace folder in VS Code"
-                    },
+                    app.locales.help_sys_vscode.as_str(),
                 ),
                 (
                     "w",
-                    if is_vi {
-                        "Đổi sang thư mục Project khác"
-                    } else {
-                        "Switch to another workspace project"
-                    },
+                    app.locales.help_sys_workspace.as_str(),
                 ),
                 (
                     "e",
-                    if is_vi {
-                        "Xem thống kê tỷ lệ ngôn ngữ trong dự án"
-                    } else {
-                        "Show project programming language stats"
-                    },
+                    app.locales.help_sys_lang_stats.as_str(),
                 ),
                 (
                     "l",
-                    if is_vi {
-                        "Thay đổi ngôn ngữ TUI (Language Panel)"
-                    } else {
-                        "Open language configuration panel"
-                    },
+                    app.locales.help_sys_lang.as_str(),
                 ),
                 (
                     "t",
-                    if is_vi {
-                        "Mở bảng cấu hình giao diện Sáng/Tối (Theme)"
-                    } else {
-                        "Open light/dark theme selection panel"
-                    },
+                    app.locales.help_sys_theme.as_str(),
                 ),
                 (
                     "r",
-                    if is_vi {
-                        "Khôi phục cài đặt gốc của git-ai"
-                    } else {
-                        "Reset git-ai to default system settings"
-                    },
+                    app.locales.help_sys_reset.as_str(),
                 ),
                 (
                     "q / Esc",
-                    if is_vi {
-                        "Đóng cửa sổ / Thoát chương trình"
-                    } else {
-                        "Close modal / Exit TUI dashboard"
-                    },
+                    app.locales.help_sys_quit.as_str(),
                 ),
             ],
         ),
@@ -233,11 +144,7 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
     }
 
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Nhấn [Esc], [Space], hoặc [Enter] để ĐÓNG."
-        } else {
-            "Press [Esc], [Space], or [Enter] to CLOSE."
-        },
+        app.locales.help_modal_close.clone(),
         Style::default()
             .fg(theme.orange)
             .add_modifier(Modifier::BOLD),

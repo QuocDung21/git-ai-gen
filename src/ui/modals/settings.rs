@@ -10,17 +10,12 @@ use crate::app::App;
 
 pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  ⚙️  CÀI ĐẶT HỆ THỐNG"
-            } else {
-                "  ⚙️  SYSTEM SETTINGS"
-            },
+            rust_i18n::t!("settings_header").to_string(),
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
@@ -29,44 +24,16 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
     ];
 
     let options = vec![
-        (
-            app.auto_push,
-            if is_vi {
-                "Tự động đẩy code lên Remote (Push)"
-            } else {
-                "Auto Push committed changes to Remote"
-            },
-        ),
-        (
-            app.auto_stage_all,
-            if is_vi {
-                "Tự động Stage tất cả thay đổi"
-            } else {
-                "Auto Stage all unstaged changes"
-            },
-        ),
-        (
-            app.kilo_ai_enabled,
-            if is_vi {
-                "Sử dụng Kilo AI tạo Commit Message"
-            } else {
-                "Enable Kilo AI for Commit Messages"
-            },
-        ),
-        (
-            app.splash_enabled,
-            if is_vi {
-                "Hiển thị màn hình chào mừng (Splash)"
-            } else {
-                "Show startup splash screen"
-            },
-        ),
+        (app.auto_push, rust_i18n::t!("settings_auto_push")),
+        (app.auto_stage_all, rust_i18n::t!("settings_auto_stage")),
+        (app.kilo_ai_enabled, rust_i18n::t!("settings_kilo_ai")),
+        (app.splash_enabled, rust_i18n::t!("settings_splash")),
     ];
 
     for (i, (enabled, text)) in options.iter().enumerate() {
         let is_selected = i == app.selected_setting_index;
         let checkbox = if *enabled { "[X]" } else { "[ ]" };
-        
+
         let prefix = if is_selected { " ➜ " } else { "   " };
         let style = if is_selected {
             Style::default()
@@ -80,8 +47,16 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
         let box_color = if *enabled { theme.green } else { theme.red };
 
         content.push(Line::from(vec![
-            Span::styled(prefix, Style::default().fg(theme.purple).add_modifier(Modifier::BOLD)),
-            Span::styled(format!("{} ", checkbox), Style::default().fg(box_color).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                prefix,
+                Style::default()
+                    .fg(theme.purple)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{} ", checkbox),
+                Style::default().fg(box_color).add_modifier(Modifier::BOLD),
+            ),
             Span::styled(text.to_string(), style),
         ]));
         content.push(Line::from(""));
@@ -98,32 +73,37 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
         Style::default().fg(theme.fg)
     };
     let editor_friendly_name = match app.editor.as_str() {
-        "code" => "VS Code",
-        "cursor" => "Cursor",
-        "zed" => "Zed",
-        "subl" => "Sublime Text",
-        _ => if is_vi { "Mặc định hệ thống" } else { "System Default" },
+        "code" => "VS Code".to_string(),
+        "cursor" => "Cursor".to_string(),
+        "zed" => "Zed".to_string(),
+        "subl" => "Sublime Text".to_string(),
+        _ => rust_i18n::t!("settings_editor_default").to_string(),
     };
-    let editor_text = if is_vi {
-        format!("Trình biên dịch mặc định: [{}]", editor_friendly_name)
-    } else {
-        format!("Default Editor: [{}]", editor_friendly_name)
-    };
+    let editor_text =
+        rust_i18n::t!("settings_editor_label", editor = &editor_friendly_name).to_string();
 
     content.push(Line::from(vec![
-        Span::styled(prefix_4, Style::default().fg(theme.purple).add_modifier(Modifier::BOLD)),
-        Span::styled("⚙️  ", Style::default().fg(theme.purple).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            prefix_4,
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            "⚙️  ",
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled(editor_text, style_4),
     ]));
     content.push(Line::from(""));
 
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  📂 THƯ MỤC CẤU HÌNH & LỊCH SỬ:"
-        } else {
-            "  📂 CONFIG & HISTORY PATHS:"
-        },
-        Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+        rust_i18n::t!("settings_path_header").to_string(),
+        Style::default()
+            .fg(theme.purple)
+            .add_modifier(Modifier::BOLD),
     )]));
 
     let home = std::env::var("HOME")
@@ -132,7 +112,7 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(vec![
         Span::styled(
-            if is_vi { "  • Cấu hình: " } else { "  • Config: " },
+            rust_i18n::t!("settings_path_config").to_string(),
             Style::default().fg(theme.border),
         ),
         Span::styled(
@@ -142,7 +122,7 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
     ]));
     content.push(Line::from(vec![
         Span::styled(
-            if is_vi { "  • Lịch sử:  " } else { "  • History: " },
+            rust_i18n::t!("settings_path_history").to_string(),
             Style::default().fg(theme.border),
         ),
         Span::styled(
@@ -153,17 +133,13 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
     content.push(Line::from(""));
 
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  [↑/↓] Di chuyển  [Space/Enter] Bật/Tắt/Chọn  [Esc] Đóng"
-        } else {
-            "  [↑/↓] Navigate   [Space/Enter] Toggle/Select  [Esc] Close"
-        },
+        rust_i18n::t!("settings_help_footer").to_string(),
         Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi { " ⚙️ CÀI ĐẶT " } else { " ⚙️ SETTINGS " },
+            rust_i18n::t!("settings_title").to_string(),
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),

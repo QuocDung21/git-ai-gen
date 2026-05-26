@@ -8,20 +8,16 @@ use ratatui::{
     },
     Frame,
 };
+use rust_i18n::t;
 
 pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
-    let is_vi = app.current_lang == "vi";
     let theme = app.theme();
     let mut diff_lines = Vec::new();
 
     if app.selected_file_diff.is_empty() {
         diff_lines.push(Line::from(""));
         diff_lines.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "   (Chọn một tập tin để xem thay đổi)"
-            } else {
-                "   (Select a file to preview changes)"
-            },
+            t!("diff_empty").to_string(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -62,7 +58,6 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
         }
     }
 
-    // Scroll calculations
     let diff_box_height = if area.height > 2 {
         (area.height - 2) as usize
     } else {
@@ -75,7 +70,6 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
     };
     let scroll_offset = app.diff_scroll_offset.min(max_scroll);
 
-    // Add scroll status info to diff panel title
     let scroll_info = if max_scroll > 0 {
         format!(" [{}/{}]", scroll_offset + 1, diff_lines.len())
     } else {
@@ -88,17 +82,9 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
     };
 
     let diff_base_title = if app.focus_diff {
-        if is_vi {
-            " 📄 XEM THAY ĐỔI LIVE [CHẾ ĐỘ CUỘN - Tab/Esc thoát]"
-        } else {
-            " 📄 LIVE DIFF VIEW [SCROLL MODE - Tab/Esc to exit]"
-        }
+        t!("diff_title_scroll")
     } else {
-        if is_vi {
-            " 📄 XEM THAY ĐỔI LIVE"
-        } else {
-            " 📄 LIVE DIFF VIEW"
-        }
+        t!("diff_title_normal")
     };
     let diff_title = format!("{}{} ", diff_base_title, scroll_info);
 
@@ -118,7 +104,6 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
         );
     f.render_widget(diff_widget, area);
 
-    // Stateful scrollbar overlay inside the diff view
     if max_scroll > 0 {
         let scrollbar = Scrollbar::default()
             .orientation(ScrollbarOrientation::VerticalRight)
@@ -132,7 +117,7 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
             scrollbar,
             area.inner(&ratatui::layout::Margin {
                 vertical: 1,
-                horizontal: 1, // beautiful native overlay inset inside borders
+                horizontal: 1,
             }),
             &mut scrollbar_state,
         );

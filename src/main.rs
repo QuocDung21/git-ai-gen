@@ -9,6 +9,9 @@ mod models;
 pub mod theme;
 mod ui;
 
+rust_i18n::i18n!("locales");
+
+
 use crate::cli::logger;
 use crate::helper::Helper;
 use anyhow::Result;

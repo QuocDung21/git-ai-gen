@@ -21,6 +21,9 @@ pub mod locales;
 pub mod models;
 pub mod theme;
 
+rust_i18n::i18n!("locales");
+
+
 // FFI C ABI layer (always present so the staticlib exports the symbols)
 mod ffi;
 

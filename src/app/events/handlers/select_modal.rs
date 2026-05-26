@@ -1,6 +1,7 @@
 use std::process::Command;
 
 use crossterm::event::{KeyCode, KeyEvent};
+use rust_i18n::t;
 
 use crate::app::App;
 
@@ -26,6 +27,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 if let Ok(msg) = crate::cli::system::handle_lang("vi", &locales) {
                     app.status_message = msg;
                     app.current_lang = crate::helper::Helper::get_ai_language();
+                    app.refresh_locales();
                 }
                 app.active_modal = crate::models::ActiveModal::None;
             }
@@ -34,6 +36,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 if let Ok(msg) = crate::cli::system::handle_lang("en", &locales) {
                     app.status_message = msg;
                     app.current_lang = crate::helper::Helper::get_ai_language();
+                    app.refresh_locales();
                 }
                 app.active_modal = crate::models::ActiveModal::None;
             }
@@ -42,6 +45,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 if let Ok(msg) = crate::cli::system::handle_lang("auto", &locales) {
                     app.status_message = msg;
                     app.current_lang = crate::helper::Helper::get_ai_language();
+                    app.refresh_locales();
                 }
                 app.active_modal = crate::models::ActiveModal::None;
             }
@@ -69,6 +73,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 if let Ok(msg) = crate::cli::system::handle_lang(selection, &locales) {
                     app.status_message = msg;
                     app.current_lang = crate::helper::Helper::get_ai_language();
+                    app.refresh_locales();
                 }
                 app.active_modal = crate::models::ActiveModal::None;
             }
@@ -131,7 +136,6 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
             }
         }
         crate::models::ActiveModal::Settings => {
-            let is_vi = app.current_lang == "vi";
             match key.code {
                 KeyCode::Esc | KeyCode::Char('q') => {
                     app.active_modal = crate::models::ActiveModal::None;
@@ -157,14 +161,8 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         let _ = Command::new("git")
                             .args(["config", "--global", "git-ai.auto-push", &val])
                             .output();
-                        app.status_message = if is_vi {
-                            format!(
-                                "⚙️ Tự động Push: {}",
-                                if app.auto_push { "BẬT" } else { "TẮT" }
-                            )
-                        } else {
-                            format!("⚙️ Auto Push: {}", if app.auto_push { "ON" } else { "OFF" })
-                        };
+                        let state = if app.auto_push { t!("select_on") } else { t!("select_off") };
+                        app.status_message = t!("select_settings_auto_push", state = state.as_ref()).to_string();
                     }
                     1 => {
                         app.auto_stage_all = !app.auto_stage_all;
@@ -172,17 +170,8 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         let _ = Command::new("git")
                             .args(["config", "--global", "git-ai.auto-stage-all", &val])
                             .output();
-                        app.status_message = if is_vi {
-                            format!(
-                                "⚙️ Tự động Stage tất cả: {}",
-                                if app.auto_stage_all { "BẬT" } else { "TẮT" }
-                            )
-                        } else {
-                            format!(
-                                "⚙️ Auto Stage All: {}",
-                                if app.auto_stage_all { "ON" } else { "OFF" }
-                            )
-                        };
+                        let state = if app.auto_stage_all { t!("select_on") } else { t!("select_off") };
+                        app.status_message = t!("select_settings_auto_stage", state = state.as_ref()).to_string();
                     }
                     2 => {
                         app.kilo_ai_enabled = !app.kilo_ai_enabled;
@@ -190,21 +179,8 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         let _ = Command::new("git")
                             .args(["config", "--global", "git-ai.kilo-ai", &val])
                             .output();
-                        app.status_message = if is_vi {
-                            format!(
-                                "⚙️ Kilo AI: {}",
-                                if app.kilo_ai_enabled {
-                                    "BẬT"
-                                } else {
-                                    "TẮT"
-                                }
-                            )
-                        } else {
-                            format!(
-                                "⚙️ Kilo AI Generation: {}",
-                                if app.kilo_ai_enabled { "ON" } else { "OFF" }
-                            )
-                        };
+                        let state = if app.kilo_ai_enabled { t!("select_on") } else { t!("select_off") };
+                        app.status_message = t!("select_settings_kilo_ai", state = state.as_ref()).to_string();
                     }
                     3 => {
                         app.splash_enabled = !app.splash_enabled;
@@ -212,21 +188,8 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         let _ = Command::new("git")
                             .args(["config", "--global", "git-ai.splash", &val])
                             .output();
-                        app.status_message = if is_vi {
-                            format!(
-                                "⚙️ Hiển thị Splash: {}",
-                                if app.splash_enabled {
-                                    "BẬT"
-                                } else {
-                                    "TẮT"
-                                }
-                            )
-                        } else {
-                            format!(
-                                "⚙️ Show Splash Screen: {}",
-                                if app.splash_enabled { "ON" } else { "OFF" }
-                            )
-                        };
+                        let state = if app.splash_enabled { t!("select_on") } else { t!("select_off") };
+                        app.status_message = t!("select_settings_splash", state = state.as_ref()).to_string();
                     }
                     4 => {
                         app.active_modal = crate::models::ActiveModal::EditorSelect;
@@ -244,7 +207,6 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
             }
         }
         crate::models::ActiveModal::EditorSelect => {
-            let is_vi = app.current_lang == "vi";
             match key.code {
                 KeyCode::Esc | KeyCode::Char('q') => {
                     app.active_modal = crate::models::ActiveModal::Settings;
@@ -263,11 +225,21 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         app.selected_editor_index = 0;
                     }
                 }
-                KeyCode::Char('1') => { app.selected_editor_index = 0; }
-                KeyCode::Char('2') => { app.selected_editor_index = 1; }
-                KeyCode::Char('3') => { app.selected_editor_index = 2; }
-                KeyCode::Char('4') => { app.selected_editor_index = 3; }
-                KeyCode::Char('5') => { app.selected_editor_index = 4; }
+                KeyCode::Char('1') => {
+                    app.selected_editor_index = 0;
+                }
+                KeyCode::Char('2') => {
+                    app.selected_editor_index = 1;
+                }
+                KeyCode::Char('3') => {
+                    app.selected_editor_index = 2;
+                }
+                KeyCode::Char('4') => {
+                    app.selected_editor_index = 3;
+                }
+                KeyCode::Char('5') => {
+                    app.selected_editor_index = 4;
+                }
                 KeyCode::Char(' ') | KeyCode::Enter => {
                     let selection = match app.selected_editor_index {
                         0 => "code",
@@ -289,18 +261,13 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         _ => "System Default",
                     };
 
-                    app.status_message = if is_vi {
-                        format!("⚙️ Trình biên dịch mặc định: {}", friendly_name)
-                    } else {
-                        format!("⚙️ Default Editor: {}", friendly_name)
-                    };
+                    app.status_message = t!("select_settings_editor", name = friendly_name).to_string();
                     app.active_modal = crate::models::ActiveModal::Settings;
                 }
                 _ => {}
             }
         }
         crate::models::ActiveModal::WorkspaceHistory => {
-            let is_vi = app.current_lang == "vi";
             match key.code {
                 KeyCode::Esc | KeyCode::Char('q') => {
                     app.active_modal = crate::models::ActiveModal::None;
@@ -325,24 +292,17 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                             app.current_dir = selected_path.clone();
                             app.add_to_workspace_history(&selected_path);
                             app.refresh_git_status();
-                            app.status_message = if is_vi {
-                                format!("🔄 Đã chuyển sang Project: {}", selected_path)
-                            } else {
-                                format!("🔄 Switched to project: {}", selected_path)
-                            };
+                            app.status_message = t!("select_workspace_ok", path = selected_path.clone()).to_string();
                             app.active_modal = crate::models::ActiveModal::None;
                         } else {
-                            app.status_message = if is_vi {
-                                "❌ Lỗi: Không thể truy cập thư mục này.".to_string()
-                            } else {
-                                "❌ Error: Cannot access this folder.".to_string()
-                            };
+                            app.status_message = t!("select_workspace_err").to_string();
                         }
                     }
                 }
                 KeyCode::Char('n') | KeyCode::Char('N') => {
                     #[cfg(target_os = "linux")]
-                    let is_headless = std::env::var("DISPLAY").is_err() && std::env::var("WAYLAND_DISPLAY").is_err();
+                    let is_headless = std::env::var("DISPLAY").is_err()
+                        && std::env::var("WAYLAND_DISPLAY").is_err();
                     #[cfg(not(target_os = "linux"))]
                     let is_headless = false;
 
@@ -350,38 +310,22 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         app.workspace_path_input.clear();
                         app.active_modal = crate::models::ActiveModal::WorkspacePathInput;
                     } else {
-                        let dialog_title = if is_vi {
-                            "Chọn thư mục Project mới"
-                        } else {
-                            "Select New Project Folder"
-                        };
+                        let dialog_title = t!("select_workspace_new_folder");
                         if let Some(folder) =
-                            rfd::FileDialog::new().set_title(dialog_title).pick_folder()
+                            rfd::FileDialog::new().set_title(dialog_title.as_ref()).pick_folder()
                         {
                             if std::env::set_current_dir(&folder).is_ok() {
                                 let folder_str = folder.display().to_string();
                                 app.current_dir = folder_str.clone();
                                 app.add_to_workspace_history(&folder_str);
                                 app.refresh_git_status();
-                                app.status_message = if is_vi {
-                                    "🔄 Đã tải Project mới thành công!".to_string()
-                                } else {
-                                    "🔄 Loaded new Project successfully!".to_string()
-                                };
+                                app.status_message = t!("select_workspace_new_ok").to_string();
                                 app.active_modal = crate::models::ActiveModal::None;
                             } else {
-                                app.status_message = if is_vi {
-                                    "❌ Lỗi: Không thể truy cập thư mục này.".to_string()
-                                } else {
-                                    "❌ Error: Cannot access this folder.".to_string()
-                                };
+                                app.status_message = t!("select_workspace_err").to_string();
                             }
                         } else {
-                            app.status_message = if is_vi {
-                                "ℹ️ Đã hủy chọn Project.".to_string()
-                            } else {
-                                "ℹ️ Project selection cancelled.".to_string()
-                            };
+                            app.status_message = t!("select_workspace_cancel").to_string();
                         }
                     }
                 }
@@ -394,18 +338,10 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         let removed_path =
                             app.workspace_history[app.selected_workspace_index].clone();
                         if removed_path == app.current_dir {
-                            app.status_message = if is_vi {
-                                "⚠️ Không thể xóa workspace đang hoạt động!".to_string()
-                            } else {
-                                "⚠️ Cannot remove the currently active workspace!".to_string()
-                            };
+                            app.status_message = t!("select_workspace_active_err").to_string();
                         } else {
                             app.remove_from_workspace_history(app.selected_workspace_index);
-                            app.status_message = if is_vi {
-                                format!("🗑️ Đã xóa khỏi lịch sử: {}", removed_path)
-                            } else {
-                                format!("🗑️ Removed from history: {}", removed_path)
-                            };
+                            app.status_message = t!("select_workspace_removed", path = removed_path.clone()).to_string();
                         }
                     }
                 }
@@ -417,54 +353,73 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 app.active_modal = crate::models::ActiveModal::None;
             }
             _ => {}
-        }
-        crate::models::ActiveModal::HandleTest => match key.code {
-            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => {
-                app.active_modal = crate::models::ActiveModal::None;
-            }
-            KeyCode::Char('1') => {
-                app.is_light_theme = !app.is_light_theme;
-                app.theme_id = if app.is_light_theme { "light".to_string() } else { "vscode".to_string() };
-            }
-            KeyCode::Char('2') => {
-                app.status_message = app.tr(
-                    "🔔 [DEV]: Đã kích hoạt cảnh báo thử nghiệm thành công!",
-                    "🔔 [DEV]: Mock alert status triggered successfully!"
-                ).to_string();
-            }
-            KeyCode::Char('3') => {
-                app.language_stats.clear();
-                app.status_message = app.tr(
-                    "🧹 [DEV]: Đã dọn dẹp dữ liệu thống kê ngôn ngữ!",
-                    "🧹 [DEV]: Cleared language stats data successfully!"
-                ).to_string();
-            }
-            KeyCode::Char('4') => {
-                app.status_message = app.tr(
+        },
+        crate::models::ActiveModal::HandleTest => {
+            match key.code {
+                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => {
+                    app.active_modal = crate::models::ActiveModal::None;
+                }
+                KeyCode::Char('1') => {
+                    app.is_light_theme = !app.is_light_theme;
+                    app.theme_id = if app.is_light_theme {
+                        "light".to_string()
+                    } else {
+                        "vscode".to_string()
+                    };
+                }
+                KeyCode::Char('2') => {
+                    app.status_message = app
+                        .tr(
+                            "🔔 [DEV]: Đã kích hoạt cảnh báo thử nghiệm thành công!",
+                            "🔔 [DEV]: Mock alert status triggered successfully!",
+                        )
+                        .to_string();
+                }
+                KeyCode::Char('3') => {
+                    app.language_stats.clear();
+                    app.status_message = app
+                        .tr(
+                            "🧹 [DEV]: Đã dọn dẹp dữ liệu thống kê ngôn ngữ!",
+                            "🧹 [DEV]: Cleared language stats data successfully!",
+                        )
+                        .to_string();
+                }
+                KeyCode::Char('4') => {
+                    app.status_message = app.tr(
                     "⚡ [DEV]: Đã quét thử nghiệm mã nguồn, đã tối ưu hóa tệp tin lockfile!",
                     "⚡ [DEV]: Executed mock diff scan, lockfiles successfully optimized!"
                 ).to_string();
+                }
+                KeyCode::Char('5') => {
+                    let history = crate::helper::Helper::load_history_file("workspace_history.txt");
+                    app.status_message = format!("JSON: {:?}", history);
+                }
+                KeyCode::Char('6') => {
+                    app.has_conflicts = !app.has_conflicts;
+                    app.conflict_count = if app.has_conflicts { 3 } else { 0 };
+                    app.status_message = app
+                        .tr(
+                            "⚡ [DEV]: Đã bật/tắt cảnh báo xung đột (3 xung đột)!",
+                            "⚡ [DEV]: Toggled mock merge conflicts (3 conflicts)!",
+                        )
+                        .to_string();
+                }
+                KeyCode::Char('7') => {
+                    app.current_lang = if app.current_lang == "vi" {
+                        "en".to_string()
+                    } else {
+                        "vi".to_string()
+                    };
+                    app.refresh_locales();
+                    app.status_message = app
+                        .tr(
+                            "🌐 [DEV]: Đã chuyển ngôn ngữ giao diện sang Tiếng Việt!",
+                            "🌐 [DEV]: Switched interface language to English!",
+                        )
+                        .to_string();
+                }
+                _ => {}
             }
-            KeyCode::Char('5') => {
-                let history = crate::helper::Helper::load_history_file("workspace_history.txt");
-                app.status_message = format!("JSON: {:?}", history);
-            }
-            KeyCode::Char('6') => {
-                app.has_conflicts = !app.has_conflicts;
-                app.conflict_count = if app.has_conflicts { 3 } else { 0 };
-                app.status_message = app.tr(
-                    "⚡ [DEV]: Đã bật/tắt cảnh báo xung đột (3 xung đột)!",
-                    "⚡ [DEV]: Toggled mock merge conflicts (3 conflicts)!"
-                ).to_string();
-            }
-            KeyCode::Char('7') => {
-                app.current_lang = if app.current_lang == "vi" { "en".to_string() } else { "vi".to_string() };
-                app.status_message = app.tr(
-                    "🌐 [DEV]: Đã chuyển ngôn ngữ giao diện sang Tiếng Việt!",
-                    "🌐 [DEV]: Switched interface language to English!"
-                ).to_string();
-            }
-            _ => {}
         }
         crate::models::ActiveModal::GitLog => match key.code {
             KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('v') | KeyCode::Char('V') => {
@@ -546,11 +501,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                     if !app.branches.is_empty() && app.selected_branch_index < app.branches.len() {
                         let branch = &app.branches[app.selected_branch_index];
                         if branch.name == app.current_branch && !branch.is_remote {
-                            app.status_message = if app.current_lang == "vi" {
-                                "❌ Không thể xóa chi nhánh đang hoạt động!".to_string()
-                            } else {
-                                "❌ Cannot delete the active branch!".to_string()
-                            };
+                            app.status_message = t!("select_branch_delete_err").to_string();
                         } else {
                             app.active_modal = crate::models::ActiveModal::BranchDeleteConfirm(
                                 branch.name.clone(),
@@ -565,11 +516,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                             app.active_modal =
                                 crate::models::ActiveModal::MergeConfirm(branch_name);
                         } else {
-                            app.status_message = if app.current_lang == "vi" {
-                                "❌ Không thể merge chi nhánh hiện tại vào chính nó!".to_string()
-                            } else {
-                                "❌ Cannot merge current branch into itself!".to_string()
-                            };
+                            app.status_message = t!("select_branch_merge_self_err").to_string();
                         }
                     }
                 }
@@ -578,18 +525,10 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         let branch_name = app.branches[app.selected_branch_index].name.clone();
                         match crate::git::branch::checkout_branch(&branch_name) {
                             Ok(_) => {
-                                app.status_message = if app.current_lang == "vi" {
-                                    format!("🌿 Đã chuyển sang chi nhánh: {}", branch_name)
-                                } else {
-                                    format!("🌿 Checked out branch: {}", branch_name)
-                                };
+                                app.status_message = t!("select_branch_checkout_ok", name = branch_name.clone()).to_string();
                             }
                             Err(err) => {
-                                app.status_message = if app.current_lang == "vi" {
-                                    format!("❌ Lỗi chuyển chi nhánh: {}", err)
-                                } else {
-                                    format!("❌ Checkout failed: {}", err)
-                                };
+                                app.status_message = t!("select_branch_checkout_err", err = err.to_string()).to_string();
                             }
                         }
                         app.active_modal = crate::models::ActiveModal::None;
@@ -606,25 +545,13 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                     app.active_modal = crate::models::ActiveModal::BranchSelect;
                 }
                 KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("⚡ Đang merge chi nhánh {}...", bname)
-                    } else {
-                        format!("⚡ Merging branch {}...", bname)
-                    };
+                    app.status_message = t!("select_branch_merging", name = bname.clone()).to_string();
                     match crate::git::branch::git_merge(&bname) {
                         Ok(out) => {
-                            app.status_message = if app.current_lang == "vi" {
-                                format!("✅ Đã merge thành công: {}", out)
-                            } else {
-                                format!("✅ Merge successful: {}", out)
-                            };
+                            app.status_message = t!("select_branch_merge_ok", out = out.clone()).to_string();
                         }
                         Err(err) => {
-                            app.status_message = if app.current_lang == "vi" {
-                                format!("❌ Lỗi merge: {}", err)
-                            } else {
-                                format!("❌ Merge failed: {}", err)
-                            };
+                            app.status_message = t!("select_branch_merge_err", err = err.to_string()).to_string();
                         }
                     }
                     app.active_modal = crate::models::ActiveModal::None;
@@ -640,28 +567,16 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                     app.active_modal = crate::models::ActiveModal::BranchSelect;
                 }
                 KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("🗑️ Đang xóa chi nhánh {}...", bname)
-                    } else {
-                        format!("🗑️ Deleting branch {}...", bname)
-                    };
+                    app.status_message = t!("select_branch_deleting", name = bname.clone()).to_string();
                     match crate::git::branch::delete_branch(
                         &bname,
                         crate::git::branch::DeleteBranchOptions::default(),
                     ) {
                         Ok(out) => {
-                            app.status_message = if app.current_lang == "vi" {
-                                format!("✅ Đã xóa thành công: {}", out)
-                            } else {
-                                format!("✅ Delete successful: {}", out)
-                            };
+                            app.status_message = t!("select_branch_delete_ok", out = out.clone()).to_string();
                         }
                         Err(err) => {
-                            app.status_message = if app.current_lang == "vi" {
-                                format!("❌ Lỗi xóa chi nhánh: {}", err)
-                            } else {
-                                format!("❌ Delete failed: {}", err)
-                            };
+                            app.status_message = t!("select_branch_delete_fail", err = err.to_string()).to_string();
                         }
                     }
                     app.fetch_branches();
@@ -820,14 +735,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
 
                         app.refresh_git_status();
 
-                        app.status_message = if app.current_lang == "vi" {
-                            format!("✅ Đã stage feature '{}': {} file(s). Nhấn [g] hoặc [K] để commit.", feature_name, file_count)
-                        } else {
-                            format!(
-                                "✅ Staged feature '{}': {} file(s). Press [g] hoặc [K] để commit.",
-                                feature_name, file_count
-                            )
-                        };
+                        app.status_message = t!("feature_staged", name = feature_name.clone(), count = file_count).to_string();
 
                         app.active_modal = crate::models::ActiveModal::None;
                     }
@@ -908,11 +816,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 {
                     let selected_branch =
                         app.github_branches[app.selected_github_branch_index].clone();
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("⏳ Đang chuyển sang nhánh {}...", selected_branch)
-                    } else {
-                        format!("⏳ Switching to branch {}...", selected_branch)
-                    };
+                    app.status_message = t!("github_branch_switching", name = selected_branch.clone()).to_string();
                     if let Some(ref dir) = app.github_temp_dir {
                         let fetch_out = Command::new("git")
                             .args(["fetch", "--depth", "1", "origin", &selected_branch])
@@ -934,25 +838,13 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                                             app.selected_github_tree_index = 0;
                                             app.active_modal =
                                                 crate::models::ActiveModal::GithubDownloadTree;
-                                            app.status_message = if app.current_lang == "vi" {
-                                                "✅ Đã chuyển nhánh thành công".to_string()
-                                            } else {
-                                                "✅ Successfully switched branch".to_string()
-                                            };
+                                            app.status_message = t!("github_branch_ok").to_string();
                                         }
                                     } else {
-                                        app.status_message = if app.current_lang == "vi" {
-                                            "❌ Lỗi checkout chi nhánh".to_string()
-                                        } else {
-                                            "❌ Error checking out branch".to_string()
-                                        };
+                                        app.status_message = t!("github_branch_checkout_err").to_string();
                                     }
                                 } else {
-                                    app.status_message = if app.current_lang == "vi" {
-                                        "❌ Không thể chạy lệnh checkout".to_string()
-                                    } else {
-                                        "❌ Cannot execute checkout command".to_string()
-                                    };
+                                    app.status_message = t!("github_branch_checkout_cmd_err").to_string();
                                 }
                             } else {
                                 let stderr =
@@ -960,11 +852,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                                 app.status_message = format!("❌ Fetch failed: {}", stderr);
                             }
                         } else {
-                            app.status_message = if app.current_lang == "vi" {
-                                "❌ Không thể chạy lệnh fetch".to_string()
-                            } else {
-                                "❌ Cannot execute fetch command".to_string()
-                            };
+                            app.status_message = t!("github_branch_fetch_cmd_err").to_string();
                         }
                     }
                 }
@@ -987,10 +875,6 @@ fn apply_theme(app: &mut App, index: usize, t_info: &crate::theme::ThemeInfo) {
     } else {
         t_info.name_en
     };
-    app.status_message = if app.current_lang == "vi" {
-        format!("🎨 Đã chuyển sang giao diện {}", label)
-    } else {
-        format!("🎨 Switched to {} theme", label)
-    };
+    app.status_message = t!("theme_switched", name = label).to_string();
     app.active_modal = crate::models::ActiveModal::None;
 }
