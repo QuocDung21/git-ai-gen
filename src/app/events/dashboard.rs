@@ -66,6 +66,10 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
             continue;
         }
 
+        if handlers::navigation::handle_language_analysis(app) {
+            continue;
+        }
+
         if event::poll(Duration::from_millis(250))? {
             match event::read()? {
                 Event::Key(key) => {

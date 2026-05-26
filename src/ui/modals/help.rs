@@ -168,6 +168,14 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
                     },
                 ),
                 (
+                    "e",
+                    if is_vi {
+                        "Xem thống kê tỷ lệ ngôn ngữ trong dự án"
+                    } else {
+                        "Show project programming language stats"
+                    },
+                ),
+                (
                     "l",
                     if is_vi {
                         "Thay đổi ngôn ngữ TUI (Language Panel)"

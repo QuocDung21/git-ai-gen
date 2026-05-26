@@ -1,5 +1,9 @@
 use crate::locales::Locales;
+use crate::models::LanguageStat;
+use std::path::Path;
 use std::process::Command;
+
+mod project_languages;
 
 pub struct Helper;
 
@@ -111,12 +115,15 @@ impl Helper {
         std::fs::write(file_path, content)?;
         Ok(())
     }
+
+    pub fn detect_project_languages<P: AsRef<Path>>(dir: P) -> Vec<LanguageStat> {
+        project_languages::detect_project_languages(dir)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_git_chill_history() {
         let temp_dir = tempfile::tempdir().unwrap();

@@ -1,11 +1,13 @@
+use crate::app::App;
 use ratatui::{
     layout::Rect,
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
+    widgets::{
+        Block, BorderType, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+    },
     Frame,
 };
-use crate::app::App;
 
 pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
     let is_vi = app.current_lang == "vi";
@@ -79,7 +81,11 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
     } else {
         "".to_string()
     };
-    let diff_border_color = if app.focus_diff { theme.yellow } else { theme.border };
+    let diff_border_color = if app.focus_diff {
+        theme.yellow
+    } else {
+        theme.border
+    };
 
     let diff_base_title = if app.focus_diff {
         if is_vi {

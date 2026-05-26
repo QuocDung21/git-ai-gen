@@ -6,6 +6,7 @@ mod gruvbox;
 mod light;
 mod nord;
 mod solarized_light;
+mod vscode;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AppTheme {
@@ -75,6 +76,13 @@ pub fn get_all_themes() -> Vec<ThemeInfo> {
             shortcut: "[g]",
             hotkey: 'g',
         },
+        ThemeInfo {
+            id: "vscode",
+            name_en: "VS Code (Dark Modern) 💻",
+            name_vi: "VS Code (Tối Hiện Đại) 💻",
+            shortcut: "[v]",
+            hotkey: 'v',
+        },
     ]
 }
 
@@ -85,6 +93,7 @@ pub fn get_theme(theme_id: &str) -> AppTheme {
         "gruvbox" => gruvbox::palette(),
         "catppuccin_latte" => catppuccin_latte::palette(),
         "solarized_light" => solarized_light::palette(),
+        "vscode" => vscode::palette(),
         _ => dark::palette(),
     }
 }

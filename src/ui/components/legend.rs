@@ -203,6 +203,15 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                     theme.cyan,
                 ),
                 (
+                    "E",
+                    if is_vi {
+                        "Thống kê ngôn ngữ"
+                    } else {
+                        "Language stats"
+                    },
+                    theme.purple,
+                ),
+                (
                     "L",
                     if is_vi {
                         "Đổi ngôn ngữ"

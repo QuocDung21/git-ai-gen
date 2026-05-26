@@ -1,5 +1,5 @@
-use crate::models::{AmendStep, GoStep, StashAction, StashStep};
 use crate::app::App;
+use crate::models::{AmendStep, GoStep, StashAction, StashStep};
 
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -186,7 +186,11 @@ pub fn render_theme_select(f: &mut Frame, app: &App, area: Rect) {
             Style::default().fg(theme.fg)
         };
 
-        let label = if is_vi { t_info.name_vi } else { t_info.name_en };
+        let label = if is_vi {
+            t_info.name_vi
+        } else {
+            t_info.name_en
+        };
 
         content.push(Line::from(vec![
             cursor,
@@ -372,32 +376,60 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
             Span::styled("    ", Style::default()),
             Span::styled(
                 "HASH     ",
-                Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(theme.purple)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                if is_vi { "THỜI GIAN         " } else { "DATE             " },
-                Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+                if is_vi {
+                    "THỜI GIAN         "
+                } else {
+                    "DATE             "
+                },
+                Style::default()
+                    .fg(theme.purple)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                if is_vi { "TÁC GIẢ         " } else { "AUTHOR          " },
-                Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+                if is_vi {
+                    "TÁC GIẢ         "
+                } else {
+                    "AUTHOR          "
+                },
+                Style::default()
+                    .fg(theme.purple)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                if is_vi { "NỘI DUNG COMMIT" } else { "COMMIT SUBJECT" },
-                Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+                if is_vi {
+                    "NỘI DUNG COMMIT"
+                } else {
+                    "COMMIT SUBJECT"
+                },
+                Style::default()
+                    .fg(theme.purple)
+                    .add_modifier(Modifier::BOLD),
             ),
         ]));
 
         let sep_width = (area.width as usize).saturating_sub(8).min(120);
-        content.push(Line::from(vec![
-            Span::styled(format!("    {}", "─".repeat(sep_width)), Style::default().fg(theme.border)),
-        ]));
+        content.push(Line::from(vec![Span::styled(
+            format!("    {}", "─".repeat(sep_width)),
+            Style::default().fg(theme.border),
+        )]));
 
         for (i, entry) in app.commit_logs.iter().enumerate() {
             let is_selected = i == app.selected_log_index;
-            let bg_style = if is_selected { theme.select_bg } else { theme.bg };
+            let bg_style = if is_selected {
+                theme.select_bg
+            } else {
+                theme.bg
+            };
             let style_base = if is_selected {
-                Style::default().fg(theme.select_fg).bg(theme.select_bg).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(theme.select_fg)
+                    .bg(theme.select_bg)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(theme.fg).bg(theme.bg)
             };
@@ -405,42 +437,49 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
             let pointer = if is_selected { "  ➜ " } else { "    " };
             let pointer_span = Span::styled(
                 pointer,
-                Style::default().fg(theme.cyan).bg(bg_style).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(theme.cyan)
+                    .bg(bg_style)
+                    .add_modifier(Modifier::BOLD),
             );
 
             let short_hash = &entry.short_hash;
             let hash_str = format!("{:<9}", short_hash);
             let hash_span = Span::styled(
                 hash_str,
-                Style::default().fg(theme.yellow).bg(bg_style).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(theme.yellow)
+                    .bg(bg_style)
+                    .add_modifier(Modifier::BOLD),
             );
 
             let time_truncated: String = entry.time.chars().take(17).collect();
             let time_str = format!("{:<17}", time_truncated);
             let time_span = Span::styled(
                 time_str,
-                Style::default().fg(theme.cyan).bg(bg_style).add_modifier(Modifier::ITALIC),
+                Style::default()
+                    .fg(theme.cyan)
+                    .bg(bg_style)
+                    .add_modifier(Modifier::ITALIC),
             );
 
             let author_truncated: String = entry.author.chars().take(15).collect();
             let author_str = format!("{:<16}", author_truncated);
-            let author_span = Span::styled(
-                author_str,
-                Style::default().fg(theme.purple).bg(bg_style),
-            );
+            let author_span =
+                Span::styled(author_str, Style::default().fg(theme.purple).bg(bg_style));
 
             let max_sub_width = (area.width as usize).saturating_sub(52).min(65);
             let subject_text = &entry.subject;
             let subject_str = if subject_text.chars().count() > max_sub_width {
-                let truncated: String = subject_text.chars().take(max_sub_width.saturating_sub(3)).collect();
+                let truncated: String = subject_text
+                    .chars()
+                    .take(max_sub_width.saturating_sub(3))
+                    .collect();
                 format!("{}...", truncated)
             } else {
                 subject_text.clone()
             };
-            let subject_span = Span::styled(
-                subject_str,
-                style_base,
-            );
+            let subject_span = Span::styled(subject_str, style_base);
 
             content.push(Line::from(vec![
                 pointer_span,
@@ -632,9 +671,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
         } else {
             "Press [d/x] to delete the selected branch."
         },
-        Style::default()
-            .fg(theme.red)
-            .add_modifier(Modifier::BOLD),
+        Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
     )]));
     content.push(Line::from(vec![Span::styled(
         if is_vi {
@@ -671,7 +708,11 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
-    let header_color = if app.diff_copy_failed { theme.yellow } else { theme.cyan };
+    let header_color = if app.diff_copy_failed {
+        theme.yellow
+    } else {
+        theme.cyan
+    };
     let header_text = if app.diff_copy_failed {
         if is_vi {
             "⚠️ LỖI CLIPBOARD - ĐÃ LƯU .git-ai-prompt.txt ⚠️"
@@ -690,7 +731,9 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         Line::from(""),
         Line::from(vec![Span::styled(
             header_text,
-            Style::default().fg(header_color).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(header_color)
+                .add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
     ];
@@ -702,7 +745,9 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 "  💡 [Notice]: No staged files found, automatically captured unstaged changes."
             },
-            Style::default().fg(theme.orange).add_modifier(Modifier::ITALIC),
+            Style::default()
+                .fg(theme.orange)
+                .add_modifier(Modifier::ITALIC),
         )]));
         content.push(Line::from(""));
     }
@@ -804,8 +849,16 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     }
 
     content.push(Line::from(""));
-    let status_icon = if app.diff_copy_failed { "  ⚠️ " } else { "  ✅ " };
-    let status_color = if app.diff_copy_failed { theme.yellow } else { theme.green };
+    let status_icon = if app.diff_copy_failed {
+        "  ⚠️ "
+    } else {
+        "  ✅ "
+    };
+    let status_color = if app.diff_copy_failed {
+        theme.yellow
+    } else {
+        theme.green
+    };
     let status_text = if app.diff_copy_failed {
         if is_vi {
             "Lỗi Clipboard! Hãy dán từ file hoặc chạy 'cat .git-ai-prompt.txt' 💡"
@@ -2005,7 +2058,6 @@ pub fn render_workspace_path_input(f: &mut Frame, app: &App, area: Rect) {
         .block(block);
     f.render_widget(paragraph, area);
 }
-
 
 pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();

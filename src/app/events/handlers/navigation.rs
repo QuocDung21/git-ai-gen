@@ -349,6 +349,16 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             app.fetch_amend_msg();
             app.active_modal = crate::models::ActiveModal::AmendCommit;
         }
+        KeyCode::Char('e') | KeyCode::Char('E') => {
+            let is_vi = app.current_lang == "vi";
+            app.status_message = if is_vi {
+                "⏳ Đang phân tích ngôn ngữ dự án...".to_string()
+            } else {
+                "⏳ Analyzing project languages...".to_string()
+            };
+            app.language_analysis_pending = true;
+            app.active_modal = crate::models::ActiveModal::ProjectLanguages;
+        }
         KeyCode::Char('w') => {
             app.load_workspace_history();
             app.selected_workspace_index = 0;
@@ -502,6 +512,21 @@ fn handle_diff_capture(app: &mut App) {
             app.status_message = format!("❌ Error capturing diff: {}", e);
         }
     }
+}
+
+pub fn handle_language_analysis(app: &mut App) -> bool {
+    if !app.language_analysis_pending {
+        return false;
+    }
+    app.language_stats = crate::helper::Helper::detect_project_languages(&app.current_dir);
+    let is_vi = app.current_lang == "vi";
+    app.status_message = if is_vi {
+        "✅ Đã phân tích xong!".to_string()
+    } else {
+        "✅ Project languages analyzed successfully!".to_string()
+    };
+    app.language_analysis_pending = false;
+    true
 }
 
 #[cfg(test)]

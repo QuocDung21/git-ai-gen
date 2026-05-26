@@ -22,6 +22,14 @@ pub struct CommitLogEntry {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct LanguageStat {
+    pub name: String,
+    pub bytes: u64,
+    pub percentage: f64,
+    pub color_code: (u8, u8, u8),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct StashEntry {
     pub index: usize,
     pub branch: String,
@@ -109,4 +117,5 @@ pub enum ActiveModal {
     Settings,
     EditorSelect,
     WorkspacePathInput,
+    ProjectLanguages,
 }

@@ -412,6 +412,12 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 _ => {}
             }
         }
+        crate::models::ActiveModal::ProjectLanguages => match key.code {
+            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => {
+                app.active_modal = crate::models::ActiveModal::None;
+            }
+            _ => {}
+        }
         crate::models::ActiveModal::GitLog => match key.code {
             KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('v') | KeyCode::Char('V') => {
                 app.active_modal = crate::models::ActiveModal::None;
