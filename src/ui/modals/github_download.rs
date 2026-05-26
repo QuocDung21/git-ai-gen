@@ -5,12 +5,12 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Clear, Paragraph},
     Frame,
 };
+use rust_i18n::t;
 
 use crate::app::App;
 
 pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let display_msg = if app.github_download_url.len() > 65 {
@@ -22,20 +22,12 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "📥 TẢI TẬP TIN TỪ GITHUB"
-            } else {
-                "📥 DOWNLOAD FILES FROM GITHUB"
-            },
+            t!("github_download_url_header").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  Nhập URL repository (HTTPS hoặc SSH) bên dưới:"
-            } else {
-                "  Enter repository URL (HTTPS or SSH) below:"
-            },
+            t!("github_download_url_prompt").to_string(),
             Style::default().fg(theme.border),
         )]),
         Line::from(""),
@@ -55,7 +47,7 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
 
     if let Some(err) = &app.github_cloning_error {
         content.push(Line::from(vec![Span::styled(
-            format!("  ❌ Lỗi: {}", err),
+            t!("github_download_error_label", err = err).to_string(),
             Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
         )]));
         content.push(Line::from(""));
@@ -63,11 +55,7 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
 
     if !app.github_history.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  📋 LỊCH SỬ REMOTE (Dùng ↑/↓ để chọn, Backspace để xóa):"
-            } else {
-                "  📋 REMOTE HISTORY (Use ↑/↓ to select, Backspace to delete):"
-            },
+            t!("github_download_url_history").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]));
         content.push(Line::from(""));
@@ -109,21 +97,13 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
     }
 
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  Nhập URL, [Enter] để tìm nạp repo, [Esc] để hủy"
-        } else {
-            "  Type URL, [Enter] to fetch repo, [Esc] to cancel"
-        },
+        t!("github_download_url_help").to_string(),
         Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 📥 TẢI TỪ GITHUB "
-            } else {
-                " 📥 GITHUB DOWNLOAD "
-            },
+            t!("github_download_url_title").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
@@ -139,7 +119,6 @@ pub fn render_github_download_url_input(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let visible = app.get_visible_github_tree_entries();
@@ -150,20 +129,12 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
 
     if visible.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  📁 CẤU TRÚC THƯ MỤC REPOSITORY"
-            } else {
-                "  📁 REPOSITORY DIRECTORY TREE"
-            },
+            t!("github_repo_tree_title").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]));
         content.push(Line::from(""));
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  (Không tìm thấy tập tin nào)"
-            } else {
-                "  (No files found)"
-            },
+            t!("github_no_files_found").to_string(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -171,15 +142,11 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
     } else {
         content.push(Line::from(vec![
             Span::styled(
-                if is_vi {
-                    "  📁 CẤU TRÚC THƯ MỤC REPOSITORY"
-                } else {
-                    "  📁 REPOSITORY DIRECTORY TREE"
-                },
+                t!("github_repo_tree_title").to_string(),
                 Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                format!("  (Mục {} / {})", selected + 1, total),
+                t!("github_download_tree_counter", current = selected + 1, total = total).to_string(),
                 Style::default()
                     .fg(theme.border)
                     .add_modifier(Modifier::ITALIC),
@@ -278,11 +245,7 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
 
         if total > start + page_size {
             content.push(Line::from(vec![Span::styled(
-                if is_vi {
-                    format!("   ... và {} mục khác", total - (start + page_size))
-                } else {
-                    format!("   ... and {} more items", total - (start + page_size))
-                },
+                t!("github_more_items", count = total - (start + page_size)).to_string(),
                 Style::default()
                     .fg(theme.border)
                     .add_modifier(Modifier::ITALIC),
@@ -292,25 +255,11 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  [B] Chọn branch  [V] Xem nhanh  [Space] Chọn/Bỏ chọn  [◀/▶] Đóng/Mở thư mục  [↑/↓] Di chuyển  [Enter] Xác nhận lưu & tải  [Esc] Quay lại"
-        } else {
-            "  [B] Branch  [V] Quick View  [Space] Select/Deselect  [◀/▶] Collapse/Expand Folder  [↑/↓] Navigate  [Enter] Confirm & Download  [Esc] Back"
-        },
+        t!("github_download_instructions").to_string(),
         Style::default().fg(theme.border),
     )]));
 
-    let title_text = if is_vi {
-        format!(
-            " 📁 CHỌN MỤC TẢI VỀ (Nhánh: {}) ",
-            app.current_github_branch
-        )
-    } else {
-        format!(
-            " 📁 SELECT ITEM TO DOWNLOAD (Branch: {}) ",
-            app.current_github_branch
-        )
-    };
+    let title_text = t!("github_download_title", branch = app.current_github_branch).to_string();
 
     let block = Block::default()
         .title(Span::styled(
@@ -330,7 +279,6 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let display_msg = if app.github_download_target_path.len() > 70 {
@@ -349,11 +297,7 @@ pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect)
     let content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "💾 CHỌN NƠI LƯU TẬP TIN"
-            } else {
-                "💾 SELECT SAVE DESTINATION"
-            },
+            t!("github_download_target_header").to_string(),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
@@ -361,11 +305,7 @@ pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect)
         Line::from(""),
         Line::from(vec![
             Span::styled(
-                if is_vi {
-                    "  Tập tin/Thư mục tải: "
-                } else {
-                    "  Downloading: "
-                },
+                t!("github_download_target_label").to_string(),
                 Style::default().fg(theme.fg),
             ),
             Span::styled(
@@ -375,11 +315,7 @@ pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect)
         ]),
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  Nhập đường dẫn thư mục lưu bên dưới:"
-            } else {
-                "  Enter destination folder path below:"
-            },
+            t!("github_download_target_prompt").to_string(),
             Style::default().fg(theme.border),
         )]),
         Line::from(""),
@@ -396,22 +332,14 @@ pub fn render_github_download_target_input(f: &mut Frame, app: &App, area: Rect)
         ]),
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  [Enter] Đồng ý & Tải về  [Tab] Chọn thư mục (Finder)  [Esc] Quay lại"
-            } else {
-                "  [Enter] Confirm & Download  [Tab] Select Folder (Finder)  [Esc] Back"
-            },
+            t!("github_download_target_help").to_string(),
             Style::default().fg(theme.border),
         )]),
     ];
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 💾 NƠI LƯU "
-            } else {
-                " 💾 SAVE TO "
-            },
+            t!("github_download_target_title").to_string(),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
@@ -604,7 +532,6 @@ fn apply_search_highlight(
 
 pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str, name: &str) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let temp_dir = if let Some(ref dir) = app.github_temp_dir {
@@ -615,18 +542,10 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
     let file_path = temp_dir.join(path);
     let content_text = if file_path.exists() {
         std::fs::read_to_string(&file_path).unwrap_or_else(|_| {
-            if is_vi {
-                "❌ Không thể đọc file".to_string()
-            } else {
-                "❌ Cannot read file".to_string()
-            }
+            t!("github_file_read_error").to_string()
         })
     } else {
-        if is_vi {
-            "❌ File không tồn tại".to_string()
-        } else {
-            "❌ File not found".to_string()
-        }
+        t!("github_file_not_found").to_string()
     };
 
     let lines_total: Vec<&str> = content_text.lines().collect();
@@ -658,7 +577,7 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
     if app.github_quickview_searching {
         content.push(Line::from(vec![
             Span::styled(
-                " 🔍 SEARCH: ",
+                t!("github_quickview_search_prefix").to_string(),
                 Style::default()
                     .fg(theme.green)
                     .add_modifier(Modifier::BOLD),
@@ -671,24 +590,16 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
         ]));
     } else {
         let mut spans = vec![Span::styled(
-            if is_vi {
-                "[Esc] Đóng  [↑/↓] Cuộn  [/] Tìm kiếm"
-            } else {
-                "[Esc] Close  [↑/↓] Scroll  [/] Search"
-            },
+            t!("github_quickview_actions").to_string(),
             Style::default().fg(theme.border),
         )];
         if !app.github_quickview_search.is_empty() {
             spans.push(Span::styled(
-                if is_vi {
-                    "  [c] Xóa tìm kiếm"
-                } else {
-                    "  [c] Clear search"
-                },
+                t!("github_quickview_clear_search").to_string(),
                 Style::default().fg(theme.purple),
             ));
             spans.push(Span::styled(
-                format!("  (Active: {})", app.github_quickview_search),
+                t!("github_quickview_active_search", search = app.github_quickview_search).to_string(),
                 Style::default()
                     .fg(theme.green)
                     .add_modifier(Modifier::ITALIC),
@@ -697,13 +608,14 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
         content.push(Line::from(spans));
     }
 
-    let title_text = format!(
-        " 👁 {} (Lines: {} - {} / {}) ",
-        name,
-        start_idx + 1,
-        (start_idx + page_size).min(total_count),
-        total_count
-    );
+    let title_text = t!(
+        "github_quickview_title",
+        name = name,
+        start = start_idx + 1,
+        end = (start_idx + page_size).min(total_count),
+        total = total_count
+    )
+    .to_string();
 
     let block = Block::default()
         .title(Span::styled(
@@ -723,17 +635,12 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
 
 pub fn render_github_branch_select(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🌿 DANH SÁCH CHI NHÁNH GITHUB (BRANCHES) 🌿"
-            } else {
-                "🌿 GITHUB BRANCH SELECTOR 🌿"
-            },
+            t!("github_branch_select_header").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -741,11 +648,7 @@ pub fn render_github_branch_select(f: &mut Frame, app: &App, area: Rect) {
 
     if app.github_branches.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "Không tìm thấy chi nhánh nào."
-            } else {
-                "No branches found."
-            },
+            t!("github_branch_select_empty").to_string(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -780,11 +683,7 @@ pub fn render_github_branch_select(f: &mut Frame, app: &App, area: Rect) {
 
             let active_badge = if is_active {
                 Span::styled(
-                    if is_vi {
-                        " (Đang xem) "
-                    } else {
-                        " (Viewing) "
-                    },
+                    t!("github_branch_select_active_badge").to_string(),
                     Style::default()
                         .fg(theme.green)
                         .add_modifier(Modifier::ITALIC),
@@ -815,31 +714,19 @@ pub fn render_github_branch_select(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Dùng ↑/↓ hoặc j/k để di chuyển, [Enter] để chuyển branch."
-        } else {
-            "Use ↑/↓ or j/k to navigate, [Enter] to switch branch."
-        },
+        t!("github_branch_select_navigate").to_string(),
         Style::default()
             .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
     )]));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Nhấn [Esc] hoặc [q] để HỦY."
-        } else {
-            "Press [Esc] or [q] to CANCEL."
-        },
+        t!("github_branch_select_cancel").to_string(),
         Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 🌿 CHỌN CHI NHÁNH GITHUB "
-            } else {
-                " 🌿 SELECT GITHUB BRANCH "
-            },
+            t!("github_branch_select_title").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)

@@ -135,219 +135,234 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 _ => {}
             }
         }
-        crate::models::ActiveModal::Settings => {
-            match key.code {
-                KeyCode::Esc | KeyCode::Char('q') => {
-                    app.active_modal = crate::models::ActiveModal::None;
-                }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    if app.selected_setting_index > 0 {
-                        app.selected_setting_index -= 1;
-                    } else {
-                        app.selected_setting_index = 4;
-                    }
-                }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    if app.selected_setting_index < 4 {
-                        app.selected_setting_index += 1;
-                    } else {
-                        app.selected_setting_index = 0;
-                    }
-                }
-                KeyCode::Char(' ') | KeyCode::Enter => match app.selected_setting_index {
-                    0 => {
-                        app.auto_push = !app.auto_push;
-                        let val = app.auto_push.to_string();
-                        let _ = Command::new("git")
-                            .args(["config", "--global", "git-ai.auto-push", &val])
-                            .output();
-                        let state = if app.auto_push { t!("select_on") } else { t!("select_off") };
-                        app.status_message = t!("select_settings_auto_push", state = state.as_ref()).to_string();
-                    }
-                    1 => {
-                        app.auto_stage_all = !app.auto_stage_all;
-                        let val = app.auto_stage_all.to_string();
-                        let _ = Command::new("git")
-                            .args(["config", "--global", "git-ai.auto-stage-all", &val])
-                            .output();
-                        let state = if app.auto_stage_all { t!("select_on") } else { t!("select_off") };
-                        app.status_message = t!("select_settings_auto_stage", state = state.as_ref()).to_string();
-                    }
-                    2 => {
-                        app.kilo_ai_enabled = !app.kilo_ai_enabled;
-                        let val = app.kilo_ai_enabled.to_string();
-                        let _ = Command::new("git")
-                            .args(["config", "--global", "git-ai.kilo-ai", &val])
-                            .output();
-                        let state = if app.kilo_ai_enabled { t!("select_on") } else { t!("select_off") };
-                        app.status_message = t!("select_settings_kilo_ai", state = state.as_ref()).to_string();
-                    }
-                    3 => {
-                        app.splash_enabled = !app.splash_enabled;
-                        let val = app.splash_enabled.to_string();
-                        let _ = Command::new("git")
-                            .args(["config", "--global", "git-ai.splash", &val])
-                            .output();
-                        let state = if app.splash_enabled { t!("select_on") } else { t!("select_off") };
-                        app.status_message = t!("select_settings_splash", state = state.as_ref()).to_string();
-                    }
-                    4 => {
-                        app.active_modal = crate::models::ActiveModal::EditorSelect;
-                        app.selected_editor_index = match app.editor.as_str() {
-                            "code" => 0,
-                            "cursor" => 1,
-                            "zed" => 2,
-                            "subl" => 3,
-                            _ => 4,
-                        };
-                    }
-                    _ => {}
-                },
-                _ => {}
+        crate::models::ActiveModal::Settings => match key.code {
+            KeyCode::Esc | KeyCode::Char('q') => {
+                app.active_modal = crate::models::ActiveModal::None;
             }
-        }
-        crate::models::ActiveModal::EditorSelect => {
-            match key.code {
-                KeyCode::Esc | KeyCode::Char('q') => {
-                    app.active_modal = crate::models::ActiveModal::Settings;
+            KeyCode::Up | KeyCode::Char('k') => {
+                if app.selected_setting_index > 0 {
+                    app.selected_setting_index -= 1;
+                } else {
+                    app.selected_setting_index = 4;
                 }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    if app.selected_editor_index > 0 {
-                        app.selected_editor_index -= 1;
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                if app.selected_setting_index < 4 {
+                    app.selected_setting_index += 1;
+                } else {
+                    app.selected_setting_index = 0;
+                }
+            }
+            KeyCode::Char(' ') | KeyCode::Enter => match app.selected_setting_index {
+                0 => {
+                    app.auto_push = !app.auto_push;
+                    let val = app.auto_push.to_string();
+                    let _ = Command::new("git")
+                        .args(["config", "--global", "git-ai.auto-push", &val])
+                        .output();
+                    let state = if app.auto_push {
+                        t!("select_on")
                     } else {
-                        app.selected_editor_index = 4;
-                    }
+                        t!("select_off")
+                    };
+                    app.status_message =
+                        t!("select_settings_auto_push", state = state.as_ref()).to_string();
                 }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    if app.selected_editor_index < 4 {
-                        app.selected_editor_index += 1;
+                1 => {
+                    app.auto_stage_all = !app.auto_stage_all;
+                    let val = app.auto_stage_all.to_string();
+                    let _ = Command::new("git")
+                        .args(["config", "--global", "git-ai.auto-stage-all", &val])
+                        .output();
+                    let state = if app.auto_stage_all {
+                        t!("select_on")
                     } else {
-                        app.selected_editor_index = 0;
-                    }
+                        t!("select_off")
+                    };
+                    app.status_message =
+                        t!("select_settings_auto_stage", state = state.as_ref()).to_string();
                 }
-                KeyCode::Char('1') => {
-                    app.selected_editor_index = 0;
+                2 => {
+                    app.kilo_ai_enabled = !app.kilo_ai_enabled;
+                    let val = app.kilo_ai_enabled.to_string();
+                    let _ = Command::new("git")
+                        .args(["config", "--global", "git-ai.kilo-ai", &val])
+                        .output();
+                    let state = if app.kilo_ai_enabled {
+                        t!("select_on")
+                    } else {
+                        t!("select_off")
+                    };
+                    app.status_message =
+                        t!("select_settings_kilo_ai", state = state.as_ref()).to_string();
                 }
-                KeyCode::Char('2') => {
-                    app.selected_editor_index = 1;
+                3 => {
+                    app.splash_enabled = !app.splash_enabled;
+                    let val = app.splash_enabled.to_string();
+                    let _ = Command::new("git")
+                        .args(["config", "--global", "git-ai.splash", &val])
+                        .output();
+                    let state = if app.splash_enabled {
+                        t!("select_on")
+                    } else {
+                        t!("select_off")
+                    };
+                    app.status_message =
+                        t!("select_settings_splash", state = state.as_ref()).to_string();
                 }
-                KeyCode::Char('3') => {
-                    app.selected_editor_index = 2;
+                4 => {
+                    app.active_modal = crate::models::ActiveModal::EditorSelect;
+                    app.selected_editor_index = match app.editor.as_str() {
+                        "code" => 0,
+                        "cursor" => 1,
+                        "zed" => 2,
+                        "subl" => 3,
+                        _ => 4,
+                    };
                 }
-                KeyCode::Char('4') => {
-                    app.selected_editor_index = 3;
-                }
-                KeyCode::Char('5') => {
+                _ => {}
+            },
+            _ => {}
+        },
+        crate::models::ActiveModal::EditorSelect => match key.code {
+            KeyCode::Esc | KeyCode::Char('q') => {
+                app.active_modal = crate::models::ActiveModal::Settings;
+            }
+            KeyCode::Up | KeyCode::Char('k') => {
+                if app.selected_editor_index > 0 {
+                    app.selected_editor_index -= 1;
+                } else {
                     app.selected_editor_index = 4;
                 }
-                KeyCode::Char(' ') | KeyCode::Enter => {
-                    let selection = match app.selected_editor_index {
-                        0 => "code",
-                        1 => "cursor",
-                        2 => "zed",
-                        3 => "subl",
-                        _ => crate::app::DEFAULT_OPEN_CMD,
-                    };
-                    app.editor = selection.to_string();
-                    let _ = Command::new("git")
-                        .args(["config", "--global", "git-ai.editor", selection])
-                        .output();
-
-                    let friendly_name = match selection {
-                        "code" => "VS Code",
-                        "cursor" => "Cursor",
-                        "zed" => "Zed",
-                        "subl" => "Sublime Text",
-                        _ => "System Default",
-                    };
-
-                    app.status_message = t!("select_settings_editor", name = friendly_name).to_string();
-                    app.active_modal = crate::models::ActiveModal::Settings;
-                }
-                _ => {}
             }
-        }
-        crate::models::ActiveModal::WorkspaceHistory => {
-            match key.code {
-                KeyCode::Esc | KeyCode::Char('q') => {
-                    app.active_modal = crate::models::ActiveModal::None;
+            KeyCode::Down | KeyCode::Char('j') => {
+                if app.selected_editor_index < 4 {
+                    app.selected_editor_index += 1;
+                } else {
+                    app.selected_editor_index = 0;
                 }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    if !app.workspace_history.is_empty() && app.selected_workspace_index > 0 {
-                        app.selected_workspace_index -= 1;
+            }
+            KeyCode::Char('1') => {
+                app.selected_editor_index = 0;
+            }
+            KeyCode::Char('2') => {
+                app.selected_editor_index = 1;
+            }
+            KeyCode::Char('3') => {
+                app.selected_editor_index = 2;
+            }
+            KeyCode::Char('4') => {
+                app.selected_editor_index = 3;
+            }
+            KeyCode::Char('5') => {
+                app.selected_editor_index = 4;
+            }
+            KeyCode::Char(' ') | KeyCode::Enter => {
+                let selection = match app.selected_editor_index {
+                    0 => "code",
+                    1 => "cursor",
+                    2 => "zed",
+                    3 => "subl",
+                    _ => crate::app::DEFAULT_OPEN_CMD,
+                };
+                app.editor = selection.to_string();
+                let _ = Command::new("git")
+                    .args(["config", "--global", "git-ai.editor", selection])
+                    .output();
+
+                let friendly_name = match selection {
+                    "code" => "VS Code",
+                    "cursor" => "Cursor",
+                    "zed" => "Zed",
+                    "subl" => "Sublime Text",
+                    _ => "System Default",
+                };
+
+                app.status_message = t!("select_settings_editor", name = friendly_name).to_string();
+                app.active_modal = crate::models::ActiveModal::Settings;
+            }
+            _ => {}
+        },
+        crate::models::ActiveModal::WorkspaceHistory => match key.code {
+            KeyCode::Esc | KeyCode::Char('q') => {
+                app.active_modal = crate::models::ActiveModal::None;
+            }
+            KeyCode::Up | KeyCode::Char('k') => {
+                if !app.workspace_history.is_empty() && app.selected_workspace_index > 0 {
+                    app.selected_workspace_index -= 1;
+                }
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                if !app.workspace_history.is_empty()
+                    && app.selected_workspace_index < app.workspace_history.len() - 1
+                {
+                    app.selected_workspace_index += 1;
+                }
+            }
+            KeyCode::Enter => {
+                if !app.workspace_history.is_empty() {
+                    let selected_path = app.workspace_history[app.selected_workspace_index].clone();
+                    if std::env::set_current_dir(&selected_path).is_ok() {
+                        app.current_dir = selected_path.clone();
+                        app.add_to_workspace_history(&selected_path);
+                        app.refresh_git_status();
+                        app.status_message =
+                            t!("select_workspace_ok", path = selected_path.clone()).to_string();
+                        app.active_modal = crate::models::ActiveModal::None;
+                    } else {
+                        app.status_message = t!("select_workspace_err").to_string();
                     }
                 }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    if !app.workspace_history.is_empty()
-                        && app.selected_workspace_index < app.workspace_history.len() - 1
+            }
+            KeyCode::Char('n') | KeyCode::Char('N') => {
+                #[cfg(target_os = "linux")]
+                let is_headless =
+                    std::env::var("DISPLAY").is_err() && std::env::var("WAYLAND_DISPLAY").is_err();
+                #[cfg(not(target_os = "linux"))]
+                let is_headless = false;
+
+                if is_headless {
+                    app.workspace_path_input.clear();
+                    app.active_modal = crate::models::ActiveModal::WorkspacePathInput;
+                } else {
+                    let dialog_title = t!("select_workspace_new_folder");
+                    if let Some(folder) = rfd::FileDialog::new()
+                        .set_title(dialog_title.as_ref())
+                        .pick_folder()
                     {
-                        app.selected_workspace_index += 1;
-                    }
-                }
-                KeyCode::Enter => {
-                    if !app.workspace_history.is_empty() {
-                        let selected_path =
-                            app.workspace_history[app.selected_workspace_index].clone();
-                        if std::env::set_current_dir(&selected_path).is_ok() {
-                            app.current_dir = selected_path.clone();
-                            app.add_to_workspace_history(&selected_path);
+                        if std::env::set_current_dir(&folder).is_ok() {
+                            let folder_str = folder.display().to_string();
+                            app.current_dir = folder_str.clone();
+                            app.add_to_workspace_history(&folder_str);
                             app.refresh_git_status();
-                            app.status_message = t!("select_workspace_ok", path = selected_path.clone()).to_string();
+                            app.status_message = t!("select_workspace_new_ok").to_string();
                             app.active_modal = crate::models::ActiveModal::None;
                         } else {
                             app.status_message = t!("select_workspace_err").to_string();
                         }
-                    }
-                }
-                KeyCode::Char('n') | KeyCode::Char('N') => {
-                    #[cfg(target_os = "linux")]
-                    let is_headless = std::env::var("DISPLAY").is_err()
-                        && std::env::var("WAYLAND_DISPLAY").is_err();
-                    #[cfg(not(target_os = "linux"))]
-                    let is_headless = false;
-
-                    if is_headless {
-                        app.workspace_path_input.clear();
-                        app.active_modal = crate::models::ActiveModal::WorkspacePathInput;
                     } else {
-                        let dialog_title = t!("select_workspace_new_folder");
-                        if let Some(folder) =
-                            rfd::FileDialog::new().set_title(dialog_title.as_ref()).pick_folder()
-                        {
-                            if std::env::set_current_dir(&folder).is_ok() {
-                                let folder_str = folder.display().to_string();
-                                app.current_dir = folder_str.clone();
-                                app.add_to_workspace_history(&folder_str);
-                                app.refresh_git_status();
-                                app.status_message = t!("select_workspace_new_ok").to_string();
-                                app.active_modal = crate::models::ActiveModal::None;
-                            } else {
-                                app.status_message = t!("select_workspace_err").to_string();
-                            }
-                        } else {
-                            app.status_message = t!("select_workspace_cancel").to_string();
-                        }
+                        app.status_message = t!("select_workspace_cancel").to_string();
                     }
                 }
-                KeyCode::Char('p') | KeyCode::Char('P') => {
-                    app.workspace_path_input.clear();
-                    app.active_modal = crate::models::ActiveModal::WorkspacePathInput;
-                }
-                KeyCode::Char('x') | KeyCode::Char('X') => {
-                    if !app.workspace_history.is_empty() {
-                        let removed_path =
-                            app.workspace_history[app.selected_workspace_index].clone();
-                        if removed_path == app.current_dir {
-                            app.status_message = t!("select_workspace_active_err").to_string();
-                        } else {
-                            app.remove_from_workspace_history(app.selected_workspace_index);
-                            app.status_message = t!("select_workspace_removed", path = removed_path.clone()).to_string();
-                        }
-                    }
-                }
-                _ => {}
             }
-        }
+            KeyCode::Char('p') | KeyCode::Char('P') => {
+                app.workspace_path_input.clear();
+                app.active_modal = crate::models::ActiveModal::WorkspacePathInput;
+            }
+            KeyCode::Char('x') | KeyCode::Char('X') => {
+                if !app.workspace_history.is_empty() {
+                    let removed_path = app.workspace_history[app.selected_workspace_index].clone();
+                    if removed_path == app.current_dir {
+                        app.status_message = t!("select_workspace_active_err").to_string();
+                    } else {
+                        app.remove_from_workspace_history(app.selected_workspace_index);
+                        app.status_message =
+                            t!("select_workspace_removed", path = removed_path.clone()).to_string();
+                    }
+                }
+            }
+            _ => {}
+        },
         crate::models::ActiveModal::ProjectLanguages => match key.code {
             KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => {
                 app.active_modal = crate::models::ActiveModal::None;
@@ -525,10 +540,14 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                         let branch_name = app.branches[app.selected_branch_index].name.clone();
                         match crate::git::branch::checkout_branch(&branch_name) {
                             Ok(_) => {
-                                app.status_message = t!("select_branch_checkout_ok", name = branch_name.clone()).to_string();
+                                app.status_message =
+                                    t!("select_branch_checkout_ok", name = branch_name.clone())
+                                        .to_string();
                             }
                             Err(err) => {
-                                app.status_message = t!("select_branch_checkout_err", err = err.to_string()).to_string();
+                                app.status_message =
+                                    t!("select_branch_checkout_err", err = err.to_string())
+                                        .to_string();
                             }
                         }
                         app.active_modal = crate::models::ActiveModal::None;
@@ -545,13 +564,16 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                     app.active_modal = crate::models::ActiveModal::BranchSelect;
                 }
                 KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    app.status_message = t!("select_branch_merging", name = bname.clone()).to_string();
+                    app.status_message =
+                        t!("select_branch_merging", name = bname.clone()).to_string();
                     match crate::git::branch::git_merge(&bname) {
                         Ok(out) => {
-                            app.status_message = t!("select_branch_merge_ok", out = out.clone()).to_string();
+                            app.status_message =
+                                t!("select_branch_merge_ok", out = out.clone()).to_string();
                         }
                         Err(err) => {
-                            app.status_message = t!("select_branch_merge_err", err = err.to_string()).to_string();
+                            app.status_message =
+                                t!("select_branch_merge_err", err = err.to_string()).to_string();
                         }
                     }
                     app.active_modal = crate::models::ActiveModal::None;
@@ -567,16 +589,19 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                     app.active_modal = crate::models::ActiveModal::BranchSelect;
                 }
                 KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    app.status_message = t!("select_branch_deleting", name = bname.clone()).to_string();
+                    app.status_message =
+                        t!("select_branch_deleting", name = bname.clone()).to_string();
                     match crate::git::branch::delete_branch(
                         &bname,
                         crate::git::branch::DeleteBranchOptions::default(),
                     ) {
                         Ok(out) => {
-                            app.status_message = t!("select_branch_delete_ok", out = out.clone()).to_string();
+                            app.status_message =
+                                t!("select_branch_delete_ok", out = out.clone()).to_string();
                         }
                         Err(err) => {
-                            app.status_message = t!("select_branch_delete_fail", err = err.to_string()).to_string();
+                            app.status_message =
+                                t!("select_branch_delete_fail", err = err.to_string()).to_string();
                         }
                     }
                     app.fetch_branches();
@@ -697,52 +722,55 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
             }
             _ => {}
         },
-        crate::models::ActiveModal::FeatureCommit => {
-            match key.code {
-                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('e') | KeyCode::Char('E') => {
+        crate::models::ActiveModal::FeatureCommit => match key.code {
+            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('e') | KeyCode::Char('E') => {
+                app.active_modal = crate::models::ActiveModal::None;
+            }
+            KeyCode::Up | KeyCode::Char('k') => {
+                if app.selected_feature_index > 0 {
+                    app.selected_feature_index -= 1;
+                } else if !app.feature_groups.is_empty() {
+                    app.selected_feature_index = app.feature_groups.len() - 1;
+                }
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                if !app.feature_groups.is_empty() {
+                    if app.selected_feature_index + 1 < app.feature_groups.len() {
+                        app.selected_feature_index += 1;
+                    } else {
+                        app.selected_feature_index = 0;
+                    }
+                }
+            }
+            KeyCode::Enter => {
+                if !app.feature_groups.is_empty()
+                    && app.selected_feature_index < app.feature_groups.len()
+                {
+                    let group = &app.feature_groups[app.selected_feature_index];
+                    let files_to_stage = group.files.clone();
+                    let feature_name = group.name.clone();
+                    let file_count = files_to_stage.len();
+
+                    let _ = crate::git::status::unstage_all();
+
+                    for path in &files_to_stage {
+                        let _ = crate::git::status::stage_file(path);
+                    }
+
+                    app.refresh_git_status();
+
+                    app.status_message = t!(
+                        "feature_staged",
+                        name = feature_name.clone(),
+                        count = file_count
+                    )
+                    .to_string();
+
                     app.active_modal = crate::models::ActiveModal::None;
                 }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    if app.selected_feature_index > 0 {
-                        app.selected_feature_index -= 1;
-                    } else if !app.feature_groups.is_empty() {
-                        app.selected_feature_index = app.feature_groups.len() - 1;
-                    }
-                }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    if !app.feature_groups.is_empty() {
-                        if app.selected_feature_index + 1 < app.feature_groups.len() {
-                            app.selected_feature_index += 1;
-                        } else {
-                            app.selected_feature_index = 0;
-                        }
-                    }
-                }
-                KeyCode::Enter => {
-                    if !app.feature_groups.is_empty()
-                        && app.selected_feature_index < app.feature_groups.len()
-                    {
-                        let group = &app.feature_groups[app.selected_feature_index];
-                        let files_to_stage = group.files.clone();
-                        let feature_name = group.name.clone();
-                        let file_count = files_to_stage.len();
-
-                        let _ = crate::git::status::unstage_all();
-
-                        for path in &files_to_stage {
-                            let _ = crate::git::status::stage_file(path);
-                        }
-
-                        app.refresh_git_status();
-
-                        app.status_message = t!("feature_staged", name = feature_name.clone(), count = file_count).to_string();
-
-                        app.active_modal = crate::models::ActiveModal::None;
-                    }
-                }
-                _ => {}
             }
-        }
+            _ => {}
+        },
         crate::models::ActiveModal::GithubQuickView { .. } => {
             if app.github_quickview_searching {
                 match key.code {
@@ -816,7 +844,8 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 {
                     let selected_branch =
                         app.github_branches[app.selected_github_branch_index].clone();
-                    app.status_message = t!("github_branch_switching", name = selected_branch.clone()).to_string();
+                    app.status_message =
+                        t!("github_branch_switching", name = selected_branch.clone()).to_string();
                     if let Some(ref dir) = app.github_temp_dir {
                         let fetch_out = Command::new("git")
                             .args(["fetch", "--depth", "1", "origin", &selected_branch])
@@ -841,10 +870,12 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                                             app.status_message = t!("github_branch_ok").to_string();
                                         }
                                     } else {
-                                        app.status_message = t!("github_branch_checkout_err").to_string();
+                                        app.status_message =
+                                            t!("github_branch_checkout_err").to_string();
                                     }
                                 } else {
-                                    app.status_message = t!("github_branch_checkout_cmd_err").to_string();
+                                    app.status_message =
+                                        t!("github_branch_checkout_cmd_err").to_string();
                                 }
                             } else {
                                 let stderr =
@@ -870,11 +901,7 @@ fn apply_theme(app: &mut App, index: usize, t_info: &crate::theme::ThemeInfo) {
     let _ = Command::new("git")
         .args(["config", "--global", "git-ai.theme", t_info.id])
         .output();
-    let label = if app.current_lang == "vi" {
-        t_info.name_vi
-    } else {
-        t_info.name_en
-    };
+    let label = if app.current_lang == "vi" { t_info.name_vi } else { t_info.name_en };
     app.status_message = t!("theme_switched", name = label).to_string();
     app.active_modal = crate::models::ActiveModal::None;
 }

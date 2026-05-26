@@ -81,7 +81,8 @@ pub fn handle_go_pushing(app: &mut App) -> bool {
                         app.go_step = GoStep::Done(t!("go_push_ok").to_string());
                     }
                     Err(err) => {
-                        app.go_step = GoStep::Done(t!("go_push_fail", err = err.to_string()).to_string());
+                        app.go_step =
+                            GoStep::Done(t!("go_push_fail", err = err.to_string()).to_string());
                     }
                 }
             } else {

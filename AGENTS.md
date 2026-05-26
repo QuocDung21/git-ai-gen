@@ -52,7 +52,7 @@ This allows building a tiny staticlib/rlib for Swift, Kotlin, Node, etc. without
 ## Critical Rules (Always Follow)
 
 1. **Bilingual mandatory**  
-   Every user-facing string must exist in both `locales/en.yml` and `locales/vi.yml`. Always check `app.current_lang == "vi"`.
+   Every user-facing string must exist in both `locales/en.yml` and `locales/vi.yml`. Always use `rust_i18n` with the `t!` macro (e.g., `t!("key").to_string()`). Avoid manual `is_vi` checks unless absolutely necessary for dynamic struct values.
 
 2. **TUI is sacred**  
    All rendering must go through `ratatui`. Never use `println!` / `eprintln!` inside the dashboard.
@@ -134,7 +134,7 @@ Style::default().fg(theme.green).add_modifier(Modifier::BOLD)
 | Add UI state            | `app/mod.rs` (App struct)               | Keep struct manageable        |
 | Handle keys for modal   | `events.rs`                             | Use `match &app.active_modal` |
 | Theme colors            | `app.theme()`                           | Never hardcode                |
-| Bilingual strings       | `locales/en.yml` + `locales/vi.yml`     | Always check `is_vi`          |
+| Bilingual strings       | `locales/en.yml` + `locales/vi.yml`     | Always use `t!` macro         |
 
 ---
 

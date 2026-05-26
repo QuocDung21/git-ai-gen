@@ -1,5 +1,6 @@
 use crate::app::App;
 use crate::models::{AmendStep, GoStep, StashAction, StashStep};
+use rust_i18n::t;
 
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -12,17 +13,12 @@ use std::process::Command;
 
 pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "Chọn ngôn ngữ của bạn / Select your language:"
-            } else {
-                "Select language / Chọn ngôn ngữ:"
-            },
+            t!("lang_select_prompt").to_string(),
             Style::default().fg(theme.fg).add_modifier(Modifier::ITALIC),
         )]),
         Line::from(""),
@@ -34,7 +30,6 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
         ("auto", "Tự động / Auto (System) ⚙️", "[a]"),
     ];
 
-    // Resolve the current raw git config setting dynamically
     let raw_lang = if let Ok(output) = Command::new("git")
         .args(["config", "--global", "--get", "git-ai.lang"])
         .output()
@@ -99,21 +94,13 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Dùng ↑/↓ hoặc j/k để di chuyển, Enter để chọn."
-        } else {
-            "Use ↑/↓ or j/k to navigate, Enter to select."
-        },
+        t!("lang_select_navigate").to_string(),
         Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 🌎 THIẾT LẬP NGÔN NGỮ "
-            } else {
-                " 🌎 LANGUAGE CONFIGURATION "
-            },
+            t!("lang_select_title").to_string(),
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
@@ -132,17 +119,12 @@ pub fn render_language_select(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_theme_select(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "Chọn giao diện:"
-            } else {
-                "Select application theme:"
-            },
+            t!("theme_select_prompt").to_string(),
             Style::default().fg(theme.fg).add_modifier(Modifier::ITALIC),
         )]),
         Line::from(""),
@@ -186,7 +168,7 @@ pub fn render_theme_select(f: &mut Frame, app: &App, area: Rect) {
             Style::default().fg(theme.fg)
         };
 
-        let label = if is_vi {
+        let label = if app.current_lang == "vi" {
             t_info.name_vi
         } else {
             t_info.name_en
@@ -205,21 +187,13 @@ pub fn render_theme_select(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Dùng ↑/↓ hoặc j/k để di chuyển, Enter để chọn."
-        } else {
-            "Use ↑/↓ or j/k to navigate, Enter to select."
-        },
+        t!("theme_select_navigate").to_string(),
         Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 🎨 THIẾT LẬP GIAO DIỆN "
-            } else {
-                " 🎨 THEME CONFIGURATION "
-            },
+            t!("theme_select_title").to_string(),
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
@@ -238,90 +212,47 @@ pub fn render_theme_select(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_revert_confirm(f: &mut Frame, app: &App, path: &str, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
-    let content = if is_vi {
-        vec![
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "⚠️  CẢNH BÁO KHÔI PHỤC HỆ THỐNG  ⚠️",
-                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "Bạn có chắc chắn muốn khôi phục/xóa các thay đổi trong:",
-                Style::default().fg(theme.fg),
-            )]),
-            Line::from(vec![Span::styled(
-                format!("👉 {} ", path),
-                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "⚠️ HÀNH ĐỘNG NÀY KHÔNG THỂ HOÀN TÁC!",
-                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![
-                Span::styled(
-                    " [y] ĐỒNG Ý ",
-                    Style::default()
-                        .fg(theme.fg)
-                        .bg(theme.green)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("      ", Style::default()),
-                Span::styled(
-                    " [n] HỦY BỎ ",
-                    Style::default()
-                        .fg(theme.fg)
-                        .bg(theme.red)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]),
-        ]
-    } else {
-        vec![
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "⚠️  SYSTEM REVERT WARNING  ⚠️",
-                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "Are you sure you want to revert/delete changes in:",
-                Style::default().fg(theme.fg),
-            )]),
-            Line::from(vec![Span::styled(
-                format!("👉 {} ", path),
-                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "⚠️ THIS ACTION CANNOT BE UNDONE!",
-                Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![
-                Span::styled(
-                    " [y] CONFIRM ",
-                    Style::default()
-                        .fg(theme.fg)
-                        .bg(theme.green)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("      ", Style::default()),
-                Span::styled(
-                    " [n] CANCEL ",
-                    Style::default()
-                        .fg(theme.fg)
-                        .bg(theme.red)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]),
-        ]
-    };
+    let content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            t!("confirm_revert_warning").to_string(),
+            Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            t!("confirm_revert_question").to_string(),
+            Style::default().fg(theme.fg),
+        )]),
+        Line::from(vec![Span::styled(
+            format!("👉 {} ", path),
+            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            t!("confirm_revert_irreversible").to_string(),
+            Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(
+                t!("confirm_revert_confirm_btn").to_string(),
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("      ", Style::default()),
+            Span::styled(
+                t!("confirm_revert_cancel_btn").to_string(),
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.red)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+    ];
 
     let block = Block::default()
         .title(Span::styled(
@@ -342,17 +273,12 @@ pub fn render_revert_confirm(f: &mut Frame, app: &App, path: &str, area: Rect) {
 
 pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  🌿 LỊCH SỬ COMMIT WORKSPACE 🌿"
-            } else {
-                "  🌿 WORKSPACE COMMIT HISTORY 🌿"
-            },
+            t!("git_log_heading").to_string(),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
@@ -362,11 +288,7 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
 
     if app.commit_logs.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  (Không tìm thấy commit nào trong lịch sử)"
-            } else {
-                "  (No commits found in history)"
-            },
+            t!("git_log_empty").to_string(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -381,31 +303,19 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                if is_vi {
-                    "THỜI GIAN         "
-                } else {
-                    "DATE             "
-                },
+                t!("git_log_col_date").to_string(),
                 Style::default()
                     .fg(theme.purple)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                if is_vi {
-                    "TÁC GIẢ         "
-                } else {
-                    "AUTHOR          "
-                },
+                t!("git_log_col_author").to_string(),
                 Style::default()
                     .fg(theme.purple)
                     .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                if is_vi {
-                    "NỘI DUNG COMMIT"
-                } else {
-                    "COMMIT SUBJECT"
-                },
+                t!("git_log_col_subject").to_string(),
                 Style::default()
                     .fg(theme.purple)
                     .add_modifier(Modifier::BOLD),
@@ -493,11 +403,7 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  [Enter] Chi tiết (Diff)  [↑/↓] Di chuyển  [Esc/q] Đóng"
-        } else {
-            "  [Enter] View Details (Diff)  [↑/↓] Navigate  [Esc/q] Close"
-        },
+        t!("git_log_footer").to_string(),
         Style::default()
             .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
@@ -505,11 +411,7 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                format!(" 🌿 LỊCH SỬ COMMIT ({}) ", app.commit_logs.len())
-            } else {
-                format!(" 🌿 COMMIT LOGS ({}) ", app.commit_logs.len())
-            },
+            t!("git_log_title", count = app.commit_logs.len()).to_string(),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
@@ -527,17 +429,12 @@ pub fn render_git_log(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🌿 DANH SÁCH CHI NHÁNH GIT (BRANCHES) 🌿"
-            } else {
-                "🌿 GIT BRANCH SELECTOR 🌿"
-            },
+            t!("branch_select_heading").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -545,11 +442,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
 
     if app.branches.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "Không tìm thấy chi nhánh nào."
-            } else {
-                "No branches found."
-            },
+            t!("branch_select_empty").to_string(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -586,11 +479,7 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
 
             let active_badge = if is_active {
                 Span::styled(
-                    if is_vi {
-                        " (Đang hoạt động) "
-                    } else {
-                        " (Active) "
-                    },
+                    t!("branch_select_active_badge").to_string(),
                     Style::default()
                         .fg(theme.green)
                         .add_modifier(Modifier::ITALIC),
@@ -636,59 +525,35 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Dùng ↑/↓ hoặc j/k để di chuyển, [Enter] để chuyển nhánh."
-        } else {
-            "Use ↑/↓ or j/k to navigate, [Enter] to checkout branch."
-        },
+        t!("branch_select_navigate").to_string(),
         Style::default()
             .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
     )]));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Nhấn [m] để merge chi nhánh được chọn vào chi nhánh hiện tại."
-        } else {
-            "Press [m] to merge selected branch into current branch."
-        },
+        t!("branch_select_merge_hint").to_string(),
         Style::default()
             .fg(theme.green)
             .add_modifier(Modifier::BOLD),
     )]));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Nhấn [c] để tạo và chuyển sang chi nhánh mới (checkout -b)."
-        } else {
-            "Press [c] to create and checkout a new branch (checkout -b)."
-        },
+        t!("branch_select_create_hint").to_string(),
         Style::default()
             .fg(theme.purple)
             .add_modifier(Modifier::BOLD),
     )]));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Nhấn [d/x] để xóa chi nhánh được chọn."
-        } else {
-            "Press [d/x] to delete the selected branch."
-        },
+        t!("branch_select_delete_hint").to_string(),
         Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
     )]));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Nhấn [Esc] hoặc [q] để HỦY."
-        } else {
-            "Press [Esc] or [q] to CANCEL."
-        },
+        t!("branch_select_cancel_hint").to_string(),
         Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 🌿 CHỌN CHI NHÁNH "
-            } else {
-                " 🌿 SELECT BRANCH "
-            },
+            t!("branch_select_title").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
@@ -705,7 +570,6 @@ pub fn render_branch_select(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let header_color = if app.diff_copy_failed {
@@ -714,17 +578,9 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         theme.cyan
     };
     let header_text = if app.diff_copy_failed {
-        if is_vi {
-            "⚠️ LỖI CLIPBOARD - ĐÃ LƯU .git-ai-prompt.txt ⚠️"
-        } else {
-            "⚠️ CLIPBOARD FAILED - SAVED TO .git-ai-prompt.txt ⚠️"
-        }
+        t!("diff_result_clipboard_failed_header").to_string()
     } else {
-        if is_vi {
-            "🤖 SNAPSHOT DIFF ĐÃ COPY VÀO CLIPBOARD 🤖"
-        } else {
-            "🤖 DIFF SNAPSHOT COPIED TO CLIPBOARD 🤖"
-        }
+        t!("diff_result_clipboard_ok_header").to_string()
     };
 
     let mut content = vec![
@@ -740,11 +596,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
 
     if app.diff_captured_unstaged {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  💡 [Chú ý]: Không tìm thấy file staged, đã tự động chụp các thay đổi chưa stage."
-            } else {
-                "  💡 [Notice]: No staged files found, automatically captured unstaged changes."
-            },
+            t!("diff_result_unstaged_notice").to_string(),
             Style::default()
                 .fg(theme.orange)
                 .add_modifier(Modifier::ITALIC),
@@ -779,12 +631,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         Span::styled("  🤖 Model: ", Style::default().fg(theme.border)),
         Span::styled(
             if app.current_kilo_model.is_empty() {
-                if is_vi {
-                    "Mặc định (Kilo config)"
-                } else {
-                    "Default (Kilo config)"
-                }
-                .to_string()
+                t!("diff_result_model_default").to_string()
             } else {
                 app.current_kilo_model.clone()
             },
@@ -796,11 +643,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     ]));
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  ── PREVIEW (40 dòng đầu) ──"
-        } else {
-            "  ── DIFF PREVIEW (first 40 lines) ──"
-        },
+        t!("diff_result_preview_label").to_string(),
         Style::default()
             .fg(theme.border)
             .add_modifier(Modifier::ITALIC),
@@ -837,11 +680,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
 
     if app.diff_snapshot.lines().count() > preview_limit {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  ... (diff dài, xem trong KILO)"
-            } else {
-                "  ... (long diff, see in KILO)"
-            },
+            t!("diff_result_long_diff").to_string(),
             Style::default()
                 .fg(theme.orange)
                 .add_modifier(Modifier::ITALIC),
@@ -860,17 +699,9 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         theme.green
     };
     let status_text = if app.diff_copy_failed {
-        if is_vi {
-            "Lỗi Clipboard! Hãy dán từ file hoặc chạy 'cat .git-ai-prompt.txt' 💡"
-        } else {
-            "Clipboard failed! Paste from file or run 'cat .git-ai-prompt.txt' 💡"
-        }
+        t!("diff_result_clipboard_fail_status").to_string()
     } else {
-        if is_vi {
-            "Prompt + Diff đã được copy! Dán vào AI ngay. 🚀"
-        } else {
-            "Prompt + Diff copied! Paste into your AI now. 🚀"
-        }
+        t!("diff_result_clipboard_ok_status").to_string()
     };
 
     content.push(Line::from(vec![
@@ -891,11 +722,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     if !app.diff_kilo_generated.is_empty() {
         content.push(Line::from(""));
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  🤖 KILO ĐÃ SINH COMMIT MESSAGE:"
-            } else {
-                "  🤖 KILO GENERATED COMMIT MESSAGE:"
-            },
+            t!("diff_result_kilo_header").to_string(),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
@@ -916,22 +743,14 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         }
         content.push(Line::from(""));
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  [C] Copy  [Enter/G] Dùng message này  [Esc] Đóng"
-            } else {
-                "  [C] Copy  [Enter/G] Use this message  [Esc] Close"
-            },
+            t!("diff_result_kilo_actions").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]));
     } else {
         content.push(Line::from(""));
         if app.kilo_generating {
             content.push(Line::from(vec![Span::styled(
-                if is_vi {
-                    "  ⏳ ĐANG HỎI KILO..."
-                } else {
-                    "  ⏳ ASKING KILO..."
-                },
+                t!("diff_result_kilo_asking").to_string(),
                 Style::default()
                     .fg(theme.yellow)
                     .add_modifier(Modifier::BOLD),
@@ -943,14 +762,9 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
                 )]));
             }
         } else if !app.diff_kilo_generated.is_empty() {
-            // already handled above
         } else {
             content.push(Line::from(vec![Span::styled(
-                if is_vi {
-                    "  Nhấn [K] để KILO sinh commit message trực tiếp!"
-                } else {
-                    "  Press [K] to let KILO generate the commit message!"
-                },
+                t!("diff_result_kilo_prompt").to_string(),
                 Style::default()
                     .fg(theme.purple)
                     .add_modifier(Modifier::BOLD),
@@ -960,11 +774,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  Nhấn [↑/↓] để cuộn, [Enter] hoặc [Esc] để đóng."
-        } else {
-            "  Press [↑/↓] to scroll, [Enter] or [Esc] to close."
-        },
+        t!("diff_result_scroll_hint").to_string(),
         Style::default().fg(theme.border),
     )]));
 
@@ -991,7 +801,6 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let content = match &app.go_step {
@@ -1007,11 +816,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
             let mut lines = vec![
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "🚀 XÁC NHẬN ĐÓNG GÓI COMMIT & PUSH 🚀"
-                    } else {
-                        "🚀 CONFIRM COMMIT & PUSH 🚀"
-                    },
+                    t!("go_confirm_heading").to_string(),
                     Style::default()
                         .fg(theme.green)
                         .add_modifier(Modifier::BOLD),
@@ -1021,11 +826,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
 
             if app.staged_count > 0 {
                 lines.push(Line::from(vec![Span::styled(
-                    if is_vi {
-                        "📂 Các file bạn đã chọn để commit:"
-                    } else {
-                        "📂 Selected files to commit:"
-                    },
+                    t!("go_confirm_files_label").to_string(),
                     Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
                 )]));
                 for file in &app.files {
@@ -1038,23 +839,16 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                     }
                 }
             } else {
-                lines.push(Line::from(vec![
-                    Span::styled(
-                        if is_vi { "⚠️ CẢNH BÁO: Chưa chọn file nào! Vui lòng thoát ra nhấn phím [Space] để chọn." }
-                        else { "⚠️ WARNING: No files selected! Please exit and press [Space] to select." },
-                        Style::default().fg(theme.red).add_modifier(Modifier::BOLD)
-                    )
-                ]));
+                lines.push(Line::from(vec![Span::styled(
+                    t!("go_confirm_no_files_warning").to_string(),
+                    Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
+                )]));
             }
 
             lines.extend(vec![
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "📋 Commit message từ Clipboard:"
-                    } else {
-                        "📋 Commit message from Clipboard:"
-                    },
+                    t!("go_confirm_commit_from_clipboard").to_string(),
                     Style::default()
                         .fg(theme.border)
                         .add_modifier(Modifier::ITALIC),
@@ -1068,11 +862,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                 )]),
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  ⚡ Tiến trình: git commit -> git push"
-                    } else {
-                        "  ⚡ Execution: git commit -> git push"
-                    },
+                    t!("go_confirm_execution").to_string(),
                     Style::default().fg(theme.orange),
                 )]),
                 Line::from(""),
@@ -1088,7 +878,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                             .add_modifier(Modifier::BOLD),
                     ),
                     Span::styled(
-                        " TIẾN HÀNH          ",
+                        t!("go_confirm_proceed_label").to_string(),
                         Style::default()
                             .fg(theme.green)
                             .add_modifier(Modifier::BOLD),
@@ -1101,7 +891,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                             .add_modifier(Modifier::BOLD),
                     ),
                     Span::styled(
-                        " HỦY ",
+                        t!("go_confirm_cancel_label").to_string(),
                         Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
                     ),
                 ]));
@@ -1115,7 +905,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
                             .add_modifier(Modifier::BOLD),
                     ),
                     Span::styled(
-                        " QUAY LẠI CHỌN FILE ",
+                        t!("go_confirm_back_label").to_string(),
                         Style::default().fg(theme.red).add_modifier(Modifier::BOLD),
                     ),
                 ]));
@@ -1127,31 +917,19 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
             vec![
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "⚡ ĐANG XỬ LÝ... ⚡"
-                    } else {
-                        "⚡ PROCESSING... ⚡"
-                    },
+                    t!("go_confirm_processing").to_string(),
                     Style::default()
                         .fg(theme.yellow)
                         .add_modifier(Modifier::BOLD | Modifier::SLOW_BLINK),
                 )]),
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  🔄 Đang chạy: git commit → git push"
-                    } else {
-                        "  🔄 Running: git commit → git push"
-                    },
+                    t!("go_confirm_running").to_string(),
                     Style::default().fg(theme.cyan),
                 )]),
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  Vui lòng chờ..."
-                    } else {
-                        "  Please wait..."
-                    },
+                    t!("go_confirm_please_wait").to_string(),
                     Style::default()
                         .fg(theme.border)
                         .add_modifier(Modifier::ITALIC),
@@ -1168,11 +946,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
             let mut lines = vec![
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "📋 KẾT QUẢ"
-                    } else {
-                        "📋 RESULT"
-                    },
+                    t!("go_confirm_result_label").to_string(),
                     Style::default()
                         .fg(theme.purple)
                         .add_modifier(Modifier::BOLD),
@@ -1189,11 +963,7 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
             }
             lines.push(Line::from(""));
             lines.push(Line::from(vec![Span::styled(
-                if is_vi {
-                    "  Nhấn [Enter] hoặc [Esc] để đóng và làm mới."
-                } else {
-                    "  Press [Enter] or [Esc] to close and refresh."
-                },
+                t!("go_confirm_close_hint").to_string(),
                 Style::default().fg(theme.border),
             )]));
             lines
@@ -1201,28 +971,13 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
     };
 
     let (title, border_color) = match &app.go_step {
-        GoStep::Confirm => (" 🚀 COMMIT & PUSH ", theme.green),
-        GoStep::Pushing => (
-            if is_vi {
-                " ⚡ ĐANG TIẾN HÀNH "
-            } else {
-                " ⚡ PROCESSING "
-            },
-            theme.yellow,
-        ),
+        GoStep::Confirm => (t!("go_confirm_title").to_string(), theme.green),
+        GoStep::Pushing => (t!("go_confirm_processing_title").to_string(), theme.yellow),
         GoStep::Done(r) => (
             if r.starts_with("✅") {
-                if is_vi {
-                    " ✅ THÀNH CÔNG "
-                } else {
-                    " ✅ SUCCESS "
-                }
+                t!("go_confirm_success_title").to_string()
             } else {
-                if is_vi {
-                    " ❌ THẤT BẠI "
-                } else {
-                    " ❌ FAILED "
-                }
+                t!("go_confirm_failed_title").to_string()
             },
             if r.starts_with("✅") {
                 theme.green
@@ -1253,17 +1008,12 @@ pub fn render_go_confirm(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "📦 QUẢN LÝ STASH — GIT STASH MANAGER"
-            } else {
-                "📦 GIT STASH MANAGER"
-            },
+            t!("stash_list_heading").to_string(),
             Style::default()
                 .fg(theme.orange)
                 .add_modifier(Modifier::BOLD),
@@ -1275,22 +1025,14 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
         StashStep::List => {
             if app.stash_entries.is_empty() {
                 content.push(Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  (Không có stash nào)"
-                    } else {
-                        "  (No stashes found)"
-                    },
+                    t!("stash_list_empty").to_string(),
                     Style::default()
                         .fg(theme.border)
                         .add_modifier(Modifier::ITALIC),
                 )]));
                 content.push(Line::from(""));
                 content.push(Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  Nhấn [n] để stash thay đổi hiện tại"
-                    } else {
-                        "  Press [n] to stash current changes"
-                    },
+                    t!("stash_list_new_stash_hint").to_string(),
                     Style::default().fg(theme.cyan),
                 )]));
             } else {
@@ -1327,11 +1069,7 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                 }
                 content.push(Line::from(""));
                 content.push(Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  [n] Stash mới  [Enter/p] Pop  [a] Apply  [x] Xóa  [Esc] Đóng"
-                    } else {
-                        "  [n] New Stash  [Enter/p] Pop  [a] Apply  [x] Drop  [Esc] Close"
-                    },
+                    t!("stash_list_actions_hint").to_string(),
                     Style::default()
                         .fg(theme.orange)
                         .add_modifier(Modifier::BOLD),
@@ -1340,27 +1078,9 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
         }
         StashStep::Confirm(idx, action) => {
             let action_str = match action {
-                StashAction::Pop => {
-                    if is_vi {
-                        "POP (apply + xóa)"
-                    } else {
-                        "POP (apply + drop)"
-                    }
-                }
-                StashAction::Apply => {
-                    if is_vi {
-                        "APPLY (giữ lại stash)"
-                    } else {
-                        "APPLY (keep stash)"
-                    }
-                }
-                StashAction::Drop => {
-                    if is_vi {
-                        "XÓA stash"
-                    } else {
-                        "DROP stash"
-                    }
-                }
+                StashAction::Pop => t!("stash_confirm_pop_action").to_string(),
+                StashAction::Apply => t!("stash_confirm_apply_action").to_string(),
+                StashAction::Drop => t!("stash_confirm_drop_action").to_string(),
             };
             let action_color = match action {
                 StashAction::Drop => theme.red,
@@ -1375,7 +1095,7 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
             content.push(Line::from(""));
             content.push(Line::from(vec![
                 Span::styled(
-                    " [y] XÁC NHẬN ",
+                    t!("stash_confirm_confirm_btn").to_string(),
                     Style::default()
                         .fg(theme.bg)
                         .bg(action_color)
@@ -1383,7 +1103,7 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
                 ),
                 Span::styled("    ", Style::default()),
                 Span::styled(
-                    " [n/Esc] HỦY ",
+                    t!("stash_confirm_cancel_btn").to_string(),
                     Style::default()
                         .fg(theme.fg)
                         .bg(theme.select_bg)
@@ -1413,7 +1133,6 @@ pub fn render_stash_list(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let ahead_color = if app.ahead_count > 0 {
@@ -1430,11 +1149,7 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🌐 THÔNG TIN REMOTE & TRACKING"
-            } else {
-                "🌐 REMOTE & UPSTREAM INFO"
-            },
+            t!("remote_info_heading").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -1464,20 +1179,12 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  📋 Danh sách Remotes:"
-        } else {
-            "  📋 Remotes List:"
-        },
+        t!("remote_info_remotes_label").to_string(),
         Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
     )]));
     if app.remotes.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "    (không có remote nào)"
-            } else {
-                "    (no remotes configured)"
-            },
+            t!("remote_info_no_remotes").to_string(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -1520,23 +1227,11 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
         if app.ahead_count > 0 && app.behind_count == 0 {
-            if is_vi {
-                "  💡 Bạn có thể push lên remote"
-            } else {
-                "  💡 You can push to remote"
-            }
+            t!("remote_info_can_push").to_string()
         } else if app.behind_count > 0 {
-            if is_vi {
-                "  ⚠️  Hãy git pull trước khi push"
-            } else {
-                "  ⚠️  Run git pull before pushing"
-            }
+            t!("remote_info_pull_first").to_string()
         } else {
-            if is_vi {
-                "  ✅ Đồng bộ với remote"
-            } else {
-                "  ✅ In sync with remote"
-            }
+            t!("remote_info_in_sync").to_string()
         },
         Style::default()
             .fg(theme.yellow)
@@ -1544,11 +1239,7 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
     )]));
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  [Esc] hoặc [Enter] để đóng"
-        } else {
-            "  [Esc] or [Enter] to close"
-        },
+        t!("remote_info_close_hint").to_string(),
         Style::default().fg(theme.border),
     )]));
 
@@ -1570,7 +1261,6 @@ pub fn render_remote_info(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let content = match &app.amend_step {
@@ -1583,33 +1273,21 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
             vec![
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "✏️  SỬA COMMIT CUỐI (AMEND)"
-                    } else {
-                        "✏️  AMEND LAST COMMIT"
-                    },
+                    t!("amend_edit_heading").to_string(),
                     Style::default()
                         .fg(theme.orange)
                         .add_modifier(Modifier::BOLD),
                 )]),
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  ⚠️  Lưu ý: Nếu đã push, cần force push sau khi amend!"
-                    } else {
-                        "  ⚠️  Note: If already pushed, you'll need to force push after amend!"
-                    },
+                    t!("amend_edit_warning").to_string(),
                     Style::default()
                         .fg(theme.red)
                         .add_modifier(Modifier::ITALIC),
                 )]),
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  Commit message mới (chỉnh sửa bên dưới):"
-                    } else {
-                        "  New commit message (edit below):"
-                    },
+                    t!("amend_edit_msg_label").to_string(),
                     Style::default().fg(theme.border),
                 )]),
                 Line::from(vec![
@@ -1624,11 +1302,7 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
                 ]),
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  Nhập để chỉnh sửa, [Enter] để xác nhận, [Esc] để hủy"
-                    } else {
-                        "  Type to edit, [Enter] to confirm, [Esc] to cancel"
-                    },
+                    t!("amend_edit_type_hint").to_string(),
                     Style::default().fg(theme.border),
                 )]),
             ]
@@ -1637,11 +1311,7 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
             vec![
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "⚡ ĐANG AMEND..."
-                    } else {
-                        "⚡ AMENDING..."
-                    },
+                    t!("amend_pushing_label").to_string(),
                     Style::default()
                         .fg(theme.yellow)
                         .add_modifier(Modifier::BOLD | Modifier::SLOW_BLINK),
@@ -1663,11 +1333,7 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
                 )]),
                 Line::from(""),
                 Line::from(vec![Span::styled(
-                    if is_vi {
-                        "  [Enter/Esc] để đóng"
-                    } else {
-                        "  [Enter/Esc] to close"
-                    },
+                    t!("amend_done_close_hint").to_string(),
                     Style::default().fg(theme.border),
                 )]),
             ]
@@ -1694,7 +1360,6 @@ pub fn render_amend_commit(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let lines: Vec<&str> = app.commit_diff_content.lines().collect();
@@ -1747,11 +1412,7 @@ pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  ↑/↓ j/k cuộn  PgUp/PgDn  [Esc/q] Quay lại lịch sử"
-        } else {
-            "  ↑/↓ j/k scroll  PgUp/PgDn  [Esc/q] Back to history"
-        },
+        t!("commit_diff_scroll_hint").to_string(),
         Style::default()
             .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
@@ -1777,122 +1438,69 @@ pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
 
 pub fn render_merge_confirm(f: &mut Frame, app: &App, branch_to_merge: &str, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
-    let content = if is_vi {
-        vec![
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "🔀  XÁC NHẬN MERGE CHI NHÁNH  🔀",
+    let content = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            t!("merge_confirm_heading").to_string(),
+            Style::default()
+                .fg(theme.orange)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(
+                t!("merge_confirm_merge_verb").to_string(),
+                Style::default().fg(theme.fg),
+            ),
+            Span::styled(
+                format!("\"{}\"", branch_to_merge),
+                Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                t!("merge_confirm_into").to_string(),
+                Style::default().fg(theme.fg),
+            ),
+            Span::styled(
+                format!("\"{}\"", app.current_branch),
                 Style::default()
-                    .fg(theme.orange)
+                    .fg(theme.green)
                     .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![
-                Span::styled("Trộn chi nhánh ", Style::default().fg(theme.fg)),
-                Span::styled(
-                    format!("\"{}\"", branch_to_merge),
-                    Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(" vào ", Style::default().fg(theme.fg)),
-                Span::styled(
-                    format!("\"{}\"", app.current_branch),
-                    Style::default()
-                        .fg(theme.green)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "⚠️ Lưu ý: Nếu xảy ra xung đột (conflict), git-ai sẽ báo lỗi",
-                Style::default().fg(theme.red),
-            )]),
-            Line::from(vec![Span::styled(
-                "và hiển thị danh sách file xung đột ngoài màn hình Workspace.",
-                Style::default().fg(theme.red),
-            )]),
-            Line::from(""),
-            Line::from(vec![
-                Span::styled(
-                    " [y] / Enter ĐỒNG Ý ",
-                    Style::default()
-                        .fg(theme.fg)
-                        .bg(theme.green)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("      ", Style::default()),
-                Span::styled(
-                    " [n] / Esc HỦY BỎ ",
-                    Style::default()
-                        .fg(theme.fg)
-                        .bg(theme.red)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]),
-        ]
-    } else {
-        vec![
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "🔀  CONFIRM MERGE BRANCH  🔀",
+            ),
+        ]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            t!("merge_confirm_conflict_note1").to_string(),
+            Style::default().fg(theme.red),
+        )]),
+        Line::from(vec![Span::styled(
+            t!("merge_confirm_conflict_note2").to_string(),
+            Style::default().fg(theme.red),
+        )]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(
+                t!("merge_confirm_confirm_btn").to_string(),
                 Style::default()
-                    .fg(theme.orange)
+                    .fg(theme.fg)
+                    .bg(theme.green)
                     .add_modifier(Modifier::BOLD),
-            )]),
-            Line::from(""),
-            Line::from(vec![
-                Span::styled("Merge branch ", Style::default().fg(theme.fg)),
-                Span::styled(
-                    format!("\"{}\"", branch_to_merge),
-                    Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(" into ", Style::default().fg(theme.fg)),
-                Span::styled(
-                    format!("\"{}\"", app.current_branch),
-                    Style::default()
-                        .fg(theme.green)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]),
-            Line::from(""),
-            Line::from(vec![Span::styled(
-                "⚠️ Note: If conflicts occur, git-ai will report error",
-                Style::default().fg(theme.red),
-            )]),
-            Line::from(vec![Span::styled(
-                "and conflict files will be listed on Workspace changes panel.",
-                Style::default().fg(theme.red),
-            )]),
-            Line::from(""),
-            Line::from(vec![
-                Span::styled(
-                    " [y] / Enter CONFIRM ",
-                    Style::default()
-                        .fg(theme.fg)
-                        .bg(theme.green)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::styled("      ", Style::default()),
-                Span::styled(
-                    " [n] / Esc CANCEL ",
-                    Style::default()
-                        .fg(theme.fg)
-                        .bg(theme.red)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]),
-        ]
-    };
+            ),
+            Span::styled("      ", Style::default()),
+            Span::styled(
+                t!("merge_confirm_cancel_btn").to_string(),
+                Style::default()
+                    .fg(theme.fg)
+                    .bg(theme.red)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+    ];
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 🔀 XÁC NHẬN MERGE "
-            } else {
-                " 🔀 CONFIRM MERGE "
-            },
+            t!("merge_confirm_title").to_string(),
             Style::default()
                 .fg(theme.orange)
                 .add_modifier(Modifier::BOLD),
@@ -1911,7 +1519,6 @@ pub fn render_merge_confirm(f: &mut Frame, app: &App, branch_to_merge: &str, are
 
 pub fn render_new_branch_input(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let display_msg = if app.new_branch_name.len() > 70 {
@@ -1923,22 +1530,14 @@ pub fn render_new_branch_input(f: &mut Frame, app: &App, area: Rect) {
     let content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🌿 TẠO CHI NHÁNH MỚI (CHECKOUT -B)"
-            } else {
-                "🌿 CREATE & CHECKOUT NEW BRANCH"
-            },
+            t!("new_branch_heading").to_string(),
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  Nhập tên chi nhánh mới bên dưới:"
-            } else {
-                "  Enter new branch name below:"
-            },
+            t!("new_branch_enter_label").to_string(),
             Style::default().fg(theme.border),
         )]),
         Line::from(vec![
@@ -1953,22 +1552,14 @@ pub fn render_new_branch_input(f: &mut Frame, app: &App, area: Rect) {
         ]),
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  Nhập tên, [Enter] để xác nhận, [Esc] để hủy"
-            } else {
-                "  Type name, [Enter] to confirm, [Esc] to cancel"
-            },
+            t!("new_branch_type_hint").to_string(),
             Style::default().fg(theme.border),
         )]),
     ];
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 🌿 CHI NHÁNH MỚI "
-            } else {
-                " 🌿 NEW BRANCH "
-            },
+            t!("new_branch_title").to_string(),
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
@@ -1986,7 +1577,6 @@ pub fn render_new_branch_input(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_workspace_path_input(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let display_msg = if app.workspace_path_input.len() > 70 {
@@ -1998,22 +1588,14 @@ pub fn render_workspace_path_input(f: &mut Frame, app: &App, area: Rect) {
     let content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "📂 NHẬP ĐƯỜNG DẪN THƯ MỤC PROJECT"
-            } else {
-                "📂 ENTER PROJECT FOLDER PATH"
-            },
+            t!("workspace_path_heading").to_string(),
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  Nhập đường dẫn tuyệt đối đến thư mục bên dưới:"
-            } else {
-                "  Enter absolute path to directory below:"
-            },
+            t!("workspace_path_enter_label").to_string(),
             Style::default().fg(theme.border),
         )]),
         Line::from(vec![
@@ -2028,22 +1610,14 @@ pub fn render_workspace_path_input(f: &mut Frame, app: &App, area: Rect) {
         ]),
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  Nhập đường dẫn, [Enter] để chuyển, [Esc] để hủy"
-            } else {
-                "  Type path, [Enter] to switch, [Esc] to cancel"
-            },
+            t!("workspace_path_type_hint").to_string(),
             Style::default().fg(theme.border),
         )]),
     ];
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 📂 ĐƯỜNG DẪN WORKSPACE "
-            } else {
-                " 📂 WORKSPACE PATH "
-            },
+            t!("workspace_path_title").to_string(),
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),
@@ -2061,17 +1635,12 @@ pub fn render_workspace_path_input(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "📂 LỊCH SỬ WORKSPACE — CHỌN NHANH PROJECT"
-            } else {
-                "📂 WORKSPACE HISTORY — QUICK PROJECT SWITCH"
-            },
+            t!("workspace_history_heading").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -2079,11 +1648,7 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
 
     if app.workspace_history.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  (Chưa có project nào trong lịch sử)"
-            } else {
-                "  (No projects in history yet)"
-            },
+            t!("workspace_history_empty").to_string(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -2114,7 +1679,6 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
                 },
             );
 
-            // Display shortened path: show last 2 components for readability
             let display_path = {
                 let parts: Vec<&str> = path.rsplitn(3, '/').collect();
                 if parts.len() >= 2 {
@@ -2148,11 +1712,7 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
 
             let active_badge = if is_active {
                 Span::styled(
-                    if is_vi {
-                        " (Đang mở) "
-                    } else {
-                        " (Active) "
-                    },
+                    t!("workspace_history_active_badge").to_string(),
                     Style::default()
                         .fg(theme.green)
                         .add_modifier(Modifier::ITALIC),
@@ -2172,11 +1732,7 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  [Enter] Mở  [n] Folder mới  [p] Nhập path  [x] Xóa  [Esc] Đóng"
-        } else {
-            "  [Enter] Open  [n] New Folder  [p] Type Path  [x] Remove  [Esc] Close"
-        },
+        t!("workspace_history_actions_hint").to_string(),
         Style::default()
             .fg(theme.orange)
             .add_modifier(Modifier::BOLD),
@@ -2184,11 +1740,7 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            if is_vi {
-                " 📂 LỊCH SỬ WORKSPACE "
-            } else {
-                " 📂 WORKSPACE HISTORY "
-            },
+            t!("workspace_history_title").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
@@ -2204,17 +1756,12 @@ pub fn render_workspace_history(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_view_prompt(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🤖 PROMPT AI ĐÃ THIẾT LẬP"
-            } else {
-                "🤖 CONFIGURED AI PROMPT"
-            },
+            t!("view_prompt_heading").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -2229,11 +1776,7 @@ pub fn render_view_prompt(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  [Esc] [q] [x] [Enter] để đóng"
-        } else {
-            "  [Esc] [q] [x] [Enter] to close"
-        },
+        t!("view_prompt_close_hint").to_string(),
         Style::default().fg(theme.border),
     )]));
 
@@ -2256,7 +1799,6 @@ pub fn render_view_prompt(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let filtered: Vec<&String> = if app.kilo_model_filter.is_empty() {
@@ -2272,30 +1814,21 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🤖 CHỌN MODEL KILO"
-            } else {
-                "🤖 SELECT KILO MODEL"
-            },
+            t!("kilo_model_heading").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
     ];
 
-    // Search bar
     if app.kilo_model_search_mode || !app.kilo_model_filter.is_empty() {
         let search_display = if app.kilo_model_filter.is_empty() {
-            if is_vi {
-                "  Tìm: _".to_string()
-            } else {
-                "  Search: _".to_string()
-            }
+            t!("kilo_model_search_empty_label").to_string()
         } else {
-            if is_vi {
-                format!("  Tìm: {}", app.kilo_model_filter)
-            } else {
-                format!("  Search: {}", app.kilo_model_filter)
-            }
+            t!(
+                "kilo_model_search_label",
+                filter = app.kilo_model_filter.clone()
+            )
+            .to_string()
         };
         content.push(Line::from(vec![Span::styled(
             search_display,
@@ -2308,11 +1841,7 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
 
     if filtered.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  Không tìm thấy model nào khớp."
-            } else {
-                "  No matching models found."
-            },
+            t!("kilo_model_no_match").to_string(),
             Style::default().fg(theme.red),
         )]));
     } else {
@@ -2359,11 +1888,7 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  [/] Tìm  [↑/↓] Di chuyển  [Enter] Chọn  [Esc] Hủy"
-        } else {
-            "  [/] Search  [↑/↓] Move  [Enter] Select  [Esc] Cancel"
-        },
+        t!("kilo_model_actions_hint").to_string(),
         Style::default().fg(theme.border),
     )]));
 
@@ -2385,97 +1910,50 @@ pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
-    let actions = if is_vi {
-        vec![
-            (
-                "Commit",
-                vec![
-                    (
-                        if app.kilo_ai_enabled {
-                            "🤖 AI Commit & Push"
-                        } else {
-                            "🤖 AI Commit & Push (TẮT)"
-                        },
-                        'g',
-                    ),
-                    ("✍️  Commit thủ công", 'c'),
-                    ("📝 Amend commit cuối", 'm'),
-                ],
-            ),
-            (
-                "Remote",
-                vec![
-                    ("📥 Fetch", 'f'),
-                    ("⬇️  Pull", 'p'),
-                    ("⬆️  Push", 'u'),
-                    ("🌐 Remote Info", 'i'),
-                ],
-            ),
-            (
-                "Khác",
-                vec![
-                    ("🌿 Quản lý Branch", 'b'),
-                    ("📦 Stash", 's'),
-                    ("🌳 Cấu trúc Commit (graph)", 't'),
-                    ("📜 Lịch sử Commit", 'v'),
-                    ("🧩 Commit theo Feature", 'e'),
-                    ("📥 Tải từ GitHub", 'n'),
-                    ("⚙️  Cài đặt hệ thống", 'y'),
-                ],
-            ),
-        ]
+    let ai_commit_label = if app.kilo_ai_enabled {
+        t!("git_menu_ai_commit_enabled").to_string()
     } else {
-        vec![
-            (
-                "Commit",
-                vec![
-                    (
-                        if app.kilo_ai_enabled {
-                            "🤖 AI Commit & Push"
-                        } else {
-                            "🤖 AI Commit & Push (DISABLED)"
-                        },
-                        'g',
-                    ),
-                    ("✍️  Manual Commit", 'c'),
-                    ("📝 Amend Last Commit", 'm'),
-                ],
-            ),
-            (
-                "Remote",
-                vec![
-                    ("📥 Fetch", 'f'),
-                    ("⬇️  Pull", 'p'),
-                    ("⬆️  Push", 'u'),
-                    ("🌐 Remote Info", 'i'),
-                ],
-            ),
-            (
-                "Other",
-                vec![
-                    ("🌿 Branch Management", 'b'),
-                    ("📦 Stash", 's'),
-                    ("🌳 Commit Tree (graph)", 't'),
-                    ("📜 Commit History", 'v'),
-                    ("🧩 Feature Commit", 'e'),
-                    ("📥 GitHub Download", 'n'),
-                    ("⚙️  System Settings", 'y'),
-                ],
-            ),
-        ]
+        t!("git_menu_ai_commit_disabled").to_string()
     };
+
+    let actions: Vec<(String, Vec<(String, char)>)> = vec![
+        (
+            t!("git_menu_group_commit").to_string(),
+            vec![
+                (ai_commit_label, 'g'),
+                (t!("git_menu_manual_commit").to_string(), 'c'),
+                (t!("git_menu_amend").to_string(), 'm'),
+            ],
+        ),
+        (
+            t!("git_menu_group_remote").to_string(),
+            vec![
+                (t!("git_menu_fetch").to_string(), 'f'),
+                (t!("git_menu_pull").to_string(), 'p'),
+                (t!("git_menu_push").to_string(), 'u'),
+                (t!("git_menu_remote_info").to_string(), 'i'),
+            ],
+        ),
+        (
+            t!("git_menu_group_other").to_string(),
+            vec![
+                (t!("git_menu_branch").to_string(), 'b'),
+                (t!("git_menu_stash").to_string(), 's'),
+                (t!("git_menu_tree").to_string(), 't'),
+                (t!("git_menu_history").to_string(), 'v'),
+                (t!("git_menu_feature").to_string(), 'e'),
+                (t!("git_menu_download").to_string(), 'n'),
+                (t!("git_menu_settings").to_string(), 'y'),
+            ],
+        ),
+    ];
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🛠️  MENU GIT OPERATIONS"
-            } else {
-                "🛠️  GIT OPERATIONS MENU"
-            },
+            t!("git_menu_heading").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -2523,11 +2001,7 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
     }
 
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  [↑/↓] Di chuyển  [Enter] Chọn  [Esc] Đóng"
-        } else {
-            "  [↑/↓] Navigate  [Enter] Select  [Esc] Close"
-        },
+        t!("git_menu_navigate_hint").to_string(),
         Style::default().fg(theme.border),
     )]));
 
@@ -2547,22 +2021,15 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(paragraph, area);
 }
 
-// render_manual_commit has been moved to ui/modals/manual_commit.rs
-// (see docs/adding-a-modal.md for the new recommended pattern)
-
 pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
-    // Split thành 2 cột - cho Graph nhiều không gian hơn
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(62), Constraint::Percentage(38)])
         .split(area);
 
-    // === LEFT: Commit Graph (cải tiến) ===
-    // Màu graph đồng bộ theme + ưu tiên màu nổi bật
     let graph_colors = [
         theme.green,
         theme.cyan,
@@ -2585,11 +2052,7 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
 
     if app.commit_logs.is_empty() {
         left_content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "Không có commit."
-            } else {
-                "No commits."
-            },
+            t!("commit_tree_no_commits").to_string(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),
@@ -2598,23 +2061,20 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
         for (i, entry) in app.commit_logs.iter().enumerate() {
             let is_selected = i == app.selected_log_index;
 
-            // === Graph nâng cao - nhiều lane + ký tự kết nối ===
             let lane = if entry.parents.len() > 1 { 0 } else { i % 4 };
 
-            // Xây dựng graph column
             let graph = match (entry.parents.len() > 1, lane, i) {
-                (true, _, _) => " ├─◉".to_string(), // Merge
-                (_, 0, 0) => " ●  ".to_string(),    // Root main
-                (_, 0, _) => " │  ".to_string(),    // Main line
-                (_, 1, _) => " ├─●".to_string(),    // Branch 1
-                (_, 2, _) => " ├─●".to_string(),    // Branch 2
-                (_, 3, _) => " └─●".to_string(),    // Branch 3
+                (true, _, _) => " ├─◉".to_string(),
+                (_, 0, 0) => " ●  ".to_string(),
+                (_, 0, _) => " │  ".to_string(),
+                (_, 1, _) => " ├─●".to_string(),
+                (_, 2, _) => " ├─●".to_string(),
+                (_, 3, _) => " └─●".to_string(),
                 _ => " │  ".to_string(),
             };
 
             let branch_color = graph_colors[lane % graph_colors.len()];
 
-            // Avatar: đồng bộ theme sáng/tối để không bị chìm
             let initial = entry.author.chars().next().unwrap_or('?');
             let avatar_fg = if app.is_light_theme {
                 theme.fg
@@ -2688,15 +2148,10 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
         .block(left_block);
     f.render_widget(left_paragraph, chunks[0]);
 
-    // === RIGHT: Diff Preview ===
     let mut right_content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "DIFF CỦA COMMIT"
-            } else {
-                "DIFF OF COMMIT"
-            },
+            t!("commit_tree_diff_heading").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -2721,11 +2176,7 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
         }
     } else {
         right_content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "(Chọn commit để xem diff)"
-            } else {
-                "(Select commit to view diff)"
-            },
+            t!("commit_tree_diff_empty").to_string(),
             Style::default()
                 .fg(theme.border)
                 .add_modifier(Modifier::ITALIC),

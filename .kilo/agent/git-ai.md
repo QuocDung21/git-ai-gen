@@ -37,7 +37,7 @@ src/
 
 ## Critical Rules (Always Follow)
 
-1. **Bilingual mandatory**: Every user-facing string must exist in both `locales/en.yml` and `locales/vi.yml`. Use `app.current_lang == "vi"` checks. Never hardcode English-only strings.
+1. **Bilingual mandatory**: Every user-facing string must exist in both `locales/en.yml` and `locales/vi.yml`. Use the `t!` macro (e.g., `t!("key").to_string()`). Avoid manual `app.current_lang == "vi"` checks.
 
 2. **TUI is sacred**: All rendering goes through `ratatui`. Never use `println!` inside the dashboard. Only use `logger::*` for CLI commands (outside TUI).
 
@@ -78,9 +78,10 @@ src/
 Command::new("git").args(["config", "--global", "git-ai.<key>", value]).output()
 ```
 
-**Current language detection**:
+**Bilingual strings using `t!`**:
 ```rust
-let is_vi = app.current_lang == "vi";
+use rust_i18n::t;
+let label = t!("key").to_string();
 ```
 
 **Theme colors** (never hardcode):
@@ -114,7 +115,7 @@ Style::default().fg(theme.green)
 | New TUI feature         | `app/mod.rs`, `app/events.rs`, `ui/mod.rs` |
 | New modal               | `app/models.rs`, `ui/modals/*.rs`          |
 | Git wrapper             | `src/git/*.rs`                             |
-| Bilingual text          | `locales/en.yml`, `locales/vi.yml`         |
+| Bilingual text          | `locales/en.yml`, `locales/vi.yml` (via `t!`) |
 | CLI command             | `main.rs`, `cli/system.rs`                 |
 | Theme colors            | `app/mod.rs:theme()`                       |
 | Language detection      | `helper/mod.rs:get_ai_language()`, `get_ai_language_name()` |

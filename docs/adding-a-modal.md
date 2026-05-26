@@ -62,16 +62,17 @@ use ratatui::{
 
 use crate::app::App;
 
+use rust_i18n::t;
+
 pub fn render_my_new_modal(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
 
     f.render_widget(Clear, area);
 
     let content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi { "Tiêu đề Modal" } else { "Modal Title" },
+            t!("my_modal_title").to_string(),
             Style::default().fg(theme.green).add_modifier(Modifier::BOLD),
         )]),
         // ... more lines
@@ -151,7 +152,7 @@ ActiveModal::MyNewModal => {
 - [ ] Registered size + dispatch in `ui/mod.rs`
 - [ ] Added key handling in `events.rs`
 - [ ] Used `app.theme()` for all colors
-- [ ] Added bilingual strings (`is_vi`)
+- [ ] Added bilingual strings to locales and used `t!` macro
 - [ ] No comments added to source code
 
 ## Example Modals to Copy From

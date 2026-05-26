@@ -1,6 +1,7 @@
 use crate::app::App;
 use crate::models::GoStep;
 use crossterm::event::{KeyCode, KeyEvent};
+use rust_i18n::t;
 
 pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
     let max = 13;
@@ -8,11 +9,7 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
     match key.code {
         KeyCode::Char('g') | KeyCode::Char('G') => {
             if !app.kilo_ai_enabled {
-                app.status_message = if app.current_lang == "vi" {
-                    "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!".to_string()
-                } else {
-                    "⚠️ Kilo AI Generation is disabled in Settings!".to_string()
-                };
+                app.status_message = t!("kilo_disabled").to_string();
                 return;
             }
             let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() {
@@ -21,11 +18,7 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
                 String::new()
             };
             app.commit_message_preview = if clipboard_msg.trim().is_empty() {
-                if app.current_lang == "vi" {
-                    "(Chưa có commit message trong clipboard)".to_string()
-                } else {
-                    "(No commit message in clipboard)".to_string()
-                }
+                t!("no_commit_in_clipboard").to_string()
             } else {
                 clipboard_msg.trim().to_string()
             };
@@ -49,48 +42,24 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
             app.active_modal = crate::models::ActiveModal::AmendCommit;
         }
         KeyCode::Char('f') | KeyCode::Char('F') => {
-            app.status_message = if app.current_lang == "vi" {
-                "⏳ Đang tải thông tin mới từ Remote (Fetch)...".to_string()
-            } else {
-                "⏳ Fetching new updates from Remote...".to_string()
-            };
+            app.status_message = t!("nav_fetch_start").to_string();
             let _ = crate::git::remote::git_fetch();
-            app.status_message = if app.current_lang == "vi" {
-                "✅ Fetch hoàn tất".to_string()
-            } else {
-                "✅ Fetch completed".to_string()
-            };
+            app.status_message = t!("nav_fetch_ok").to_string();
             app.active_modal = crate::models::ActiveModal::None;
             app.refresh_git_status();
         }
         KeyCode::Char('p') | KeyCode::Char('P') => {
-            app.status_message = if app.current_lang == "vi" {
-                "⏳ Đang cập nhật thay đổi từ Remote (Pull)...".to_string()
-            } else {
-                "⏳ Pulling changes from Remote...".to_string()
-            };
+            app.status_message = t!("nav_pull_start").to_string();
             let _ = crate::git::remote::git_pull();
-            app.status_message = if app.current_lang == "vi" {
-                "✅ Pull hoàn tất".to_string()
-            } else {
-                "✅ Pull completed".to_string()
-            };
+            app.status_message = t!("nav_pull_ok").to_string();
             app.active_modal = crate::models::ActiveModal::None;
             app.refresh_git_status();
         }
         KeyCode::Char('u') | KeyCode::Char('U') => {
-            app.status_message = if app.current_lang == "vi" {
-                "⏳ Đang đẩy các thay đổi lên Remote (Push)...".to_string()
-            } else {
-                "⏳ Pushing committed changes to Remote...".to_string()
-            };
+            app.status_message = t!("nav_push_start").to_string();
             match crate::git::remote::git_push() {
                 Ok(_) => {
-                    app.status_message = if app.current_lang == "vi" {
-                        "✅ Push thành công".to_string()
-                    } else {
-                        "✅ Push successful".to_string()
-                    };
+                    app.status_message = t!("nav_push_ok").to_string();
                 }
                 Err(e) => {
                     app.status_message = format!("❌ Push failed: {}", e);
@@ -145,11 +114,7 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
                 0 => {
                     // AI Commit & Push
                     if !app.kilo_ai_enabled {
-                        app.status_message = if app.current_lang == "vi" {
-                            "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!".to_string()
-                        } else {
-                            "⚠️ Kilo AI Generation is disabled in Settings!".to_string()
-                        };
+                        app.status_message = t!("kilo_disabled").to_string();
                     } else {
                         let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() {
                             cb.get_text().unwrap_or_default()
@@ -157,11 +122,7 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
                             String::new()
                         };
                         app.commit_message_preview = if clipboard_msg.trim().is_empty() {
-                            if app.current_lang == "vi" {
-                                "(Chưa có commit message trong clipboard)".to_string()
-                            } else {
-                                "(No commit message in clipboard)".to_string()
-                            }
+                            t!("no_commit_in_clipboard").to_string()
                         } else {
                             clipboard_msg.trim().to_string()
                         };
@@ -181,48 +142,24 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
                     app.active_modal = crate::models::ActiveModal::AmendCommit;
                 }
                 3 => {
-                    app.status_message = if app.current_lang == "vi" {
-                        "⏳ Đang tải thông tin mới từ Remote (Fetch)...".to_string()
-                    } else {
-                        "⏳ Fetching new updates from Remote...".to_string()
-                    };
+                    app.status_message = t!("nav_fetch_start").to_string();
                     let _ = crate::git::remote::git_fetch();
-                    app.status_message = if app.current_lang == "vi" {
-                        "✅ Fetch hoàn tất".to_string()
-                    } else {
-                        "✅ Fetch completed".to_string()
-                    };
+                    app.status_message = t!("nav_fetch_ok").to_string();
                     app.active_modal = crate::models::ActiveModal::None;
                     app.refresh_git_status();
                 }
                 4 => {
-                    app.status_message = if app.current_lang == "vi" {
-                        "⏳ Đang cập nhật thay đổi từ Remote (Pull)...".to_string()
-                    } else {
-                        "⏳ Pulling changes from Remote...".to_string()
-                    };
+                    app.status_message = t!("nav_pull_start").to_string();
                     let _ = crate::git::remote::git_pull();
-                    app.status_message = if app.current_lang == "vi" {
-                        "✅ Pull hoàn tất".to_string()
-                    } else {
-                        "✅ Pull completed".to_string()
-                    };
+                    app.status_message = t!("nav_pull_ok").to_string();
                     app.active_modal = crate::models::ActiveModal::None;
                     app.refresh_git_status();
                 }
                 5 => {
-                    app.status_message = if app.current_lang == "vi" {
-                        "⏳ Đang đẩy các thay đổi lên Remote (Push)...".to_string()
-                    } else {
-                        "⏳ Pushing committed changes to Remote...".to_string()
-                    };
+                    app.status_message = t!("nav_push_start").to_string();
                     match crate::git::remote::git_push() {
                         Ok(_) => {
-                            app.status_message = if app.current_lang == "vi" {
-                                "✅ Push thành công".to_string()
-                            } else {
-                                "✅ Push successful".to_string()
-                            };
+                            app.status_message = t!("nav_push_ok").to_string();
                         }
                         Err(e) => {
                             app.status_message = format!("❌ Push failed: {}", e);

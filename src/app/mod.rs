@@ -1,5 +1,6 @@
 use std::env;
 use std::process::Command;
+use rust_i18n::t;
 
 pub mod events;
 pub mod fetch;
@@ -134,11 +135,7 @@ impl App {
             .unwrap_or_else(|_| "Unknown".to_string());
 
         let current_lang = crate::helper::Helper::get_ai_language();
-        let init_msg = if current_lang == "vi" {
-            "Sẵn sàng tạo Commit Message! Nhấn Space để stage, Backspace để revert."
-        } else {
-            "Ready to generate Commit Message! Press Space to stage, Backspace to revert."
-        };
+        let init_msg = t!("init_ready").to_string();
 
         let theme_id = {
             if let Ok(output) = Command::new("git")
@@ -379,12 +376,7 @@ impl App {
         self.files.clear();
         if let Ok(status_text) = crate::git::status::get_git_status() {
             if status_text.trim().is_empty() {
-                let msg = if self.current_lang == "vi" {
-                    "✅ Thư mục làm việc sạch sẽ (Không có thay đổi)."
-                } else {
-                    "✅ Working tree clean (No changes)."
-                };
-                self.git_status_lines.push(msg.to_string());
+                self.git_status_lines.push(t!("status_clean").to_string());
             } else {
                 for line in status_text.lines() {
                     self.git_status_lines.push(format!(" {}", line));
@@ -396,14 +388,10 @@ impl App {
                     }
                 }
             }
-        } else {
-            let msg = if self.current_lang == "vi" {
-                "❌ Không thể đọc trạng thái Git."
             } else {
-                "❌ Failed to read Git status."
-            };
-            self.git_status_lines.push(msg.to_string());
-        }
+                self.git_status_lines.push(t!("status_fail").to_string());
+            }
+
 
         self.current_branch = crate::git::status::get_current_branch();
 
@@ -467,19 +455,10 @@ impl App {
         let output = if is_untracked {
             if let Ok(content) = std::fs::read_to_string(&file.path) {
                 let lines: Vec<&str> = content.lines().take(500).collect();
-                let heading = if self.current_lang == "vi" {
-                    format!("📄 [Tập tin chưa theo dõi]\n\n")
-                } else {
-                    format!("📄 [Untracked File]\n\n")
-                };
+                let heading = t!("untracked_file_heading").to_string();
                 heading + &lines.join("\n")
             } else {
-                if self.current_lang == "vi" {
-                    "[Không thể đọc tập tin]"
-                } else {
-                    "[Cannot read file]"
-                }
-                .to_string()
+                t!("cannot_read_file").to_string()
             }
         } else {
             let mut diff_output = crate::git::status::get_diff_head(&file.path);
@@ -493,11 +472,7 @@ impl App {
             }
 
             diff_output.unwrap_or_else(|| {
-                if self.current_lang == "vi" {
-                    "[Không có thay đổi so với commit cuối cùng]".to_string()
-                } else {
-                    "[No changes compared to last commit]".to_string()
-                }
+                t!("no_changes_compared_to_last_commit").to_string()
             })
         };
         self.selected_file_diff = output;

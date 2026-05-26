@@ -1,6 +1,7 @@
 use std::process::Command;
 
 use crossterm::event::{KeyCode, KeyEvent};
+use rust_i18n::t;
 
 use crate::app::App;
 
@@ -34,11 +35,7 @@ pub fn handle_download_tree(app: &mut App, key: &KeyEvent) {
             app.toggle_github_tree_selection(app.selected_github_tree_index);
         }
         KeyCode::Char('b') | KeyCode::Char('B') => {
-            app.status_message = if app.current_lang == "vi" {
-                "⏳ Đang tải danh sách chi nhánh (branch)...".to_string()
-            } else {
-                "⏳ Fetching branch list...".to_string()
-            };
+            app.status_message = t!("github_branch_fetching").to_string();
             match app.fetch_github_branches() {
                 Ok(_) => {
                     app.selected_github_branch_index = app
@@ -47,11 +44,7 @@ pub fn handle_download_tree(app: &mut App, key: &KeyEvent) {
                         .position(|b| b == &app.current_github_branch)
                         .unwrap_or(0);
                     app.active_modal = crate::models::ActiveModal::GithubBranchSelect;
-                    app.status_message = if app.current_lang == "vi" {
-                        "✅ Tải danh sách chi nhánh hoàn tất".to_string()
-                    } else {
-                        "✅ Branches loaded".to_string()
-                    };
+                    app.status_message = t!("github_branch_ok").to_string();
                 }
                 Err(e) => {
                     app.status_message = format!("❌ Lỗi: {}", e);

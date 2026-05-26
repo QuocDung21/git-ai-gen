@@ -70,7 +70,7 @@ help_git_fetch: "Fetch all remote branch metadata (git fetch)"
 help_git_pull: "Pull latest changes from remote (git pull)"
 help_git_remote: "Show remote tracking info & remotes list"
 help_git_copy_diff: "Capture & Copy code diff to AI Clipboard"
-help_git_ai_prompt: "View the configured AI prompt (base)"
+help_git_ai_prompt: "View or edit the base AI prompt used by KILO (used to generate commit messages)"
 help_git_go: "Commit & Push changes auto (Go)"
 help_group_sys: "System Operations "
 help_sys_vscode: "Open workspace folder in VS Code"
@@ -103,6 +103,14 @@ header_sys_info: " ⚙️ SYSTEM INFORMATION "
 header_lang_display: "English"
 header_status_online: "ONLINE"
 header_start_prompt: "⚡ 👉 PRESS [ENTER] OR ANY KEY TO START 👈 ⚡"
+
+# app init messages
+init_ready: "Ready to generate Commit Message! Press Space to stage, Backspace to revert."
+
+# Manual commit modal
+manual_commit_title: "✍️ MANUAL COMMIT"
+manual_commit_prompt: "  Enter commit message below:"
+manual_commit_actions: "  [Enter] Commit  [Esc] Cancel"
 
 # Changes component
 changes_title: " 📂 WORKSPACE CHANGES "
@@ -148,9 +156,11 @@ nav_returned_files: "📂 Returned to Files list"
 nav_diff_focused: "📄 Focused Diff view. Press j/k to line scroll, d/u to page scroll, Tab/Esc to return."
 nav_fetch_start: "⏳ Fetching new updates from Remote..."
 nav_fetch_ok: "✅ Git fetch completed successfully!"
-nav_fetch_err: "❌ git fetch failed: {err}"
 nav_pull_start: "⏳ Pulling changes from Remote..."
 nav_pull_ok: "✅ Git pull completed successfully!"
+nav_push_start: "⏳ Pushing committed changes to Remote..."
+nav_push_ok: "✅ Push successful"
+
 nav_pull_err: "❌ git pull failed: {err}"
 nav_stage_all_ok: "➕ Staged all changes!"
 nav_stage_all_err: "❌ Error: Failed to stage all."
@@ -235,11 +245,29 @@ github_branch_checkout_err: "❌ Error checking out branch"
 github_branch_checkout_cmd_err: "❌ Cannot execute checkout command"
 github_branch_fetch_cmd_err: "❌ Cannot execute fetch command"
 
+# messages used by handlers/github.rs
+github_branch_fetching: "⏳ Fetching branch list..."
+
+github_repo_tree_title: "  📁 REPOSITORY DIRECTORY TREE"
+github_no_files_found: "  (No files found)"
+item: "Item"
+github_more_items: "   ... and {count} more items"
+github_download_instructions: "  [B] Branch  [V] Quick View  [Space] Select/Deselect  [◀/▶] Collapse/Expand Folder  [↑/↓] Navigate  [Enter] Confirm & Download  [Esc] Back"
+github_download_title: " 📁 SELECT ITEM TO DOWNLOAD (Branch: {branch}) "
+
+github_file_read_error: "❌ Cannot read file"
+github_file_not_found: "❌ File not found"
+
+github_quickview_actions: "[Esc] Close  [↑/↓] Scroll  [/] Search"
+
 # Theme selection
 theme_switched: "🎨 Switched to {name} theme"
 
 # Feature commit
 feature_staged: "✅ Staged feature '{name}': {count} file(s). Press [g] to commit."
+feature_commit_title: "🧩 FEATURE COMMIT"
+feature_commit_empty: "  No changes to group into features."
+feature_commit_actions: "  [↑/↓] Select  [Enter] Stage feature  [Esc] Close"
 
 # UI status bar
 ui_notification_label: "  🔔  SYSTEM NOTIFICATION  "
@@ -250,6 +278,7 @@ branch_delete_question: "Are you sure you want to delete the branch:"
 branch_delete_irreversible: "⚠️ THIS ACTION MIGHT BE IRREVERSIBLE!"
 branch_delete_confirm_btn: " [y] CONFIRM "
 branch_delete_cancel_btn: " [n] CANCEL "
+branch_delete_title: " BRANCH DELETION "
 
 # language_select modal
 lang_select_prompt: "Select language / Chọn ngôn ngữ:"
@@ -257,6 +286,12 @@ lang_select_navigate: "Use ↑/↓ or j/k to navigate, Enter to select."
 lang_select_title: " 🌎 LANGUAGE CONFIGURATION "
 
 # theme_select modal
+
+editor_select_prompt: "Select default open application/editor:"
+editor_select_default: "System Default"
+editor_select_navigate: "Use ↑/↓ or j/k to navigate, Enter to select."
+editor_select_title: " ⚙️ SELECT DEFAULT EDITOR "
+
 theme_select_prompt: "Select application theme:"
 theme_select_navigate: "Use ↑/↓ or j/k to navigate, Enter to select."
 theme_select_title: " 🎨 THEME CONFIGURATION "
@@ -267,6 +302,13 @@ confirm_revert_question: "Are you sure you want to revert/delete changes in:"
 confirm_revert_irreversible: "⚠️ THIS ACTION CANNOT BE UNDONE!"
 confirm_revert_confirm_btn: " [y] CONFIRM "
 confirm_revert_cancel_btn: " [n] CANCEL "
+
+# messages used by handlers/confirm.rs
+revert_deleted_untracked: "🗑️ Deleted untracked file: {path}"
+revert_success: "🔄 Reverted changes in file: {path}"
+revert_failed: "❌ Failed to revert file: {path}"
+revert_cancelled: "ℹ️ Revert cancelled."
+
 
 # git_log modal
 git_log_heading: "  🌿 WORKSPACE COMMIT HISTORY 🌿"
@@ -299,8 +341,22 @@ diff_result_kilo_header: "  🤖 KILO GENERATED COMMIT MESSAGE:"
 diff_result_kilo_actions: "  [C] Copy  [Enter/G] Use this message  [Esc] Close"
 diff_result_kilo_asking: "  ⏳ ASKING KILO..."
 diff_result_kilo_prompt: "  Press [K] to let KILO generate the commit message!"
+
+# messages used by handlers/diff_result.rs
+kilo_fetching_models: "⏳ Fetching Kilo model list..."
 diff_result_scroll_hint: "  Press [↑/↓] to scroll, [Enter] or [Esc] to close."
 diff_result_model_default: "Default (Kilo config)"
+
+# messages used by handlers/diff_result.rs
+diff_kilo_clipboard_copied: "✅ KILO commit message copied to clipboard."
+diff_kilo_using_message: "✅ Using KILO message. Press [G] to commit & push."
+kilo_disabled: "⚠️ Kilo AI Generation is disabled in Settings!"
+kilo_no_staged_diff: "⚠️ No staged diff."
+kilo_asking: "⏳ Asking KILO..."
+kilo_finished: "✅ KILO finished generating!"
+kilo_cmd_not_found: "'kilo' command not found. Please install @kilocode/cli (npm i -g @kilocode/cli) and ensure it is in PATH. Error: {err}"
+kilo_run_failed: "kilo run failed: {err}"
+kilo_empty_output: "kilo returned empty output."
 diff_result_preview_label: "  ── DIFF PREVIEW (first 40 lines) ──"
 
 # go_confirm modal
@@ -308,6 +364,10 @@ go_confirm_heading: "🚀 CONFIRM COMMIT & PUSH 🚀"
 go_confirm_files_label: "📂 Selected files to commit:"
 go_confirm_no_files_warning: "⚠️ WARNING: No files selected! Please exit and press [Space] to select."
 go_confirm_commit_from_clipboard: "📋 Commit message from Clipboard:"
+
+# messages used by handlers/git_menu.rs
+no_commit_in_clipboard: "(No commit message in clipboard)"
+
 go_confirm_execution: "  ⚡ Execution: git commit -> git push"
 go_confirm_proceed_label: " TIẾN HÀNH          "
 go_confirm_cancel_label: " HỦY "
@@ -419,3 +479,30 @@ git_menu_navigate_hint: "  [↑/↓] Navigate  [Enter] Select  [Esc] Close"
 commit_tree_no_commits: "No commits."
 commit_tree_diff_heading: "DIFF OF COMMIT"
 commit_tree_diff_empty: "(Select commit to view diff)"
+
+# github_download modal
+github_download_url_header: "📥 DOWNLOAD FILES FROM GITHUB"
+github_download_url_prompt: "  Enter repository URL (HTTPS or SSH) below:"
+github_download_url_history: "  📋 REMOTE HISTORY (Use ↑/↓ to select, Backspace to delete):"
+github_download_url_help: "  Type URL, [Enter] to fetch repo, [Esc] to cancel"
+github_download_url_title: " 📥 GITHUB DOWNLOAD "
+github_download_tree_counter: "  (Item {current} / {total})"
+github_download_target_header: "💾 SELECT SAVE DESTINATION"
+github_download_target_label: "  Downloading: "
+github_download_target_prompt: "  Enter destination folder path below:"
+github_download_target_help: "  [Enter] Confirm & Download  [Tab] Select Folder (Finder)  [Esc] Back"
+github_download_target_title: " 💾 SAVE TO "
+github_quickview_search_prefix: " 🔍 SEARCH: "
+github_quickview_clear_search: "  [c] Clear search"
+github_quickview_active_search: "  (Active: {search})"
+github_quickview_title: " 👁 {name} (Lines: {start} - {end} / {total}) "
+github_branch_select_header: "🌿 GITHUB BRANCH SELECTOR 🌿"
+github_branch_select_empty: "No branches found."
+github_branch_select_active_badge: " (Viewing) "
+github_branch_select_navigate: "Use ↑/↓ or j/k to navigate, [Enter] to switch branch."
+github_branch_select_cancel: "Press [Esc] or [q] to CANCEL."
+github_branch_select_title: " 🌿 SELECT GITHUB BRANCH "
+github_download_error_label: "  ❌ Error: {err}"
+untracked_file_heading: "📄 [Untracked File]\n\n"
+cannot_read_file: "[Cannot read file]"
+no_changes_compared_to_last_commit: "[No changes compared to last commit]"

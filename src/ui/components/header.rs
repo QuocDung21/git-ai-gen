@@ -104,7 +104,9 @@ pub fn render_splash_screen(f: &mut Frame, app: &App) {
         .border_type(BorderType::Rounded)
         .title(Span::styled(
             welcome_title.as_ref(),
-            Style::default().fg(theme.purple).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(theme.purple)
+                .add_modifier(Modifier::BOLD),
         ))
         .title_alignment(Alignment::Center);
 
@@ -200,15 +202,30 @@ pub fn render_splash_screen(f: &mut Frame, app: &App) {
     let left_lines = vec![
         Line::from(vec![
             Span::styled(" 🤖 Tool Name:  ", Style::default().fg(theme.border)),
-            Span::styled("git-ai (GIT-CHILL)", Style::default().fg(theme.purple).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "git-ai (GIT-CHILL)",
+                Style::default()
+                    .fg(theme.purple)
+                    .add_modifier(Modifier::BOLD),
+            ),
         ]),
         Line::from(vec![
             Span::styled(" ⚡ AI Agent:   ", Style::default().fg(theme.border)),
-            Span::styled(status_lbl.as_ref(), Style::default().fg(theme.green).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                status_lbl.as_ref(),
+                Style::default()
+                    .fg(theme.green)
+                    .add_modifier(Modifier::BOLD),
+            ),
         ]),
         Line::from(vec![
             Span::styled(" 🌎 Language:   ", Style::default().fg(theme.border)),
-            Span::styled(lang_display.as_ref(), Style::default().fg(theme.yellow).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                lang_display.as_ref(),
+                Style::default()
+                    .fg(theme.yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
         ]),
         Line::from(vec![
             Span::styled(" 📦 Version:    ", Style::default().fg(theme.border)),
@@ -226,7 +243,7 @@ pub fn render_splash_screen(f: &mut Frame, app: &App) {
             Span::styled(" 📂 Workspace:  ", Style::default().fg(theme.border)),
             Span::styled(
                 if app.current_dir.len() > 30 {
-                    format!("...{}", &app.current_dir[app.current_dir.len()-27..])
+                    format!("...{}", &app.current_dir[app.current_dir.len() - 27..])
                 } else {
                     app.current_dir.clone()
                 },
@@ -235,17 +252,31 @@ pub fn render_splash_screen(f: &mut Frame, app: &App) {
         ]),
         Line::from(vec![
             Span::styled(" 🌿 Branch:     ", Style::default().fg(theme.border)),
-            Span::styled(&app.current_branch, Style::default().fg(theme.green).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                &app.current_branch,
+                Style::default()
+                    .fg(theme.green)
+                    .add_modifier(Modifier::BOLD),
+            ),
         ]),
         Line::from(vec![
             Span::styled(" 📊 Changes:    ", Style::default().fg(theme.border)),
-            Span::styled(format!("{}{}", lbl_staged, app.staged_count), Style::default().fg(theme.green)),
+            Span::styled(
+                format!("{}{}", lbl_staged, app.staged_count),
+                Style::default().fg(theme.green),
+            ),
             Span::styled(" | ", Style::default().fg(theme.border)),
-            Span::styled(format!("{}{}", lbl_unstaged, app.unstaged_count), Style::default().fg(theme.yellow)),
+            Span::styled(
+                format!("{}{}", lbl_unstaged, app.unstaged_count),
+                Style::default().fg(theme.yellow),
+            ),
         ]),
         Line::from(vec![
             Span::styled("                ", Style::default()),
-            Span::styled(format!("{}{}", lbl_untracked, app.untracked_count), Style::default().fg(theme.purple)),
+            Span::styled(
+                format!("{}{}", lbl_untracked, app.untracked_count),
+                Style::default().fg(theme.purple),
+            ),
         ]),
     ];
     f.render_widget(Paragraph::new(right_lines), info_cols[1]);

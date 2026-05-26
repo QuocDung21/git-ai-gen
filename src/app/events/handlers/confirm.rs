@@ -1,4 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
+use rust_i18n::t;
 
 use crate::app::App;
 
@@ -20,26 +21,15 @@ pub fn handle_revert_confirm(app: &mut App, key: &KeyEvent) {
                 } else {
                     let _ = std::fs::remove_file(p);
                 }
-                app.status_message = if app.current_lang == "vi" {
-                    format!("🗑️ Đã xóa file chưa theo dõi: {}", path_to_revert)
-                } else {
-                    format!("🗑️ Deleted untracked file: {}", path_to_revert)
-                };
+                app.status_message =
+                    t!("revert_deleted_untracked", path = path_to_revert).to_string();
             } else {
                 let _ = crate::git::status::unstage_file(&path_to_revert);
                 let success = crate::git::status::revert_file(&path_to_revert).is_ok();
                 if success {
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("🔄 Đã khôi phục file: {}", path_to_revert)
-                    } else {
-                        format!("🔄 Reverted changes in file: {}", path_to_revert)
-                    };
+                    app.status_message = t!("revert_success", path = path_to_revert).to_string();
                 } else {
-                    app.status_message = if app.current_lang == "vi" {
-                        format!("❌ Lỗi khi khôi phục file: {}", path_to_revert)
-                    } else {
-                        format!("❌ Failed to revert file: {}", path_to_revert)
-                    };
+                    app.status_message = t!("revert_failed", path = path_to_revert).to_string();
                 }
             }
             app.active_modal = crate::models::ActiveModal::None;
@@ -47,11 +37,7 @@ pub fn handle_revert_confirm(app: &mut App, key: &KeyEvent) {
         }
         KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
             app.active_modal = crate::models::ActiveModal::None;
-            app.status_message = if app.current_lang == "vi" {
-                "ℹ️ Đã hủy khôi phục file.".to_string()
-            } else {
-                "ℹ️ Revert cancelled.".to_string()
-            };
+            app.status_message = t!("revert_cancelled").to_string();
         }
         _ => {}
     }

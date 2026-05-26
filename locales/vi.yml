@@ -70,7 +70,7 @@ help_git_fetch: "Tìm nạp toàn bộ metadata từ máy chủ (git fetch)"
 help_git_pull: "Cập nhật thay đổi từ máy chủ về máy (git pull)"
 help_git_remote: "Hiển thị thông tin tracking & danh sách remote"
 help_git_copy_diff: "Chụp ảnh Diff chuyển qua AI Clipboard"
-help_git_ai_prompt: "Xem prompt AI đã thiết lập (base prompt)"
+help_git_ai_prompt: "Xem hoặc chỉnh sửa base AI prompt dùng cho KILO (dùng để sinh commit message)"
 help_git_go: "Đóng gói toàn bộ, tự động commit & push (Go)"
 help_group_sys: "System Operations "
 help_sys_vscode: "Mở thư mục hiện tại bằng VS Code"
@@ -104,9 +104,17 @@ header_lang_display: "Tiếng Việt"
 header_status_online: "TRỰC TUYẼN"
 header_start_prompt: "⚡ 👉 NHẤN [ENTER] HOẶC PHÍM BẤT KỲ ĐỂ BẮT ĐẦU 👈 ⚡"
 
+# app init messages
+init_ready: "Sẵn sàng tạo Commit Message! Nhấn Space để stage, Backspace để revert."
+
 # Changes component
 changes_title: " 📂 THAY ĐỔI (CHANGES) "
 changes_empty: "Không có thay đổi!"
+
+# Manual commit modal
+manual_commit_title: "✍️ COMMIT THỦ CÔNG"
+manual_commit_prompt: "  Nhập commit message bên dưới:"
+manual_commit_actions: "  [Enter] Commit  [Esc] Hủy"
 
 # Diff component
 diff_empty: "   (Chọn một tập tin để xem thay đổi)"
@@ -148,9 +156,11 @@ nav_returned_files: "📂 Đã quay lại Danh sách tập tin"
 nav_diff_focused: "📄 Đã chuyển focus sang Diff. Nhấn j/k để cuộn dòng, d/u để cuộn trang, Tab/Esc để quay lại."
 nav_fetch_start: "⏳ Đang tải thông tin mới từ Remote (Fetch)..."
 nav_fetch_ok: "✅ Đã tìm nạp (git fetch) thành công!"
-nav_fetch_err: "❌ Lỗi git fetch: {err}"
 nav_pull_start: "⏳ Đang cập nhật thay đổi từ Remote (Pull)..."
 nav_pull_ok: "✅ Đã cập nhật (git pull) thành công!"
+nav_push_start: "⏳ Đang đẩy các thay đổi lên Remote (Push)..."
+nav_push_ok: "✅ Push thành công"
+
 nav_pull_err: "❌ Lỗi git pull: {err}"
 nav_stage_all_ok: "➕ Đã stage toàn bộ thay đổi!"
 nav_stage_all_err: "❌ Lỗi: Không thể stage toàn bộ."
@@ -235,11 +245,263 @@ github_branch_checkout_err: "❌ Lỗi checkout chi nhánh"
 github_branch_checkout_cmd_err: "❌ Không thể chạy lệnh checkout"
 github_branch_fetch_cmd_err: "❌ Không thể chạy lệnh fetch"
 
+# messages used by handlers/github.rs
+github_branch_fetching: "⏳ Đang tải danh sách chi nhánh (branch)..."
+
+github_repo_tree_title: "  📁 CẤU TRÚC THƯ MỤC REPOSITORY"
+github_no_files_found: "  (Không tìm thấy tập tin nào)"
+item: "Mục"
+github_more_items: "   ... và {count} mục khác"
+github_download_instructions: "  [B] Chọn branch  [V] Xem nhanh  [Space] Chọn/Bỏ chọn  [◀/▶] Đóng/Mở thư mục  [↑/↓] Di chuyển  [Enter] Xác nhận lưu & tải  [Esc] Quay lại"
+github_download_title: " 📁 CHỌN MỤC TẢI VỀ (Nhánh: {branch}) "
+
+github_file_read_error: "❌ Không thể đọc file"
+github_file_not_found: "❌ File không tồn tại"
+
+github_quickview_actions: "[Esc] Đóng  [↑/↓] Cuộn  [/] Tìm kiếm"
+
 # Theme selection
 theme_switched: "🎨 Đã chuyển sang giao diện {name}"
 
 # Feature commit
 feature_staged: "✅ Đã stage feature '{name}': {count} file(s). Nhấn [g] để commit."
+feature_commit_title: "🧩 COMMIT THEO FEATURE"
+feature_commit_empty: "  Không có thay đổi để nhóm thành feature."
+feature_commit_actions: "  [↑/↓] Chọn  [Enter] Stage feature  [Esc] Đóng"
 
 # UI status bar
 ui_notification_label: "  🔔  THÔNG BÁO HỆ THỐNG  "
+
+# branch_delete modal
+branch_delete_warning_title: "⚠️  CẢNH BÁO XÓA CHI NHÁNH  ⚠️"
+branch_delete_question: "Bạn có chắc chắn muốn xóa chi nhánh:"
+branch_delete_irreversible: "⚠️ HÀNH ĐỘNG NÀY CÓ THỂ KHÔNG THỂ HOÀN TÁC!"
+branch_delete_confirm_btn: " [y] ĐỒNG Ý "
+branch_delete_cancel_btn: " [n] HỦY BỎ "
+branch_delete_title: " BRANCH DELETION "
+
+# language_select modal
+lang_select_prompt: "Chọn ngôn ngữ của bạn / Select your language:"
+lang_select_navigate: "Dùng ↑/↓ hoặc j/k để di chuyển, Enter để chọn."
+lang_select_title: " 🌎 THIẾT LẬP NGÔN NGỮ "
+
+# theme_select modal
+
+editor_select_prompt: "Chọn trình biên dịch/ứng dụng mở mặc định:"
+editor_select_default: "Mặc định hệ thống"
+editor_select_navigate: "Dùng ↑/↓ hoặc j/k để di chuyển, Enter để chọn."
+editor_select_title: " ⚙️ CHỌN TRÌNH BIÊN DỊCH MẶC ĐỊNH "
+
+theme_select_prompt: "Chọn giao diện:"
+theme_select_navigate: "Dùng ↑/↓ hoặc j/k để di chuyển, Enter để chọn."
+theme_select_title: " 🎨 THIẾT LẬP GIAO DIỆN "
+
+# revert_confirm modal
+confirm_revert_warning: "⚠️  CẢNH BÁO KHÔI PHỤC HỆ THỐNG  ⚠️"
+confirm_revert_question: "Bạn có chắc chắn muốn khôi phục/xóa các thay đổi trong:"
+confirm_revert_irreversible: "⚠️ HÀNH ĐỘNG NÀY KHÔNG THỂ HOÀN TÁC!"
+confirm_revert_confirm_btn: " [y] ĐỒNG Ý "
+confirm_revert_cancel_btn: " [n] HỦY BỎ "
+
+# messages used by handlers/confirm.rs
+revert_deleted_untracked: "🗑️ Đã xóa file chưa theo dõi: {path}"
+revert_success: "🔄 Đã khôi phục file: {path}"
+revert_failed: "❌ Lỗi khi khôi phục file: {path}"
+revert_cancelled: "ℹ️ Đã hủy khôi phục file."
+
+
+# git_log modal
+git_log_heading: "  🌿 LỊCH SỬ COMMIT WORKSPACE 🌿"
+git_log_empty: "  (Không tìm thấy commit nào trong lịch sử)"
+git_log_col_date: "THỜI GIAN         "
+git_log_col_author: "TÁC GIẢ         "
+git_log_col_subject: "NỘI DUNG COMMIT"
+git_log_footer: "  [Enter] Chi tiết (Diff)  [↑/↓] Di chuyển  [Esc/q] Đóng"
+git_log_title: " 🌿 LỊCH SỬ COMMIT ({count}) "
+
+# branch_select modal
+branch_select_heading: "🌿 DANH SÁCH CHI NHÁNH GIT (BRANCHES) 🌿"
+branch_select_empty: "Không tìm thấy chi nhánh nào."
+branch_select_active_badge: " (Đang hoạt động) "
+branch_select_navigate: "Dùng ↑/↓ hoặc j/k để di chuyển, [Enter] để chuyển nhánh."
+branch_select_merge_hint: "Nhấn [m] để merge chi nhánh được chọn vào chi nhánh hiện tại."
+branch_select_create_hint: "Nhấn [c] để tạo và chuyển sang chi nhánh mới (checkout -b)."
+branch_select_delete_hint: "Nhấn [d/x] để xóa chi nhánh được chọn."
+branch_select_cancel_hint: "Nhấn [Esc] hoặc [q] để HỦY."
+branch_select_title: " 🌿 CHỌN CHI NHÁNH "
+
+# diff_result modal
+diff_result_clipboard_failed_header: "⚠️ LỖI CLIPBOARD - ĐÃ LƯU .git-ai-prompt.txt ⚠️"
+diff_result_clipboard_ok_header: "🤖 SNAPSHOT DIFF ĐÃ COPY VÀO CLIPBOARD 🤖"
+diff_result_unstaged_notice: "  💡 [Chú ý]: Không tìm thấy file staged, đã tự động chụp các thay đổi chưa stage."
+diff_result_long_diff: "  ... (diff dài, xem trong KILO)"
+diff_result_clipboard_fail_status: "Lỗi Clipboard! Hãy dán từ file hoặc chạy 'cat .git-ai-prompt.txt' 💡"
+diff_result_clipboard_ok_status: "Prompt + Diff đã được copy! Dán vào AI ngay. 🚀"
+diff_result_kilo_header: "  🤖 KILO ĐÃ SINH COMMIT MESSAGE:"
+diff_result_kilo_actions: "  [C] Copy  [Enter/G] Dùng message này  [Esc] Đóng"
+diff_result_kilo_asking: "  ⏳ ĐANG HỎI KILO..."
+
+# messages used by handlers/diff_result.rs
+kilo_disabled: "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!"
+kilo_no_staged_diff: "⚠️ Không có diff staged."
+kilo_asking: "⏳ Đang hỏi KILO..."
+kilo_finished: "✅ KILO đã sinh message xong!"
+kilo_cmd_not_found: "Không tìm thấy lệnh 'kilo'. Hãy cài @kilocode/cli (npm i -g @kilocode/cli) hoặc đảm bảo 'kilo' có trong PATH. Lỗi: {err}"
+kilo_run_failed: "kilo run thất bại: {err}"
+kilo_empty_output: "kilo trả về kết quả rỗng."
+diff_kilo_clipboard_copied: "✅ Đã copy commit message từ KILO vào clipboard."
+diff_kilo_using_message: "✅ Sử dụng message từ KILO. Nhấn [G] để commit & push."
+diff_result_kilo_prompt: "  Nhấn [K] để KILO sinh commit message trực tiếp!"
+
+# messages used by handlers/diff_result.rs
+kilo_fetching_models: "⏳ Đang tải danh sách model Kilo..."
+diff_result_scroll_hint: "  Nhấn [↑/↓] để cuộn, [Enter] hoặc [Esc] để đóng."
+diff_result_model_default: "Mặc định (Kilo config)"
+diff_result_preview_label: "  ── PREVIEW (40 dòng đầu) ──"
+
+# go_confirm modal
+go_confirm_heading: "🚀 XÁC NHẬN ĐÓNG GÓI COMMIT & PUSH 🚀"
+go_confirm_files_label: "📂 Các file bạn đã chọn để commit:"
+go_confirm_no_files_warning: "⚠️ CẢNH BÁO: Chưa chọn file nào! Vui lòng thoát ra nhấn phím [Space] để chọn."
+go_confirm_commit_from_clipboard: "📋 Commit message từ Clipboard:"
+
+# messages used by handlers/git_menu.rs
+no_commit_in_clipboard: "(Chưa có commit message trong clipboard)"
+go_confirm_execution: "  ⚡ Tiến trình: git commit -> git push"
+go_confirm_proceed_label: " TIẾN HÀNH          "
+go_confirm_cancel_label: " HỦY "
+go_confirm_back_label: " QUAY LẠI CHỌN FILE "
+go_confirm_processing: "⚡ ĐANG XỬ LÝ... ⚡"
+go_confirm_running: "  🔄 Đang chạy: git commit → git push"
+go_confirm_please_wait: "  Vui lòng chờ..."
+go_confirm_result_label: "📋 KẾT QUẢ"
+go_confirm_close_hint: "  Nhấn [Enter] hoặc [Esc] để đóng và làm mới."
+go_confirm_title: " 🚀 COMMIT & PUSH "
+go_confirm_processing_title: " ⚡ ĐANG TIẾN HÀNH "
+go_confirm_success_title: " ✅ THÀNH CÔNG "
+go_confirm_failed_title: " ❌ THẤT BẠI "
+
+# stash_list modal
+stash_list_heading: "📦 QUẢN LÝ STASH — GIT STASH MANAGER"
+stash_list_empty: "  (Không có stash nào)"
+stash_list_new_stash_hint: "  Nhấn [n] để stash thay đổi hiện tại"
+stash_list_actions_hint: "  [n] Stash mới  [Enter/p] Pop  [a] Apply  [x] Xóa  [Esc] Đóng"
+stash_confirm_pop_action: "POP (apply + xóa)"
+stash_confirm_apply_action: "APPLY (giữ lại stash)"
+stash_confirm_drop_action: "XÓA stash"
+stash_confirm_confirm_btn: " [y] XÁC NHẬN "
+stash_confirm_cancel_btn: " [n/Esc] HỦY "
+
+# remote_info modal
+remote_info_heading: "🌐 THÔNG TIN REMOTE & TRACKING"
+remote_info_remotes_label: "  📋 Danh sách Remotes:"
+remote_info_no_remotes: "    (không có remote nào)"
+remote_info_can_push: "  💡 Bạn có thể push lên remote"
+remote_info_pull_first: "  ⚠️  Hãy git pull trước khi push"
+remote_info_in_sync: "  ✅ Đồng bộ với remote"
+remote_info_close_hint: "  [Esc] hoặc [Enter] để đóng"
+
+# amend_commit modal
+amend_edit_heading: "✏️  SỬA COMMIT CUỐI (AMEND)"
+amend_edit_warning: "  ⚠️  Lưu ý: Nếu đã push, cần force push sau khi amend!"
+amend_edit_msg_label: "  Commit message mới (chỉnh sửa bên dưới):"
+amend_edit_type_hint: "  Nhập để chỉnh sửa, [Enter] để xác nhận, [Esc] để hủy"
+amend_pushing_label: "⚡ ĐANG AMEND..."
+amend_done_close_hint: "  [Enter/Esc] để đóng"
+
+# commit_diff modal
+commit_diff_scroll_hint: "  ↑/↓ j/k cuộn  PgUp/PgDn  [Esc/q] Quay lại lịch sử"
+
+# merge_confirm modal
+merge_confirm_heading: "🔀  XÁC NHẬN MERGE CHI NHÁNH  🔀"
+merge_confirm_merge_verb: "Trộn chi nhánh "
+merge_confirm_into: " vào "
+merge_confirm_conflict_note1: "⚠️ Lưu ý: Nếu xảy ra xung đột (conflict), git-ai sẽ báo lỗi"
+merge_confirm_conflict_note2: "và hiển thị danh sách file xung đột ngoài màn hình Workspace."
+merge_confirm_confirm_btn: " [y] / Enter ĐỒNG Ý "
+merge_confirm_cancel_btn: " [n] / Esc HỦY BỎ "
+merge_confirm_title: " 🔀 XÁC NHẬN MERGE "
+
+# new_branch_input modal
+new_branch_heading: "🌿 TẠO CHI NHÁNH MỚI (CHECKOUT -B)"
+new_branch_enter_label: "  Nhập tên chi nhánh mới bên dưới:"
+new_branch_type_hint: "  Nhập tên, [Enter] để xác nhận, [Esc] để hủy"
+new_branch_title: " 🌿 CHI NHÁNH MỚI "
+
+# workspace_path_input modal
+workspace_path_heading: "📂 NHẬP ĐƯỜNG DẪN THƯ MỤC PROJECT"
+workspace_path_enter_label: "  Nhập đường dẫn tuyệt đối đến thư mục bên dưới:"
+workspace_path_type_hint: "  Nhập đường dẫn, [Enter] để chuyển, [Esc] để hủy"
+workspace_path_title: " 📂 ĐƯỜNG DẪN WORKSPACE "
+
+# workspace_history modal
+workspace_history_heading: "📂 LỊCH SỬ WORKSPACE — CHỌN NHANH PROJECT"
+workspace_history_empty: "  (Chưa có project nào trong lịch sử)"
+workspace_history_active_badge: " (Đang mở) "
+workspace_history_actions_hint: "  [Enter] Mở  [n] Folder mới  [p] Nhập path  [x] Xóa  [Esc] Đóng"
+workspace_history_title: " 📂 LỊCH SỬ WORKSPACE "
+
+# view_prompt modal
+view_prompt_heading: "🤖 PROMPT AI ĐÃ THIẾT LẬP"
+view_prompt_close_hint: "  [Esc] [q] [x] [Enter] để đóng"
+
+# kilo_model_select modal
+kilo_model_heading: "🤖 CHỌN MODEL KILO"
+kilo_model_search_empty_label: "  Tìm: _"
+kilo_model_search_label: "  Tìm: {filter}"
+kilo_model_no_match: "  Không tìm thấy model nào khớp."
+kilo_model_actions_hint: "  [/] Tìm  [↑/↓] Di chuyển  [Enter] Chọn  [Esc] Hủy"
+
+# git_menu modal
+git_menu_heading: "🛠️  MENU GIT OPERATIONS"
+git_menu_group_commit: "Commit"
+git_menu_group_remote: "Remote"
+git_menu_group_other: "Khác"
+git_menu_ai_commit_enabled: "🤖 AI Commit & Push"
+git_menu_ai_commit_disabled: "🤖 AI Commit & Push (TẮT)"
+git_menu_manual_commit: "✍️  Commit thủ công"
+git_menu_amend: "📝 Amend commit cuối"
+git_menu_fetch: "📥 Fetch"
+git_menu_pull: "⬇️  Pull"
+git_menu_push: "⬆️  Push"
+git_menu_remote_info: "🌐 Remote Info"
+git_menu_branch: "🌿 Quản lý Branch"
+git_menu_stash: "📦 Stash"
+git_menu_tree: "🌳 Cấu trúc Commit (graph)"
+git_menu_history: "📜 Lịch sử Commit"
+git_menu_feature: "🧩 Commit theo Feature"
+git_menu_download: "📥 Tải từ GitHub"
+git_menu_settings: "⚙️  Cài đặt hệ thống"
+git_menu_navigate_hint: "  [↑/↓] Di chuyển  [Enter] Chọn  [Esc] Đóng"
+
+# commit_tree modal
+commit_tree_no_commits: "Không có commit."
+commit_tree_diff_heading: "DIFF CỦA COMMIT"
+commit_tree_diff_empty: "(Chọn commit để xem diff)"
+
+# github_download modal
+github_download_url_header: "📥 TẢI TẬP TIN TỪ GITHUB"
+github_download_url_prompt: "  Nhập URL repository (HTTPS hoặc SSH) bên dưới:"
+github_download_url_history: "  📋 LỊCH SỬ REMOTE (Dùng ↑/↓ để chọn, Backspace để xóa):"
+github_download_url_help: "  Nhập URL, [Enter] để tìm nạp repo, [Esc] để hủy"
+github_download_url_title: " 📥 TẢI TỪ GITHUB "
+github_download_tree_counter: "  (Mục {current} / {total})"
+github_download_target_header: "💾 CHỌN NƠI LƯU TẬP TIN"
+github_download_target_label: "  Tập tin/Thư mục tải: "
+github_download_target_prompt: "  Nhập đường dẫn thư mục lưu bên dưới:"
+github_download_target_help: "  [Enter] Đồng ý & Tải về  [Tab] Chọn thư mục (Finder)  [Esc] Quay lại"
+github_download_target_title: " 💾 NƠI LƯU "
+github_quickview_search_prefix: " 🔍 TÌM KIẾM: "
+github_quickview_clear_search: "  [c] Xóa tìm kiếm"
+github_quickview_active_search: "  (Active: {search})"
+github_quickview_title: " 👁 {name} (Lines: {start} - {end} / {total}) "
+github_branch_select_header: "🌿 DANH SÁCH CHI NHÁNH GITHUB (BRANCHES) 🌿"
+github_branch_select_empty: "Không tìm thấy chi nhánh nào."
+github_branch_select_active_badge: " (Đang xem) "
+github_branch_select_navigate: "Dùng ↑/↓ hoặc j/k để di chuyển, [Enter] để chuyển branch."
+github_branch_select_cancel: "Nhấn [Esc] hoặc [q] để HỦY."
+github_branch_select_title: " 🌿 CHỌN CHI NHÁNH GITHUB "
+github_download_error_label: "  ❌ Lỗi: {err}"
+untracked_file_heading: "📄 [Tập tin chưa theo dõi]\n\n"
+cannot_read_file: "[Không thể đọc tập tin]"
+no_changes_compared_to_last_commit: "[Không có thay đổi so với commit cuối cùng]"

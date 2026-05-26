@@ -5,33 +5,29 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Clear, Paragraph},
     Frame,
 };
+use rust_i18n::t;
 
 use crate::app::App;
 
 pub fn render_editor_select(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "Chọn trình biên dịch/ứng dụng mở mặc định:"
-            } else {
-                "Select default open application/editor:"
-            },
+            t!("editor_select_prompt").to_string(),
             Style::default().fg(theme.fg).add_modifier(Modifier::ITALIC),
         )]),
         Line::from(""),
     ];
 
     let items = vec![
-        ("VS Code (code)", 0),
-        ("Cursor (cursor)", 1),
-        ("Zed (zed)", 2),
-        ("Sublime Text (subl)", 3),
-        (if is_vi { "Mặc định hệ thống" } else { "System Default" }, 4),
+        ("VS Code (code)".to_string(), 0),
+        ("Cursor (cursor)".to_string(), 1),
+        ("Zed (zed)".to_string(), 2),
+        ("Sublime Text (subl)".to_string(), 3),
+        (t!("editor_select_default").to_string(), 4),
     ];
 
     let current_selection = match app.editor.as_str() {
@@ -90,17 +86,13 @@ pub fn render_editor_select(f: &mut Frame, app: &App, area: Rect) {
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "Dùng ↑/↓ hoặc j/k để di chuyển, Enter để chọn."
-        } else {
-            "Use ↑/↓ or j/k to navigate, Enter to select."
-        },
+        t!("editor_select_navigate").to_string(),
         Style::default().fg(theme.border),
     )]));
 
     let block = Block::default()
         .title(Span::styled(
-             if is_vi { " ⚙️ CHỌN TRÌNH BIÊN DỊCH MẶC ĐỊNH " } else { " ⚙️ SELECT DEFAULT EDITOR " },
+            t!("editor_select_title").to_string(),
             Style::default()
                 .fg(theme.purple)
                 .add_modifier(Modifier::BOLD),

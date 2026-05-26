@@ -1,4 +1,5 @@
 use std::process::Command;
+use rust_i18n::t;
 
 use super::App;
 
@@ -32,31 +33,19 @@ impl App {
         let output = match cmd.output() {
             Ok(o) => o,
             Err(e) => {
-                return Err(if self.current_lang == "vi" {
-                    format!("Không tìm thấy lệnh 'kilo'. Hãy cài @kilocode/cli (npm i -g @kilocode/cli) hoặc đảm bảo 'kilo' có trong PATH. Lỗi: {}", e)
-                } else {
-                    format!("'kilo' command not found. Please install @kilocode/cli (npm i -g @kilocode/cli) and ensure it is in PATH. Error: {}", e)
-                });
+                return Err(t!("kilo_cmd_not_found", err = e.to_string()).to_string());
             }
         };
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(if self.current_lang == "vi" {
-                format!("kilo run thất bại: {}", stderr)
-            } else {
-                format!("kilo run failed: {}", stderr)
-            });
+            return Err(t!("kilo_run_failed", err = stderr).to_string());
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
         if stdout.is_empty() {
-            return Err(if self.current_lang == "vi" {
-                "kilo trả về kết quả rỗng.".to_string()
-            } else {
-                "kilo returned empty output.".to_string()
-            });
+            return Err(t!("kilo_empty_output").to_string());
         }
 
         Ok(stdout)

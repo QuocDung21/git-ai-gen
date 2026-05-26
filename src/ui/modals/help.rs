@@ -22,100 +22,37 @@ pub fn render_help_modal(f: &mut Frame, app: &App, area: Rect) {
         (
             app.locales.help_group_navigation.as_str(),
             vec![
-                (
-                    "↑/↓ / j/k",
-                    app.locales.help_nav_select.as_str(),
-                ),
-                (
-                    "PgUp/PgDn",
-                    app.locales.help_nav_scroll.as_str(),
-                ),
+                ("↑/↓ / j/k", app.locales.help_nav_select.as_str()),
+                ("PgUp/PgDn", app.locales.help_nav_scroll.as_str()),
             ],
         ),
         (
             app.locales.help_group_git.as_str(),
             vec![
-                (
-                    "Space",
-                    app.locales.help_git_stage.as_str(),
-                ),
-                (
-                    "Backspace",
-                    app.locales.help_git_revert.as_str(),
-                ),
-                (
-                    "a",
-                    app.locales.help_git_stage_all.as_str(),
-                ),
-                (
-                    "u",
-                    app.locales.help_git_unstage_all.as_str(),
-                ),
-                (
-                    "b",
-                    app.locales.help_git_branch.as_str(),
-                ),
-                (
-                    "v",
-                    app.locales.help_git_timeline.as_str(),
-                ),
-                (
-                    "f",
-                    app.locales.help_git_fetch.as_str(),
-                ),
-                (
-                    "p",
-                    app.locales.help_git_pull.as_str(),
-                ),
-                (
-                    "i",
-                    app.locales.help_git_remote.as_str(),
-                ),
-                (
-                    "d",
-                    app.locales.help_git_copy_diff.as_str(),
-                ),
-                (
-                    "x",
-                    app.locales.help_git_ai_prompt.as_str(),
-                ),
-                (
-                    "g",
-                    app.locales.help_git_go.as_str(),
-                ),
+                ("Space", app.locales.help_git_stage.as_str()),
+                ("Backspace", app.locales.help_git_revert.as_str()),
+                ("a", app.locales.help_git_stage_all.as_str()),
+                ("u", app.locales.help_git_unstage_all.as_str()),
+                ("b", app.locales.help_git_branch.as_str()),
+                ("v", app.locales.help_git_timeline.as_str()),
+                ("f", app.locales.help_git_fetch.as_str()),
+                ("p", app.locales.help_git_pull.as_str()),
+                ("i", app.locales.help_git_remote.as_str()),
+                ("d", app.locales.help_git_copy_diff.as_str()),
+                ("x", app.locales.help_git_ai_prompt.as_str()),
+                ("g", app.locales.help_git_go.as_str()),
             ],
         ),
         (
             app.locales.help_group_sys.as_str(),
             vec![
-                (
-                    "o",
-                    app.locales.help_sys_vscode.as_str(),
-                ),
-                (
-                    "w",
-                    app.locales.help_sys_workspace.as_str(),
-                ),
-                (
-                    "e",
-                    app.locales.help_sys_lang_stats.as_str(),
-                ),
-                (
-                    "l",
-                    app.locales.help_sys_lang.as_str(),
-                ),
-                (
-                    "t",
-                    app.locales.help_sys_theme.as_str(),
-                ),
-                (
-                    "r",
-                    app.locales.help_sys_reset.as_str(),
-                ),
-                (
-                    "q / Esc",
-                    app.locales.help_sys_quit.as_str(),
-                ),
+                ("o", app.locales.help_sys_vscode.as_str()),
+                ("w", app.locales.help_sys_workspace.as_str()),
+                ("e", app.locales.help_sys_lang_stats.as_str()),
+                ("l", app.locales.help_sys_lang.as_str()),
+                ("t", app.locales.help_sys_theme.as_str()),
+                ("r", app.locales.help_sys_reset.as_str()),
+                ("q / Esc", app.locales.help_sys_quit.as_str()),
             ],
         ),
     ];

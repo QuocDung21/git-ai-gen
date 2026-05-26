@@ -5,22 +5,18 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Clear, Paragraph},
     Frame,
 };
+use rust_i18n::t;
 
 use crate::app::App;
 
 pub fn render_feature_commit(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let mut content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "🧩 COMMIT THEO FEATURE"
-            } else {
-                "🧩 FEATURE COMMIT"
-            },
+            t!("feature_commit_title").to_string(),
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
@@ -28,11 +24,7 @@ pub fn render_feature_commit(f: &mut Frame, app: &App, area: Rect) {
 
     if app.feature_groups.is_empty() {
         content.push(Line::from(vec![Span::styled(
-            if is_vi {
-                "  Không có thay đổi để nhóm thành feature."
-            } else {
-                "  No changes to group into features."
-            },
+            t!("feature_commit_empty").to_string(),
             Style::default().fg(theme.border),
         )]));
     } else {
@@ -40,7 +32,12 @@ pub fn render_feature_commit(f: &mut Frame, app: &App, area: Rect) {
             let is_selected = i == app.selected_feature_index;
 
             let cursor = if is_selected {
-                Span::styled(" ▶ ", Style::default().fg(theme.green).add_modifier(Modifier::BOLD))
+                Span::styled(
+                    " ▶ ",
+                    Style::default()
+                        .fg(theme.green)
+                        .add_modifier(Modifier::BOLD),
+                )
             } else {
                 Span::styled("   ", Style::default())
             };
@@ -56,20 +53,13 @@ pub fn render_feature_commit(f: &mut Frame, app: &App, area: Rect) {
 
             let line_text = format!("{} ({} files)", group.name, group.file_count);
 
-            content.push(Line::from(vec![
-                cursor,
-                Span::styled(line_text, style),
-            ]));
+            content.push(Line::from(vec![cursor, Span::styled(line_text, style)]));
         }
     }
 
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
-        if is_vi {
-            "  [↑/↓] Chọn  [Enter] Stage feature  [Esc] Đóng"
-        } else {
-            "  [↑/↓] Select  [Enter] Stage feature  [Esc] Close"
-        },
+        t!("feature_commit_actions").to_string(),
         Style::default().fg(theme.border),
     )]));
 

@@ -5,12 +5,12 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Clear, Paragraph},
     Frame,
 };
+use rust_i18n::t;
 
 use crate::app::App;
 
 pub fn render_manual_commit(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
-    let is_vi = app.current_lang == "vi";
     f.render_widget(Clear, area);
 
     let display_msg = if app.manual_commit_message.len() > 70 {
@@ -22,22 +22,14 @@ pub fn render_manual_commit(f: &mut Frame, app: &App, area: Rect) {
     let content = vec![
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "✍️ COMMIT THỦ CÔNG"
-            } else {
-                "✍️ MANUAL COMMIT"
-            },
+            t!("manual_commit_title").to_string(),
             Style::default()
                 .fg(theme.green)
                 .add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  Nhập commit message bên dưới:"
-            } else {
-                "  Enter commit message below:"
-            },
+            t!("manual_commit_prompt").to_string(),
             Style::default().fg(theme.border),
         )]),
         Line::from(vec![
@@ -52,11 +44,7 @@ pub fn render_manual_commit(f: &mut Frame, app: &App, area: Rect) {
         ]),
         Line::from(""),
         Line::from(vec![Span::styled(
-            if is_vi {
-                "  [Enter] Commit  [Esc] Hủy"
-            } else {
-                "  [Enter] Commit  [Esc] Cancel"
-            },
+            t!("manual_commit_actions").to_string(),
             Style::default().fg(theme.border),
         )]),
     ];
