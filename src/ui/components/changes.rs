@@ -22,6 +22,7 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
             ),
         ]));
     } else {
+        let max_path_len = (area.width as usize).saturating_sub(12).max(10);
         for (i, file) in app.files.iter().enumerate() {
             let is_selected = i == app.selected_index;
 
@@ -79,10 +80,18 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
                 Style::default().fg(theme.fg)
             };
 
+            let display_path = if file.path.chars().count() > max_path_len {
+                let count = file.path.chars().count();
+                let skip_count = count - max_path_len;
+                format!("...{}", file.path.chars().skip(skip_count).collect::<String>())
+            } else {
+                file.path.clone()
+            };
+
             change_lines.push(Line::from(vec![
                 cursor_span,
                 Span::styled(badge_text, badge_style),
-                Span::styled(file.path.clone(), file_style),
+                Span::styled(display_path, file_style),
             ]));
         }
     }
@@ -94,17 +103,19 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
         theme.purple
     };
 
-    let changes_widget = Paragraph::new(change_lines).block(
-        Block::default()
-            .title(Span::styled(
-                left_title.as_ref(),
-                Style::default()
-                    .fg(changes_border_color)
-                    .add_modifier(Modifier::BOLD),
-            ))
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(changes_border_color))
-            .border_type(ratatui::widgets::BorderType::Rounded),
-    );
+    let changes_widget = Paragraph::new(change_lines)
+        .style(Style::default().bg(theme.bg).fg(theme.fg))
+        .block(
+            Block::default()
+                .title(Span::styled(
+                    left_title.as_ref(),
+                    Style::default()
+                        .fg(changes_border_color)
+                        .add_modifier(Modifier::BOLD),
+                ))
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(changes_border_color))
+                .border_type(ratatui::widgets::BorderType::Rounded),
+        );
     f.render_widget(changes_widget, area);
 }

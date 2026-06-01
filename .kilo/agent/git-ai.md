@@ -37,7 +37,7 @@ src/
 
 ## Critical Rules (Always Follow)
 
-1. **Bilingual mandatory**: Every user-facing string must exist in both `locales/en.yml` and `locales/vi.yml`. Use the `t!` macro (e.g., `t!("key").to_string()`). Avoid manual `app.current_lang == "vi"` checks.
+1. **Bilingual mandatory**: Every user-facing string must exist in both `locales/en.yml` and `locales/vi.yml`. Always use the `t!` macro from `rust_i18n` (via `use rust_i18n::t;`). Do not use manual `is_vi` or `app.current_lang == "vi"` checks.
 
 2. **TUI is sacred**: All rendering goes through `ratatui`. Never use `println!` inside the dashboard. Only use `logger::*` for CLI commands (outside TUI).
 

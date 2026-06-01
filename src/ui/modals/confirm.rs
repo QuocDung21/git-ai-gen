@@ -661,16 +661,17 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     let scroll = app.diff_snapshot_scroll.min(max_scroll);
 
     for line in app.diff_snapshot.lines().skip(scroll).take(preview_limit) {
-        let (styled_line, color) = if line.starts_with('+') && !line.starts_with("+++") {
-            (line, theme.green)
-        } else if line.starts_with('-') && !line.starts_with("---") {
-            (line, theme.red)
-        } else if line.starts_with("@@") {
-            (line, theme.cyan)
-        } else if line.starts_with("diff ") || line.starts_with("index ") {
-            (line, theme.purple)
+        let expanded = line.replace('\t', "    ");
+        let (styled_line, color) = if expanded.starts_with('+') && !expanded.starts_with("+++") {
+            (expanded, theme.green)
+        } else if expanded.starts_with('-') && !expanded.starts_with("---") {
+            (expanded, theme.red)
+        } else if expanded.starts_with("@@") {
+            (expanded, theme.cyan)
+        } else if expanded.starts_with("diff ") || expanded.starts_with("index ") {
+            (expanded, theme.purple)
         } else {
-            (line, theme.fg)
+            (expanded, theme.fg)
         };
         content.push(Line::from(vec![Span::styled(
             format!("  {}", styled_line),
@@ -728,8 +729,9 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
                 .add_modifier(Modifier::BOLD),
         )]));
         for line in app.diff_kilo_generated.lines().take(11) {
+            let expanded = line.replace('\t', "    ");
             content.push(Line::from(vec![Span::styled(
-                format!("    {}", line),
+                format!("    {}", expanded),
                 Style::default().fg(theme.fg),
             )]));
         }
@@ -1384,28 +1386,29 @@ pub fn render_commit_diff(f: &mut Frame, app: &App, hash: &str, area: Rect) {
     ];
 
     for line in visible_lines {
-        let color = if line.starts_with('+') && !line.starts_with("+++") {
+        let expanded = line.replace('\t', "    ");
+        let color = if expanded.starts_with('+') && !expanded.starts_with("+++") {
             theme.green
-        } else if line.starts_with('-') && !line.starts_with("---") {
+        } else if expanded.starts_with('-') && !expanded.starts_with("---") {
             theme.red
-        } else if line.starts_with("@@") {
+        } else if expanded.starts_with("@@") {
             theme.cyan
-        } else if line.starts_with("commit ")
-            || line.starts_with("Author:")
-            || line.starts_with("Date:")
+        } else if expanded.starts_with("commit ")
+            || expanded.starts_with("Author:")
+            || expanded.starts_with("Date:")
         {
             theme.purple
-        } else if line.starts_with("diff ")
-            || line.starts_with("index ")
-            || line.starts_with("---")
-            || line.starts_with("+++")
+        } else if expanded.starts_with("diff ")
+            || expanded.starts_with("index ")
+            || expanded.starts_with("---")
+            || expanded.starts_with("+++")
         {
             theme.border
         } else {
             theme.fg
         };
         content.push(Line::from(vec![Span::styled(
-            line.to_string(),
+            expanded,
             Style::default().fg(color),
         )]));
     }
@@ -1768,8 +1771,9 @@ pub fn render_view_prompt(f: &mut Frame, app: &App, area: Rect) {
     ];
 
     for line_str in app.prompt_text.lines() {
+        let expanded = line_str.replace('\t', "    ");
         content.push(Line::from(Span::styled(
-            line_str.to_string(),
+            expanded,
             Style::default().fg(theme.fg),
         )));
     }
@@ -2160,17 +2164,18 @@ pub fn render_commit_tree(f: &mut Frame, app: &App, area: Rect) {
     if !app.commit_diff_content.is_empty() {
         let diff_lines: Vec<&str> = app.commit_diff_content.lines().take(22).collect();
         for line in diff_lines {
-            let color = if line.starts_with('+') && !line.starts_with("+++") {
+            let expanded = line.replace('\t', "    ");
+            let color = if expanded.starts_with('+') && !expanded.starts_with("+++") {
                 theme.green
-            } else if line.starts_with('-') && !line.starts_with("---") {
+            } else if expanded.starts_with('-') && !expanded.starts_with("---") {
                 theme.red
-            } else if line.starts_with("@@") {
+            } else if expanded.starts_with("@@") {
                 theme.cyan
             } else {
                 theme.fg
             };
             right_content.push(Line::from(vec![Span::styled(
-                format!(" {}", line),
+                format!(" {}", expanded),
                 Style::default().fg(color),
             )]));
         }

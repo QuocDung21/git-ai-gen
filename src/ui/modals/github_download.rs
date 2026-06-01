@@ -146,7 +146,12 @@ pub fn render_github_download_tree(f: &mut Frame, app: &App, area: Rect) {
                 Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                t!("github_download_tree_counter", current = selected + 1, total = total).to_string(),
+                t!(
+                    "github_download_tree_counter",
+                    current = selected + 1,
+                    total = total
+                )
+                .to_string(),
                 Style::default()
                     .fg(theme.border)
                     .add_modifier(Modifier::ITALIC),
@@ -541,9 +546,8 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
     };
     let file_path = temp_dir.join(path);
     let content_text = if file_path.exists() {
-        std::fs::read_to_string(&file_path).unwrap_or_else(|_| {
-            t!("github_file_read_error").to_string()
-        })
+        std::fs::read_to_string(&file_path)
+            .unwrap_or_else(|_| t!("github_file_read_error").to_string())
     } else {
         t!("github_file_not_found").to_string()
     };
@@ -561,7 +565,8 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
     for (idx, line) in visible_lines.enumerate() {
         let real_line_num = start_idx + idx + 1;
         let line_num_str = format!("{:>4} │ ", real_line_num);
-        let highlighted = highlight_line(line, &theme);
+        let expanded = line.replace('\t', "    ");
+        let highlighted = highlight_line(&expanded, &theme);
         let filtered_spans =
             apply_search_highlight(highlighted.spans, &app.github_quickview_search, &theme);
 
@@ -599,7 +604,11 @@ pub fn render_github_quick_view(f: &mut Frame, app: &App, area: Rect, path: &str
                 Style::default().fg(theme.purple),
             ));
             spans.push(Span::styled(
-                t!("github_quickview_active_search", search = app.github_quickview_search).to_string(),
+                t!(
+                    "github_quickview_active_search",
+                    search = app.github_quickview_search
+                )
+                .to_string(),
                 Style::default()
                     .fg(theme.green)
                     .add_modifier(Modifier::ITALIC),

@@ -23,34 +23,42 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
                 .add_modifier(Modifier::ITALIC),
         )]));
     } else {
+        let max_len = (area.width as usize).saturating_sub(4).max(15);
         for line in app.selected_file_diff.lines() {
-            let styled_line = if line.starts_with('+') && !line.starts_with("+++") {
+            let expanded = line.replace('\t', "    ");
+            let display_line = if expanded.chars().count() > max_len {
+                expanded.chars().take(max_len).collect::<String>()
+            } else {
+                expanded
+            };
+
+            let styled_line = if display_line.starts_with('+') && !display_line.starts_with("+++") {
                 Line::from(vec![Span::styled(
-                    line.to_string(),
+                    display_line,
                     Style::default().fg(theme.green),
                 )])
-            } else if line.starts_with('-') && !line.starts_with("---") {
+            } else if display_line.starts_with('-') && !display_line.starts_with("---") {
                 Line::from(vec![Span::styled(
-                    line.to_string(),
+                    display_line,
                     Style::default().fg(theme.red),
                 )])
-            } else if line.starts_with("@@") {
+            } else if display_line.starts_with("@@") {
                 Line::from(vec![Span::styled(
-                    line.to_string(),
+                    display_line,
                     Style::default()
                         .fg(theme.purple)
                         .add_modifier(Modifier::BOLD),
                 )])
-            } else if line.starts_with("diff --git") || line.starts_with("index") {
+            } else if display_line.starts_with("diff --git") || display_line.starts_with("index") {
                 Line::from(vec![Span::styled(
-                    line.to_string(),
+                    display_line,
                     Style::default()
                         .fg(theme.border)
                         .add_modifier(Modifier::BOLD),
                 )])
             } else {
                 Line::from(vec![Span::styled(
-                    line.to_string(),
+                    display_line,
                     Style::default().fg(theme.fg),
                 )])
             };
@@ -90,6 +98,7 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
 
     let diff_widget = Paragraph::new(diff_lines)
         .scroll((scroll_offset as u16, 0))
+        .style(Style::default().bg(theme.bg).fg(theme.fg))
         .block(
             Block::default()
                 .title(Span::styled(

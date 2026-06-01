@@ -92,6 +92,9 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
                 Event::Paste(text) => {
                     handlers::paste::handle_paste(app, &text);
                 }
+                Event::Resize(_, _) => {
+                    let _ = terminal.clear();
+                }
                 _ => {}
             }
         }
