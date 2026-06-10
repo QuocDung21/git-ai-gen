@@ -15,7 +15,7 @@ pub fn stash_push() -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 
@@ -27,7 +27,7 @@ pub fn stash_pop(stash_ref: &str) -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 
@@ -39,7 +39,7 @@ pub fn stash_apply(stash_ref: &str) -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 
@@ -51,6 +51,6 @@ pub fn stash_drop(stash_ref: &str) -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }

@@ -17,12 +17,12 @@ impl App {
 
         let output = std::process::Command::new("git")
             .args(["ls-tree", "-r", "-t", "HEAD"])
-            .current_dir(&temp_dir)
+            .current_dir(temp_dir)
             .output()?;
 
         if !output.status.success() {
             let err_msg = String::from_utf8_lossy(&output.stderr).to_string();
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, err_msg));
+            return Err(std::io::Error::other(err_msg));
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -110,11 +110,11 @@ impl App {
                     return true;
                 }
                 let mut current = String::new();
-                for i in 0..(parts.len() - 1) {
+                for (i, part) in parts.iter().enumerate().take(parts.len() - 1) {
                     if i > 0 {
                         current.push('/');
                     }
-                    current.push_str(parts[i]);
+                    current.push_str(part);
                     if !self.github_expanded_dirs.contains(&current) {
                         return false;
                     }
@@ -165,11 +165,11 @@ impl App {
                     let mut has_selected_ancestor = false;
                     let parts: Vec<&str> = entry.path.split('/').collect();
                     let mut current = String::new();
-                    for i in 0..(parts.len().saturating_sub(1)) {
+                    for (i, part) in parts.iter().enumerate().take(parts.len().saturating_sub(1)) {
                         if i > 0 {
                             current.push('/');
                         }
-                        current.push_str(parts[i]);
+                        current.push_str(part);
                         if self.github_selected_paths.contains(&current) {
                             has_selected_ancestor = true;
                             break;
@@ -200,12 +200,12 @@ impl App {
         for entry in items_to_download {
             let output = std::process::Command::new("git")
                 .args(["checkout", "HEAD", &entry.path])
-                .current_dir(&temp_dir)
+                .current_dir(temp_dir)
                 .output()?;
 
             if !output.status.success() {
                 let err_msg = String::from_utf8_lossy(&output.stderr).to_string();
-                return Err(std::io::Error::new(std::io::ErrorKind::Other, err_msg));
+                return Err(std::io::Error::other(err_msg));
             }
 
             let src_path = temp_dir.join(&entry.path);
@@ -255,7 +255,7 @@ impl App {
 
         if !output.status.success() {
             let err_msg = String::from_utf8_lossy(&output.stderr).to_string();
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, err_msg));
+            return Err(std::io::Error::other(err_msg));
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);

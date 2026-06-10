@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_match)]
+
 use std::process::Command;
 
 use crossterm::event::{KeyCode, KeyEvent};

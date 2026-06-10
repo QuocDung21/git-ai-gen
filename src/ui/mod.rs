@@ -66,7 +66,6 @@ pub fn ui(f: &mut Frame, app: &App) {
     let is_error = app.status_message.starts_with("❌")
         || app.status_message.contains("Error")
         || app.status_message.contains("Lỗi");
-    let is_loading = app.status_message.starts_with("⏳");
     let is_success = app.status_message.starts_with("✅")
         || app.status_message.starts_with("🚀")
         || app.status_message.starts_with("⚡")
@@ -78,8 +77,6 @@ pub fn ui(f: &mut Frame, app: &App) {
         theme.red
     } else if is_success {
         theme.green
-    } else if is_loading {
-        theme.cyan
     } else {
         theme.cyan
     };
@@ -204,7 +201,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubDownloadTargetInput => modals::render_github_download_target_input(f, app, area),
             ActiveModal::GithubQuickView { path, name } => modals::render_github_quick_view(f, app, area, path, name),
             ActiveModal::GithubBranchSelect => modals::render_github_branch_select(f, app, area),
-            ActiveModal::BranchDeleteConfirm(branch_name) => modals::render_branch_delete_confirm(f, app, &branch_name, area),
+            ActiveModal::BranchDeleteConfirm(branch_name) => modals::render_branch_delete_confirm(f, app, branch_name, area),
             ActiveModal::Settings => modals::render_settings(f, app, area),
             ActiveModal::EditorSelect => modals::render_editor_select(f, app, area),
             ActiveModal::None => {}

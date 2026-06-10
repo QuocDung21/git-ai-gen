@@ -18,10 +18,8 @@ impl App {
 
         let model_to_use = if !self.current_kilo_model.is_empty() {
             self.current_kilo_model.clone()
-        } else if let Ok(env_model) = std::env::var("KILO_MODEL") {
-            env_model
         } else {
-            String::new()
+            std::env::var("KILO_MODEL").unwrap_or_default()
         };
 
         if !model_to_use.trim().is_empty() {

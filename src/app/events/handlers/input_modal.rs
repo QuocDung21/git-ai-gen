@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_match)]
+
 use crossterm::event::{KeyCode, KeyEvent};
 use rust_i18n::t;
 
@@ -174,14 +176,13 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                     let target_canon = target
                         .canonicalize()
                         .unwrap_or_else(|_| target.to_path_buf());
-                    if target_canon.starts_with(&current_canon) || target.starts_with(&current) {
+                    if target_canon.starts_with(&current_canon) || target.starts_with(current) {
                         app.status_message = t!("input_download_conflict").to_string();
                         return;
                     }
-                    match {
-                        app.status_message = t!("input_download_copying").to_string();
-                        app.copy_github_download_item()
-                    } {
+                    app.status_message = t!("input_download_copying").to_string();
+                    let copy_result = app.copy_github_download_item();
+                    match copy_result {
                         Ok(_) => {
                             let visible = app.get_visible_github_tree_entries();
                             let selected_name = visible

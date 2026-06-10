@@ -62,16 +62,16 @@ pub fn detect_project_languages<P: AsRef<Path>>(dir: P) -> Vec<LanguageStat> {
 
                 if let Some(ext) = entry.path().extension() {
                     let ext_str = ext.to_string_lossy().to_lowercase();
-                    let is_binary_or_asset = match ext_str.as_str() {
+                    let is_binary_or_asset = matches!(
+                        ext_str.as_str(),
                         "a" | "lib" | "so" | "dylib" | "dll" | "exe" | "bin" | "o" | "obj" | "out" |
                         "png" | "jpg" | "jpeg" | "gif" | "ico" | "svg" | "webp" | "bmp" | "tiff" |
                         "zip" | "tar" | "gz" | "rar" | "7z" | "bz2" | "xz" |
                         "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" |
                         "ttf" | "otf" | "woff" | "woff2" | "eot" |
                         "mp3" | "mp4" | "wav" | "avi" | "mov" | "mkv" | "flac" |
-                        "db" | "sqlite" | "sqlite3" => true,
-                        _ => false,
-                    };
+                        "db" | "sqlite" | "sqlite3"
+                    );
                     if !is_binary_or_asset {
                         *ext_map.entry(ext_str).or_insert(0) += size;
                         *total_bytes += size;
@@ -179,7 +179,7 @@ mod tests {
         std::fs::write(&a_file, "binary data here which is huge").unwrap();
         std::fs::write(&js_file, "console.log()").unwrap();
 
-        let stats = detect_project_languages(&project_path);
+        let stats = detect_project_languages(project_path);
 
         assert_eq!(stats.len(), 2);
 

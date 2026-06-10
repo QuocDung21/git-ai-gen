@@ -1,5 +1,4 @@
-use super::AppTheme;
-use ratatui::style::Color;
+use super::{AppTheme, Color};
 
 pub fn palette() -> AppTheme {
     AppTheme {

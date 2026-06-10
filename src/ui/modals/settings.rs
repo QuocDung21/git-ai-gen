@@ -23,7 +23,7 @@ pub fn render_settings(f: &mut Frame, app: &App, area: Rect) {
         Line::from(""),
     ];
 
-    let options = vec![
+    let options = [
         (app.auto_push, rust_i18n::t!("settings_auto_push")),
         (app.auto_stage_all, rust_i18n::t!("settings_auto_stage")),
         (app.kilo_ai_enabled, rust_i18n::t!("settings_kilo_ai")),

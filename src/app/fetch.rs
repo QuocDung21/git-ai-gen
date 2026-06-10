@@ -209,6 +209,6 @@ impl App {
         }
 
         self.feature_groups
-            .sort_by(|a, b| b.file_count.cmp(&a.file_count));
+            .sort_by_key(|group| std::cmp::Reverse(group.file_count));
     }
 }

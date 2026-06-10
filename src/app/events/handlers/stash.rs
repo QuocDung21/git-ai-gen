@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_match)]
+
 use crossterm::event::{KeyCode, KeyEvent};
 use rust_i18n::t;
 

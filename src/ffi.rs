@@ -69,12 +69,8 @@ pub extern "C" fn git_ai_get_diff(path: *const c_char) -> *mut c_char {
         .map(|m| m.is_file())
         .unwrap_or(false);
 
-    let diff_output = if is_untracked && !crate::git::status::get_diff_head(file_path).is_some() {
-        if let Ok(content) = std::fs::read_to_string(file_path) {
-            content
-        } else {
-            String::new()
-        }
+    let diff_output = if is_untracked && crate::git::status::get_diff_head(file_path).is_none() {
+        std::fs::read_to_string(file_path).unwrap_or_default()
     } else {
         let mut out = crate::git::status::get_diff_head(file_path);
         if out.is_none() {

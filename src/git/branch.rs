@@ -40,7 +40,7 @@ pub fn checkout_branch(branch: &str) -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 
@@ -65,7 +65,7 @@ pub fn git_merge(branch: &str) -> Result<String, std::io::Error> {
                 format!("{}\n{}", stderr, stdout)
             }
         };
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 
@@ -77,7 +77,7 @@ pub fn create_and_checkout_branch(branch: &str) -> Result<String, std::io::Error
 
     if !output.status.success() {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        return Err(std::io::Error::new(std::io::ErrorKind::Other, err));
+        return Err(std::io::Error::other(err));
     }
 
     let mut msg = String::from_utf8_lossy(&output.stdout).trim().to_string();
@@ -89,10 +89,10 @@ pub fn create_and_checkout_branch(branch: &str) -> Result<String, std::io::Error
             "{}\nSuccessfully pushed branch '{}' to origin.",
             msg, branch
         )),
-        Err(e) => Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Branch created, but failed to push:\n{}", e),
-        )),
+        Err(e) => Err(std::io::Error::other(format!(
+            "Branch created, but failed to push:\n{}",
+            e
+        ))),
     }
 }
 
@@ -110,7 +110,7 @@ fn push_branch(branch: &str) -> Result<String, std::io::Error> {
         Ok(msg)
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 
@@ -174,13 +174,10 @@ pub fn delete_branch(
     if options.local {
         if let Some(current) = get_current_branch() {
             if current == branch {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!(
-                        "WARNING: Cannot delete local branch '{}' while currently on it.",
-                        branch
-                    ),
-                ));
+                return Err(std::io::Error::other(format!(
+                    "WARNING: Cannot delete local branch '{}' while currently on it.",
+                    branch
+                )));
             }
         }
     }

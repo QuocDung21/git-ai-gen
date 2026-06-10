@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_match)]
+
 use crate::app::App;
 use crate::models::GoStep;
 use crossterm::event::{KeyCode, KeyEvent};

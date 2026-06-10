@@ -8,7 +8,7 @@ pub fn commit(message: &str) -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 
@@ -31,7 +31,7 @@ pub fn amend_commit(message: &str) -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 

@@ -33,7 +33,7 @@ pub fn get_ahead_behind(branch: &str, remote_tracking: &str) -> (i32, i32) {
         .output()
     {
         let text = String::from_utf8_lossy(&out.stdout);
-        let nums: Vec<&str> = text.trim().split_whitespace().collect();
+        let nums: Vec<&str> = text.split_whitespace().collect();
         if nums.len() == 2 {
             let ahead = nums[0].parse().unwrap_or(0);
             let behind = nums[1].parse().unwrap_or(0);
@@ -49,7 +49,7 @@ pub fn git_push() -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 
@@ -59,7 +59,7 @@ pub fn git_fetch() -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 
@@ -69,7 +69,7 @@ pub fn git_pull() -> Result<String, std::io::Error> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         let err = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        Err(std::io::Error::other(err))
     }
 }
 

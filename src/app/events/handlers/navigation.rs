@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_match)]
+
 use std::process::Command;
 
 use crossterm::event::KeyCode;
@@ -138,11 +140,11 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
         KeyCode::Char('o') => {
             let cmd = &app.editor;
             let friendly_name = match cmd.as_str() {
-                "code" => "VS Code",
-                "cursor" => "Cursor",
-                "zed" => "Zed",
-                "subl" => "Sublime Text",
-                _ => &t!("nav_system_default").to_string(),
+                "code" => "VS Code".to_string(),
+                "cursor" => "Cursor".to_string(),
+                "zed" => "Zed".to_string(),
+                "subl" => "Sublime Text".to_string(),
+                _ => t!("nav_system_default").to_string(),
             };
             match Command::new(cmd).arg(".").spawn() {
                 Ok(_) => {

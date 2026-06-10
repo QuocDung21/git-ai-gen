@@ -1,4 +1,11 @@
-use ratatui::style::Color;
+#[cfg(feature = "tui")]
+pub type Color = ratatui::style::Color;
+
+#[cfg(not(feature = "tui"))]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Color {
+    Rgb(u8, u8, u8),
+}
 
 mod catppuccin_latte;
 mod dark;

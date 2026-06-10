@@ -15,6 +15,7 @@ use crate::cli::logger;
 use crate::helper::Helper;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 // =========================================================================
 // CLAP CLI CONFIGURATION
@@ -27,6 +28,9 @@ use clap::{Parser, Subcommand};
     about = "🤖 ULTIMATE GIT-AI CLI\nA tool to help you write Git Commits using AI rapidly."
 )]
 struct Cli {
+    #[arg(value_name = "PATH")]
+    path: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Option<Commands>,
 }
@@ -87,6 +91,9 @@ fn run(cli: &Cli, locales: &crate::cli::Locales) -> Result<()> {
         Some(Commands::Reset) => crate::cli::system::handle_restore(locales)?,
         Some(Commands::Test) => crate::cli::system::handle_test()?,
         None => {
+            if let Some(path) = &cli.path {
+                std::env::set_current_dir(path)?;
+            }
             crate::app::events::run_dashboard()?;
         }
     }
