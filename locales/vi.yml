@@ -334,29 +334,16 @@ branch_select_title: " 🌿 CHỌN CHI NHÁNH "
 diff_result_clipboard_failed_header: "⚠️ LỖI CLIPBOARD - ĐÃ LƯU .git-ai-prompt.txt ⚠️"
 diff_result_clipboard_ok_header: "🤖 SNAPSHOT DIFF ĐÃ COPY VÀO CLIPBOARD 🤖"
 diff_result_unstaged_notice: "  💡 [Chú ý]: Không tìm thấy file staged, đã tự động chụp các thay đổi chưa stage."
-diff_result_long_diff: "  ... (diff dài, xem trong KILO)"
+diff_result_long_diff: "  ... (diff dài, cuộn để xem thêm)"
 diff_result_clipboard_fail_status: "Lỗi Clipboard! Hãy dán từ file hoặc chạy 'cat .git-ai-prompt.txt' 💡"
 diff_result_clipboard_ok_status: "Prompt + Diff đã được copy! Dán vào AI ngay. 🚀"
-diff_result_kilo_header: "  🤖 KILO ĐÃ SINH COMMIT MESSAGE:"
-diff_result_kilo_actions: "  [C] Copy  [Enter/G] Dùng message này  [Esc] Đóng"
-diff_result_kilo_asking: "  ⏳ ĐANG HỎI KILO..."
 
 # messages used by handlers/diff_result.rs
 kilo_disabled: "⚠️ Tính năng Kilo AI đã bị tắt trong Cài đặt!"
 kilo_no_staged_diff: "⚠️ Không có diff staged."
-kilo_asking: "⏳ Đang hỏi KILO..."
-kilo_finished: "✅ KILO đã sinh message xong!"
-kilo_cmd_not_found: "Không tìm thấy lệnh 'kilo'. Hãy cài @kilocode/cli (npm i -g @kilocode/cli) hoặc đảm bảo 'kilo' có trong PATH. Lỗi: {err}"
-kilo_run_failed: "kilo run thất bại: {err}"
-kilo_empty_output: "kilo trả về kết quả rỗng."
-diff_kilo_clipboard_copied: "✅ Đã copy commit message từ KILO vào clipboard."
-diff_kilo_using_message: "✅ Sử dụng message từ KILO. Nhấn [G] để commit & push."
-diff_result_kilo_prompt: "  Nhấn [K] để KILO sinh commit message trực tiếp!"
 
 # messages used by handlers/diff_result.rs
-kilo_fetching_models: "⏳ Đang tải danh sách model Kilo..."
 diff_result_scroll_hint: "  Nhấn [↑/↓] để cuộn, [Enter] hoặc [Esc] để đóng."
-diff_result_model_default: "Mặc định (Kilo config)"
 diff_result_preview_label: "  ── PREVIEW (40 dòng đầu) ──"
 
 # go_confirm modal
@@ -444,13 +431,6 @@ workspace_history_title: " 📂 LỊCH SỬ WORKSPACE "
 # view_prompt modal
 view_prompt_heading: "🤖 PROMPT AI ĐÃ THIẾT LẬP"
 view_prompt_close_hint: "  [Esc] [q] [x] [Enter] để đóng"
-
-# kilo_model_select modal
-kilo_model_heading: "🤖 CHỌN MODEL KILO"
-kilo_model_search_empty_label: "  Tìm: _"
-kilo_model_search_label: "  Tìm: {filter}"
-kilo_model_no_match: "  Không tìm thấy model nào khớp."
-kilo_model_actions_hint: "  [/] Tìm  [↑/↓] Di chuyển  [Enter] Chọn  [Esc] Hủy"
 
 # git_menu modal
 git_menu_heading: "🛠️  MENU GIT OPERATIONS"
