@@ -19,6 +19,7 @@ pub struct App {
     pub files: Vec<ChangedFile>,
     pub selected_index: usize,
     pub selected_file_diff: String,
+    pub selected_file_diff_lines: Vec<DiffViewLine>,
     pub diff_scroll_offset: usize,
     pub active_modal: ActiveModal,
     pub selected_lang_index: usize,
@@ -251,6 +252,7 @@ impl App {
             files: Vec::new(),
             selected_index: 0,
             selected_file_diff: String::new(),
+            selected_file_diff_lines: Vec::new(),
             diff_scroll_offset: 0,
             active_modal: ActiveModal::None,
             selected_lang_index: 0,
@@ -407,6 +409,7 @@ impl App {
         if self.files.is_empty() {
             self.selected_index = 0;
             self.selected_file_diff = String::new();
+            self.selected_file_diff_lines.clear();
             self.diff_scroll_offset = 0;
         } else {
             if let Some(path) = prev_selected_path {
@@ -425,6 +428,7 @@ impl App {
     pub fn update_selected_diff(&mut self) {
         if self.files.is_empty() || self.selected_index >= self.files.len() {
             self.selected_file_diff = String::new();
+            self.selected_file_diff_lines.clear();
             return;
         }
 
@@ -453,6 +457,29 @@ impl App {
             diff_output.unwrap_or_else(|| t!("no_changes_compared_to_last_commit").to_string())
         };
         self.selected_file_diff = output;
+        self.rebuild_selected_diff_lines();
+    }
+
+    fn rebuild_selected_diff_lines(&mut self) {
+        self.selected_file_diff_lines = self
+            .selected_file_diff
+            .lines()
+            .map(|line| {
+                let text = line.replace('\t', "    ");
+                let kind = if text.starts_with('+') && !text.starts_with("+++") {
+                    DiffLineKind::Added
+                } else if text.starts_with('-') && !text.starts_with("---") {
+                    DiffLineKind::Removed
+                } else if text.starts_with("@@") {
+                    DiffLineKind::Hunk
+                } else if text.starts_with("diff --git") || text.starts_with("index") {
+                    DiffLineKind::Header
+                } else {
+                    DiffLineKind::Normal
+                };
+                DiffViewLine { text, kind }
+            })
+            .collect();
     }
 
     pub fn theme(&self) -> AppTheme {

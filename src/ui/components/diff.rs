@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::models::DiffLineKind;
 use ratatui::{
     layout::Rect,
     style::{Modifier, Style},
@@ -12,9 +13,19 @@ use rust_i18n::t;
 
 pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
     let theme = app.theme();
+    let diff_box_height = if area.height > 2 {
+        (area.height - 2) as usize
+    } else {
+        0
+    };
+    let max_scroll = app
+        .selected_file_diff_lines
+        .len()
+        .saturating_sub(diff_box_height);
+    let scroll_offset = app.diff_scroll_offset.min(max_scroll);
     let mut diff_lines = Vec::new();
 
-    if app.selected_file_diff.is_empty() {
+    if app.selected_file_diff_lines.is_empty() {
         diff_lines.push(Line::from(""));
         diff_lines.push(Line::from(vec![Span::styled(
             t!("diff_empty").to_string(),
@@ -24,62 +35,39 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
         )]));
     } else {
         let max_len = (area.width as usize).saturating_sub(4).max(15);
-        for line in app.selected_file_diff.lines() {
-            let expanded = line.replace('\t', "    ");
-            let display_line = if expanded.chars().count() > max_len {
-                expanded.chars().take(max_len).collect::<String>()
+        for line in app
+            .selected_file_diff_lines
+            .iter()
+            .skip(scroll_offset)
+            .take(diff_box_height)
+        {
+            let display_line = if line.text.chars().count() > max_len {
+                line.text.chars().take(max_len).collect::<String>()
             } else {
-                expanded
+                line.text.clone()
             };
 
-            let styled_line = if display_line.starts_with('+') && !display_line.starts_with("+++") {
-                Line::from(vec![Span::styled(
-                    display_line,
-                    Style::default().fg(theme.green),
-                )])
-            } else if display_line.starts_with('-') && !display_line.starts_with("---") {
-                Line::from(vec![Span::styled(
-                    display_line,
-                    Style::default().fg(theme.red),
-                )])
-            } else if display_line.starts_with("@@") {
-                Line::from(vec![Span::styled(
-                    display_line,
-                    Style::default()
-                        .fg(theme.purple)
-                        .add_modifier(Modifier::BOLD),
-                )])
-            } else if display_line.starts_with("diff --git") || display_line.starts_with("index") {
-                Line::from(vec![Span::styled(
-                    display_line,
-                    Style::default()
-                        .fg(theme.border)
-                        .add_modifier(Modifier::BOLD),
-                )])
-            } else {
-                Line::from(vec![Span::styled(
-                    display_line,
-                    Style::default().fg(theme.fg),
-                )])
+            let style = match line.kind {
+                DiffLineKind::Added => Style::default().fg(theme.green),
+                DiffLineKind::Removed => Style::default().fg(theme.red),
+                DiffLineKind::Hunk => Style::default()
+                    .fg(theme.purple)
+                    .add_modifier(Modifier::BOLD),
+                DiffLineKind::Header => Style::default()
+                    .fg(theme.border)
+                    .add_modifier(Modifier::BOLD),
+                DiffLineKind::Normal => Style::default().fg(theme.fg),
             };
-            diff_lines.push(styled_line);
+            diff_lines.push(Line::from(vec![Span::styled(display_line, style)]));
         }
     }
 
-    let diff_box_height = if area.height > 2 {
-        (area.height - 2) as usize
-    } else {
-        0
-    };
-    let max_scroll = if diff_lines.len() > diff_box_height {
-        diff_lines.len() - diff_box_height
-    } else {
-        0
-    };
-    let scroll_offset = app.diff_scroll_offset.min(max_scroll);
-
     let scroll_info = if max_scroll > 0 {
-        format!(" [{}/{}]", scroll_offset + 1, diff_lines.len())
+        format!(
+            " [{}/{}]",
+            scroll_offset + 1,
+            app.selected_file_diff_lines.len()
+        )
     } else {
         "".to_string()
     };
@@ -97,7 +85,6 @@ pub fn render_diff(f: &mut Frame, app: &App, area: Rect) {
     let diff_title = format!("{}{} ", diff_base_title, scroll_info);
 
     let diff_widget = Paragraph::new(diff_lines)
-        .scroll((scroll_offset as u16, 0))
         .style(Style::default().bg(theme.bg).fg(theme.fg))
         .block(
             Block::default()

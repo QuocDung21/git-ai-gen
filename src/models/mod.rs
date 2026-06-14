@@ -11,6 +11,21 @@ pub struct ChangedFile {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum DiffLineKind {
+    Added,
+    Removed,
+    Hunk,
+    Header,
+    Normal,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DiffViewLine {
+    pub text: String,
+    pub kind: DiffLineKind,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct CommitLogEntry {
     pub hash: String,
     pub short_hash: String,
