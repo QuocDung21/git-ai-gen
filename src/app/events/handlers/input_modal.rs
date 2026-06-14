@@ -20,13 +20,15 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                 } else {
                     match crate::git::commit::commit(&msg) {
                         Ok(_) => {
-                            app.status_message = t!("input_commit_ok", msg = msg.clone()).to_string();
+                            app.status_message =
+                                t!("input_commit_ok", msg = msg.clone()).to_string();
                             app.active_modal = crate::models::ActiveModal::None;
                             app.manual_commit_message.clear();
                             app.refresh_git_status();
                         }
                         Err(e) => {
-                            app.status_message = t!("input_commit_err", err = e.to_string()).to_string();
+                            app.status_message =
+                                t!("input_commit_err", err = e.to_string()).to_string();
                         }
                     }
                 }
@@ -57,14 +59,17 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
             KeyCode::Enter => {
                 let branch_name = app.new_branch_name.trim().to_string();
                 if !branch_name.is_empty() {
-                    app.status_message = t!("input_branch_creating", name = branch_name.clone()).to_string();
+                    app.status_message =
+                        t!("input_branch_creating", name = branch_name.clone()).to_string();
                     match crate::git::branch::create_and_checkout_branch(&branch_name) {
                         Ok(_) => {
-                            app.status_message = t!("input_branch_ok", name = branch_name.clone()).to_string();
+                            app.status_message =
+                                t!("input_branch_ok", name = branch_name.clone()).to_string();
                             app.active_modal = crate::models::ActiveModal::None;
                         }
                         Err(err) => {
-                            app.status_message = t!("input_branch_err", err = err.to_string()).to_string();
+                            app.status_message =
+                                t!("input_branch_err", err = err.to_string()).to_string();
                             app.active_modal = crate::models::ActiveModal::BranchSelect;
                         }
                     }
@@ -189,13 +194,15 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                                 .get(app.selected_github_tree_index)
                                 .map(|e| e.name.clone())
                                 .unwrap_or_default();
-                            app.status_message = t!("input_download_ok", name = selected_name).to_string();
+                            app.status_message =
+                                t!("input_download_ok", name = selected_name).to_string();
                             app.github_temp_dir = None;
                             app.active_modal = crate::models::ActiveModal::None;
                             app.refresh_git_status();
                         }
                         Err(err) => {
-                            app.status_message = t!("input_download_err", err = err.to_string()).to_string();
+                            app.status_message =
+                                t!("input_download_err", err = err.to_string()).to_string();
                             app.github_temp_dir = None;
                         }
                     }
@@ -220,7 +227,8 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                         app.current_dir = selected_path.clone();
                         app.add_to_workspace_history(&selected_path);
                         app.refresh_git_status();
-                        app.status_message = t!("input_workspace_ok", path = selected_path.clone()).to_string();
+                        app.status_message =
+                            t!("input_workspace_ok", path = selected_path.clone()).to_string();
                         app.active_modal = crate::models::ActiveModal::None;
                         app.workspace_path_input.clear();
                     } else {
@@ -248,7 +256,7 @@ pub fn handle_input_modal_keys(app: &mut App, key: &KeyEvent) {
                 app.workspace_path_input.push(c);
             }
             _ => {}
-        }
+        },
         _ => {}
     }
 }

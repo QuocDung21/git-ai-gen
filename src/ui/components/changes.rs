@@ -83,7 +83,10 @@ pub fn render_changes(f: &mut Frame, app: &App, area: Rect) {
             let display_path = if file.path.chars().count() > max_path_len {
                 let count = file.path.chars().count();
                 let skip_count = count - max_path_len;
-                format!("...{}", file.path.chars().skip(skip_count).collect::<String>())
+                format!(
+                    "...{}",
+                    file.path.chars().skip(skip_count).collect::<String>()
+                )
             } else {
                 file.path.clone()
             };

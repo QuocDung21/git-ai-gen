@@ -13,39 +13,15 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
     let mut legend_lines = vec![Line::from("")];
     let nav_items = if app.focus_diff {
         vec![
-            (
-                "↑/↓ / j/k",
-                t!("legend_nav_line_scroll"),
-                theme.yellow,
-            ),
-            (
-                "d / u",
-                t!("legend_nav_page_scroll"),
-                theme.yellow,
-            ),
-            (
-                "Tab / Esc",
-                t!("legend_nav_return"),
-                theme.purple,
-            ),
+            ("↑/↓ / j/k", t!("legend_nav_line_scroll"), theme.yellow),
+            ("d / u", t!("legend_nav_page_scroll"), theme.yellow),
+            ("Tab / Esc", t!("legend_nav_return"), theme.purple),
         ]
     } else {
         vec![
-            (
-                "↑/↓ / j/k",
-                t!("legend_nav_select"),
-                theme.purple,
-            ),
-            (
-                "Tab / l / →",
-                t!("legend_nav_focus_diff"),
-                theme.yellow,
-            ),
-            (
-                "[ / ]",
-                t!("legend_nav_quick_scroll"),
-                theme.cyan,
-            ),
+            ("↑/↓ / j/k", t!("legend_nav_select"), theme.purple),
+            ("Tab / l / →", t!("legend_nav_focus_diff"), theme.yellow),
+            ("[ / ]", t!("legend_nav_quick_scroll"), theme.cyan),
         ]
     };
 
@@ -54,121 +30,33 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
         (
             "Git Operations",
             vec![
-                (
-                    "Space",
-                    t!("legend_git_stage_all"),
-                    theme.green,
-                ),
-                (
-                    "Backspace",
-                    t!("legend_git_revert"),
-                    theme.red,
-                ),
-                (
-                    "A",
-                    t!("legend_git_stage_all"),
-                    theme.green,
-                ),
-                (
-                    "U",
-                    t!("legend_git_unstage_all"),
-                    theme.red,
-                ),
-                (
-                    "B",
-                    t!("legend_git_branch"),
-                    theme.cyan,
-                ),
-                (
-                    "V",
-                    t!("legend_git_history"),
-                    theme.yellow,
-                ),
-                (
-                    "F",
-                    t!("legend_git_fetch"),
-                    theme.cyan,
-                ),
-                (
-                    "P",
-                    t!("legend_git_pull"),
-                    theme.cyan,
-                ),
-                (
-                    "I",
-                    t!("legend_git_remote"),
-                    theme.cyan,
-                ),
-                (
-                    "D",
-                    t!("legend_git_view_prompt"),
-                    theme.yellow,
-                ),
-                (
-                    "X",
-                    t!("legend_git_view_prompt"),
-                    theme.yellow,
-                ),
-                (
-                    "G",
-                    t!("legend_git_stage_all"),
-                    theme.green,
-                ),
-                (
-                    "N",
-                    t!("legend_git_download"),
-                    theme.cyan,
-                ),
+                ("Space", t!("legend_git_stage_all"), theme.green),
+                ("Backspace", t!("legend_git_revert"), theme.red),
+                ("A", t!("legend_git_stage_all"), theme.green),
+                ("U", t!("legend_git_unstage_all"), theme.red),
+                ("B", t!("legend_git_branch"), theme.cyan),
+                ("V", t!("legend_git_history"), theme.yellow),
+                ("F", t!("legend_git_fetch"), theme.cyan),
+                ("P", t!("legend_git_pull"), theme.cyan),
+                ("I", t!("legend_git_remote"), theme.cyan),
+                ("D", t!("legend_git_view_prompt"), theme.yellow),
+                ("X", t!("legend_git_view_prompt"), theme.yellow),
+                ("G", t!("legend_git_stage_all"), theme.green),
+                ("N", t!("legend_git_download"), theme.cyan),
             ],
         ),
         (
             "System",
             vec![
-                (
-                    "O",
-                    t!("legend_sys_vscode"),
-                    theme.purple,
-                ),
-                (
-                    "W",
-                    t!("legend_sys_workspace"),
-                    theme.cyan,
-                ),
-                (
-                    "E",
-                    t!("legend_sys_lang_stats"),
-                    theme.purple,
-                ),
-                (
-                    "L",
-                    t!("legend_sys_lang"),
-                    theme.purple,
-                ),
-                (
-                    "T",
-                    t!("legend_sys_theme"),
-                    theme.purple,
-                ),
-                (
-                    ",",
-                    t!("legend_sys_settings"),
-                    theme.purple,
-                ),
-                (
-                    "R",
-                    t!("legend_sys_reset"),
-                    theme.red,
-                ),
-                (
-                    "? / H",
-                    t!("legend_sys_manual"),
-                    theme.cyan,
-                ),
-                (
-                    "Q",
-                    t!("legend_sys_quit"),
-                    theme.border,
-                ),
+                ("O", t!("legend_sys_vscode"), theme.purple),
+                ("W", t!("legend_sys_workspace"), theme.cyan),
+                ("E", t!("legend_sys_lang_stats"), theme.purple),
+                ("L", t!("legend_sys_lang"), theme.purple),
+                ("T", t!("legend_sys_theme"), theme.purple),
+                (",", t!("legend_sys_settings"), theme.purple),
+                ("R", t!("legend_sys_reset"), theme.red),
+                ("? / H", t!("legend_sys_manual"), theme.cyan),
+                ("Q", t!("legend_sys_quit"), theme.border),
             ],
         ),
     ];

@@ -75,10 +75,7 @@ pub fn git_pull() -> Result<String, std::io::Error> {
 
 pub fn get_remotes() -> Vec<RemoteEntry> {
     let mut remotes = Vec::new();
-    if let Ok(output) = Command::new("git")
-        .args(["remote", "-v"])
-        .output()
-    {
+    if let Ok(output) = Command::new("git").args(["remote", "-v"]).output() {
         let text = String::from_utf8_lossy(&output.stdout);
         let mut seen = HashSet::new();
         for line in text.lines() {

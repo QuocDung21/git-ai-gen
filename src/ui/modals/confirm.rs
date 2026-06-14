@@ -627,21 +627,6 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         ),
     ]));
     content.push(Line::from(""));
-    content.push(Line::from(vec![
-        Span::styled("  🤖 Model: ", Style::default().fg(theme.border)),
-        Span::styled(
-            if app.current_kilo_model.is_empty() {
-                t!("diff_result_model_default").to_string()
-            } else {
-                app.current_kilo_model.clone()
-            },
-            Style::default()
-                .fg(theme.green)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::styled("   [M] Đổi", Style::default().fg(theme.cyan)),
-    ]));
-    content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
         t!("diff_result_preview_label").to_string(),
         Style::default()
@@ -650,11 +635,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
     )]));
     content.push(Line::from(""));
 
-    let preview_limit = if !app.diff_kilo_generated.is_empty() {
-        6
-    } else {
-        22
-    };
+    let preview_limit = 22;
 
     let total_lines = app.diff_snapshot.lines().count();
     let max_scroll = total_lines.saturating_sub(preview_limit);
@@ -720,60 +701,6 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
         ),
     ]));
 
-    if !app.diff_kilo_generated.is_empty() {
-        content.push(Line::from(""));
-        content.push(Line::from(vec![Span::styled(
-            t!("diff_result_kilo_header").to_string(),
-            Style::default()
-                .fg(theme.green)
-                .add_modifier(Modifier::BOLD),
-        )]));
-        for line in app.diff_kilo_generated.lines().take(11) {
-            let expanded = line.replace('\t', "    ");
-            content.push(Line::from(vec![Span::styled(
-                format!("    {}", expanded),
-                Style::default().fg(theme.fg),
-            )]));
-        }
-        if app.diff_kilo_generated.lines().count() > 11 {
-            content.push(Line::from(vec![Span::styled(
-                "    ...",
-                Style::default()
-                    .fg(theme.border)
-                    .add_modifier(Modifier::ITALIC),
-            )]));
-        }
-        content.push(Line::from(""));
-        content.push(Line::from(vec![Span::styled(
-            t!("diff_result_kilo_actions").to_string(),
-            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
-        )]));
-    } else {
-        content.push(Line::from(""));
-        if app.kilo_generating {
-            content.push(Line::from(vec![Span::styled(
-                t!("diff_result_kilo_asking").to_string(),
-                Style::default()
-                    .fg(theme.yellow)
-                    .add_modifier(Modifier::BOLD),
-            )]));
-            if !app.kilo_generation_status.is_empty() {
-                content.push(Line::from(vec![Span::styled(
-                    format!("  {}", app.kilo_generation_status),
-                    Style::default().fg(theme.fg),
-                )]));
-            }
-        } else if !app.diff_kilo_generated.is_empty() {
-        } else {
-            content.push(Line::from(vec![Span::styled(
-                t!("diff_result_kilo_prompt").to_string(),
-                Style::default()
-                    .fg(theme.purple)
-                    .add_modifier(Modifier::BOLD),
-            )]));
-        }
-    }
-
     content.push(Line::from(""));
     content.push(Line::from(vec![Span::styled(
         t!("diff_result_scroll_hint").to_string(),
@@ -782,11 +709,7 @@ pub fn render_diff_result(f: &mut Frame, app: &App, area: Rect) {
 
     let block = Block::default()
         .title(Span::styled(
-            if !app.diff_kilo_generated.is_empty() {
-                " 🤖 KILO AI COMMIT "
-            } else {
-                " 🤖 AI DIFF SNAPSHOT "
-            },
+            " 🤖 AI DIFF SNAPSHOT ",
             Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
@@ -1797,117 +1720,6 @@ pub fn render_view_prompt(f: &mut Frame, app: &App, area: Rect) {
     let paragraph = Paragraph::new(content)
         .alignment(ratatui::layout::Alignment::Left)
         .wrap(Wrap { trim: true })
-        .block(block);
-    f.render_widget(paragraph, area);
-}
-
-pub fn render_kilo_model_select(f: &mut Frame, app: &App, area: Rect) {
-    let theme = app.theme();
-    f.render_widget(Clear, area);
-
-    let filtered: Vec<&String> = if app.kilo_model_filter.is_empty() {
-        app.kilo_models.iter().collect()
-    } else {
-        let f = app.kilo_model_filter.to_lowercase();
-        app.kilo_models
-            .iter()
-            .filter(|m| m.to_lowercase().contains(&f))
-            .collect()
-    };
-
-    let mut content = vec![
-        Line::from(""),
-        Line::from(vec![Span::styled(
-            t!("kilo_model_heading").to_string(),
-            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
-        )]),
-        Line::from(""),
-    ];
-
-    if app.kilo_model_search_mode || !app.kilo_model_filter.is_empty() {
-        let search_display = if app.kilo_model_filter.is_empty() {
-            t!("kilo_model_search_empty_label").to_string()
-        } else {
-            t!(
-                "kilo_model_search_label",
-                filter = app.kilo_model_filter.clone()
-            )
-            .to_string()
-        };
-        content.push(Line::from(vec![Span::styled(
-            search_display,
-            Style::default()
-                .fg(theme.yellow)
-                .add_modifier(Modifier::BOLD),
-        )]));
-        content.push(Line::from(""));
-    }
-
-    if filtered.is_empty() {
-        content.push(Line::from(vec![Span::styled(
-            t!("kilo_model_no_match").to_string(),
-            Style::default().fg(theme.red),
-        )]));
-    } else {
-        let start = app.selected_kilo_model_index.saturating_sub(10);
-        let visible: Vec<_> = filtered.iter().skip(start).take(16).collect();
-
-        for (i, model) in visible.iter().enumerate() {
-            let real_idx = start + i;
-            let is_selected = real_idx == app.selected_kilo_model_index;
-
-            let prefix = if is_selected {
-                Span::styled(
-                    " ▶ ",
-                    Style::default()
-                        .fg(theme.green)
-                        .add_modifier(Modifier::BOLD),
-                )
-            } else {
-                Span::styled("   ", Style::default())
-            };
-
-            let style = if is_selected {
-                Style::default()
-                    .fg(theme.fg)
-                    .bg(theme.select_bg)
-                    .add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(theme.fg)
-            };
-
-            content.push(Line::from(vec![
-                prefix,
-                Span::styled((*model).to_string(), style),
-            ]));
-        }
-
-        if filtered.len() > 16 {
-            content.push(Line::from(vec![Span::styled(
-                "  ...",
-                Style::default().fg(theme.border),
-            )]));
-        }
-    }
-
-    content.push(Line::from(""));
-    content.push(Line::from(vec![Span::styled(
-        t!("kilo_model_actions_hint").to_string(),
-        Style::default().fg(theme.border),
-    )]));
-
-    let block = Block::default()
-        .title(Span::styled(
-            " KILO MODEL ",
-            Style::default().fg(theme.cyan).add_modifier(Modifier::BOLD),
-        ))
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(theme.cyan))
-        .border_type(BorderType::Double)
-        .style(Style::default().bg(theme.bg));
-
-    let paragraph = Paragraph::new(content)
-        .alignment(ratatui::layout::Alignment::Left)
         .block(block);
     f.render_widget(paragraph, area);
 }

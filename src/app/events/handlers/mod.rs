@@ -19,7 +19,7 @@ pub(crate) mod stash;
 #[allow(unused_imports)]
 pub use confirm::handle_revert_confirm;
 #[allow(unused_imports)]
-pub use diff_result::{handle_diff_result, handle_kilo_generation};
+pub use diff_result::handle_diff_result;
 #[allow(unused_imports)]
 pub use git_menu::handle_git_menu;
 #[allow(unused_imports)]
@@ -53,7 +53,6 @@ pub fn dispatch_modal_key(app: &mut App, key: &KeyEvent) -> bool {
         | ActiveModal::CommitTree
         | ActiveModal::FeatureCommit
         | ActiveModal::WorkspaceHistory
-        | ActiveModal::KiloModelSelect
         | ActiveModal::RemoteInfo
         | ActiveModal::ViewPrompt
         | ActiveModal::CommitDiff(_)

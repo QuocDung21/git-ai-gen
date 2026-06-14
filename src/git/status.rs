@@ -45,10 +45,7 @@ pub fn get_diff_head(path: &str) -> Option<String> {
 }
 
 pub fn get_diff_unstaged(path: &str) -> Option<String> {
-    if let Ok(out) = Command::new("git")
-        .args(["diff", "--", path])
-        .output()
-    {
+    if let Ok(out) = Command::new("git").args(["diff", "--", path]).output() {
         let diff = String::from_utf8_lossy(&out.stdout).to_string();
         if !diff.trim().is_empty() {
             return Some(diff);

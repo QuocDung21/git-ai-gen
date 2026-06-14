@@ -307,20 +307,20 @@ fn filter_diff(diff: &str) -> String {
         }
         let full_section = format!("diff --git {}", section);
         let first_line = full_section.lines().next().unwrap_or("");
-        
+
         let is_lockfile = first_line.contains("Cargo.lock")
             || first_line.contains("package-lock.json")
             || first_line.contains("yarn.lock")
             || first_line.contains("pnpm-lock.yaml")
             || first_line.contains("composer.lock");
-            
+
         if is_lockfile {
             let mut headers = Vec::new();
             for line in full_section.lines() {
-                if line.starts_with("diff --git") 
-                    || line.starts_with("index") 
-                    || line.starts_with("---") 
-                    || line.starts_with("+++") 
+                if line.starts_with("diff --git")
+                    || line.starts_with("index")
+                    || line.starts_with("---")
+                    || line.starts_with("+++")
                 {
                     headers.push(line);
                 } else if line.starts_with("@@") {
@@ -328,13 +328,14 @@ fn filter_diff(diff: &str) -> String {
                     break;
                 }
             }
-            headers.push(" [Modified lockfile diff content omitted for brevity to save AI tokens] ");
+            headers
+                .push(" [Modified lockfile diff content omitted for brevity to save AI tokens] ");
             filtered_diffs.push(headers.join("\n"));
         } else {
             filtered_diffs.push(full_section);
         }
     }
-    
+
     if filtered_diffs.is_empty() {
         diff.to_string()
     } else {
@@ -345,7 +346,7 @@ fn filter_diff(diff: &str) -> String {
 fn handle_diff_capture(app: &mut App) {
     let mut is_unstaged = false;
     let mut diff_output = Command::new("git").args(["diff", "--cached"]).output();
-    
+
     if let Ok(ref out) = diff_output {
         let staged_diff = String::from_utf8_lossy(&out.stdout).to_string();
         if staged_diff.trim().is_empty() {
@@ -361,7 +362,7 @@ fn handle_diff_capture(app: &mut App) {
                 app.status_message = t!("diff_no_changes").to_string();
             } else {
                 app.diff_captured_unstaged = is_unstaged;
-                
+
                 let clean_diff = filter_diff(&diff_str);
 
                 app.diff_added_lines = clean_diff
@@ -376,7 +377,6 @@ fn handle_diff_capture(app: &mut App) {
                 app.diff_snapshot = clean_diff.clone();
                 app.diff_snapshot_scroll = 0;
                 app.last_staged_diff = clean_diff.clone();
-                app.diff_kilo_generated.clear();
 
                 let ai_lang = crate::helper::Helper::get_ai_language_name();
                 let prompt = format!(
@@ -385,7 +385,7 @@ fn handle_diff_capture(app: &mut App) {
                     ai_lang,
                     clean_diff
                 );
-                
+
                 let mut copy_failed = false;
                 if let Ok(mut cb) = arboard::Clipboard::new() {
                     if cb.set_text(prompt.clone()).is_err() {
@@ -394,7 +394,7 @@ fn handle_diff_capture(app: &mut App) {
                 } else {
                     copy_failed = true;
                 }
-                
+
                 app.diff_copy_failed = copy_failed;
                 if copy_failed {
                     let _ = std::fs::write(".git-ai-prompt.txt", &prompt);
@@ -406,7 +406,7 @@ fn handle_diff_capture(app: &mut App) {
                         t!("diff_captured_staged").to_string()
                     };
                 }
-                
+
                 app.active_modal = crate::models::ActiveModal::DiffResult;
             }
         }
@@ -455,12 +455,13 @@ index abcdef..fedcba 100644
 +version = "3.0.1""#;
 
         let filtered = filter_diff(diff);
-        
+
         assert!(filtered.contains("pub struct App {"));
         assert!(filtered.contains("+    pub foo: bool,"));
-        
+
         assert!(filtered.contains("diff --git a/Cargo.lock b/Cargo.lock"));
-        assert!(filtered.contains(" [Modified lockfile diff content omitted for brevity to save AI tokens] "));
+        assert!(filtered
+            .contains(" [Modified lockfile diff content omitted for brevity to save AI tokens] "));
         assert!(!filtered.contains("name = \"anyhow\""));
         assert!(!filtered.contains("version = \"3.0.1\""));
     }

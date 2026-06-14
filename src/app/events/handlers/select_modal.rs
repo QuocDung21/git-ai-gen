@@ -616,72 +616,6 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 _ => {}
             }
         }
-        crate::models::ActiveModal::KiloModelSelect => {
-            let filtered: Vec<String> = if app.kilo_model_filter.is_empty() {
-                app.kilo_models.clone()
-            } else {
-                let f = app.kilo_model_filter.to_lowercase();
-                app.kilo_models
-                    .iter()
-                    .filter(|m| m.to_lowercase().contains(&f))
-                    .cloned()
-                    .collect()
-            };
-
-            if !filtered.is_empty() && app.selected_kilo_model_index >= filtered.len() {
-                app.selected_kilo_model_index = filtered.len() - 1;
-            }
-
-            match key.code {
-                KeyCode::Esc | KeyCode::Char('q') => {
-                    if app.kilo_model_search_mode || !app.kilo_model_filter.is_empty() {
-                        app.kilo_model_filter.clear();
-                        app.kilo_model_search_mode = false;
-                        app.selected_kilo_model_index = 0;
-                    } else {
-                        app.active_modal = crate::models::ActiveModal::DiffResult;
-                    }
-                }
-                KeyCode::Enter => {
-                    if !filtered.is_empty() {
-                        let idx = app.selected_kilo_model_index.min(filtered.len() - 1);
-                        app.current_kilo_model = filtered[idx].clone();
-                    }
-                    app.kilo_model_filter.clear();
-                    app.kilo_model_search_mode = false;
-                    app.active_modal = crate::models::ActiveModal::DiffResult;
-                }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    if app.selected_kilo_model_index > 0 {
-                        app.selected_kilo_model_index -= 1;
-                    }
-                }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    if !filtered.is_empty() && app.selected_kilo_model_index + 1 < filtered.len() {
-                        app.selected_kilo_model_index += 1;
-                    }
-                }
-                KeyCode::Char('/') => {
-                    app.kilo_model_search_mode = true;
-                }
-                KeyCode::Backspace => {
-                    if app.kilo_model_search_mode && !app.kilo_model_filter.is_empty() {
-                        app.kilo_model_filter.pop();
-                        app.selected_kilo_model_index = 0;
-                    }
-                }
-                KeyCode::Char(c) => {
-                    if c.is_ascii_alphanumeric() || c == '-' || c == '.' {
-                        if !app.kilo_model_search_mode {
-                            app.kilo_model_search_mode = true;
-                        }
-                        app.kilo_model_filter.push(c);
-                        app.selected_kilo_model_index = 0;
-                    }
-                }
-                _ => {}
-            }
-        }
         crate::models::ActiveModal::RemoteInfo => match key.code {
             KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('i') | KeyCode::Enter => {
                 app.active_modal = crate::models::ActiveModal::None;
@@ -903,7 +837,11 @@ fn apply_theme(app: &mut App, index: usize, t_info: &crate::theme::ThemeInfo) {
     let _ = Command::new("git")
         .args(["config", "--global", "git-ai.theme", t_info.id])
         .output();
-    let label = if app.current_lang == "vi" { t_info.name_vi } else { t_info.name_en };
+    let label = if app.current_lang == "vi" {
+        t_info.name_vi
+    } else {
+        t_info.name_en
+    };
     app.status_message = t!("theme_switched", name = label).to_string();
     app.active_modal = crate::models::ActiveModal::None;
 }

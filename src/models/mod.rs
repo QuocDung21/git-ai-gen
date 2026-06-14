@@ -103,7 +103,6 @@ pub enum ActiveModal {
     ThemeSelect,          // Interactive theme selection modal
     WorkspaceHistory,     // Workspace history selector modal
     ViewPrompt,
-    KiloModelSelect,
     ManualCommit,
     GitMenu,
     CommitTree,

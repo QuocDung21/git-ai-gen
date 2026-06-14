@@ -1,16 +1,14 @@
 pub mod components;
 pub mod modals;
 
-use crate::models::ActiveModal;
 use crate::app::App;
+use crate::models::ActiveModal;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, Borders, Clear, Paragraph},
+    style::{Color, Style},
+    widgets::{Block, Clear},
     Frame,
 };
-use rust_i18n::t;
 
 pub fn ui(f: &mut Frame, app: &App) {
     let theme = app.theme();
@@ -58,53 +56,7 @@ pub fn ui(f: &mut Frame, app: &App) {
     // 5. RENDER CONTROL LEGEND
     components::render_legend(f, app, main_chunks[2]);
 
-    // 6. STATUS MESSAGE BAR
-    let theme = app.theme();
-    let is_warning = app.status_message.starts_with("⚠️")
-        || app.status_message.contains("CONFIRM")
-        || app.status_message.contains("XÁC NHẬN");
-    let is_error = app.status_message.starts_with("❌")
-        || app.status_message.contains("Error")
-        || app.status_message.contains("Lỗi");
-    let is_success = app.status_message.starts_with("✅")
-        || app.status_message.starts_with("🚀")
-        || app.status_message.starts_with("⚡")
-        || app.status_message.starts_with("✨");
-
-    let status_color = if is_warning {
-        theme.yellow
-    } else if is_error {
-        theme.red
-    } else if is_success {
-        theme.green
-    } else {
-        theme.cyan
-    };
-
-    let status_text = Line::from(vec![
-        Span::styled(
-            t!("ui_notification_label").to_string(),
-            Style::default()
-                .fg(theme.bg)
-                .bg(status_color)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::styled("  ", Style::default()),
-        Span::styled(
-            &app.status_message,
-            Style::default()
-                .fg(status_color)
-                .add_modifier(Modifier::BOLD),
-        ),
-    ]);
-
-    let status_widget = Paragraph::new(status_text).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(status_color))
-            .border_type(ratatui::widgets::BorderType::Rounded),
-    );
-    f.render_widget(status_widget, chunks[2]);
+    components::render_toast(f, app, chunks[2]);
 
     // 7. RENDER FLOATING MODAL OVERLAYS (LAST IN CANVAS LAYERS)
     if app.active_modal != ActiveModal::None {
@@ -128,7 +80,6 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::ProjectLanguages => modals::centered_rect(55, 48, f.size()),
             ActiveModal::HandleTest => modals::centered_rect(75, 60, f.size()),
             ActiveModal::ViewPrompt => modals::centered_rect(80, 80, f.size()),
-            ActiveModal::KiloModelSelect => modals::centered_rect(70, 70, f.size()),
             ActiveModal::ManualCommit => modals::centered_rect(65, 38, f.size()),
             ActiveModal::GitMenu => modals::centered_rect(60, 70, f.size()),
             ActiveModal::CommitTree => modals::centered_rect(85, 80, f.size()),
@@ -191,17 +142,24 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::ProjectLanguages => modals::render_project_languages(f, app, area),
             ActiveModal::HandleTest => modals::render_handle_test(f, app, area),
             ActiveModal::ViewPrompt => modals::render_view_prompt(f, app, area),
-            ActiveModal::KiloModelSelect => modals::render_kilo_model_select(f, app, area),
             ActiveModal::ManualCommit => modals::render_manual_commit(f, app, area),
             ActiveModal::GitMenu => modals::render_git_menu(f, app, area),
             ActiveModal::CommitTree => modals::render_commit_tree(f, app, area),
             ActiveModal::FeatureCommit => modals::render_feature_commit(f, app, area),
-            ActiveModal::GithubDownloadUrlInput => modals::render_github_download_url_input(f, app, area),
+            ActiveModal::GithubDownloadUrlInput => {
+                modals::render_github_download_url_input(f, app, area)
+            }
             ActiveModal::GithubDownloadTree => modals::render_github_download_tree(f, app, area),
-            ActiveModal::GithubDownloadTargetInput => modals::render_github_download_target_input(f, app, area),
-            ActiveModal::GithubQuickView { path, name } => modals::render_github_quick_view(f, app, area, path, name),
+            ActiveModal::GithubDownloadTargetInput => {
+                modals::render_github_download_target_input(f, app, area)
+            }
+            ActiveModal::GithubQuickView { path, name } => {
+                modals::render_github_quick_view(f, app, area, path, name)
+            }
             ActiveModal::GithubBranchSelect => modals::render_github_branch_select(f, app, area),
-            ActiveModal::BranchDeleteConfirm(branch_name) => modals::render_branch_delete_confirm(f, app, branch_name, area),
+            ActiveModal::BranchDeleteConfirm(branch_name) => {
+                modals::render_branch_delete_confirm(f, app, branch_name, area)
+            }
             ActiveModal::Settings => modals::render_settings(f, app, area),
             ActiveModal::EditorSelect => modals::render_editor_select(f, app, area),
             ActiveModal::None => {}

@@ -1,6 +1,6 @@
+use crate::models::LanguageStat;
 use std::collections::HashMap;
 use std::path::Path;
-use crate::models::LanguageStat;
 
 pub fn detect_project_languages<P: AsRef<Path>>(dir: P) -> Vec<LanguageStat> {
     let mut ext_map = HashMap::new();
@@ -64,13 +64,53 @@ pub fn detect_project_languages<P: AsRef<Path>>(dir: P) -> Vec<LanguageStat> {
                     let ext_str = ext.to_string_lossy().to_lowercase();
                     let is_binary_or_asset = matches!(
                         ext_str.as_str(),
-                        "a" | "lib" | "so" | "dylib" | "dll" | "exe" | "bin" | "o" | "obj" | "out" |
-                        "png" | "jpg" | "jpeg" | "gif" | "ico" | "svg" | "webp" | "bmp" | "tiff" |
-                        "zip" | "tar" | "gz" | "rar" | "7z" | "bz2" | "xz" |
-                        "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" |
-                        "ttf" | "otf" | "woff" | "woff2" | "eot" |
-                        "mp3" | "mp4" | "wav" | "avi" | "mov" | "mkv" | "flac" |
-                        "db" | "sqlite" | "sqlite3"
+                        "a" | "lib"
+                            | "so"
+                            | "dylib"
+                            | "dll"
+                            | "exe"
+                            | "bin"
+                            | "o"
+                            | "obj"
+                            | "out"
+                            | "png"
+                            | "jpg"
+                            | "jpeg"
+                            | "gif"
+                            | "ico"
+                            | "svg"
+                            | "webp"
+                            | "bmp"
+                            | "tiff"
+                            | "zip"
+                            | "tar"
+                            | "gz"
+                            | "rar"
+                            | "7z"
+                            | "bz2"
+                            | "xz"
+                            | "pdf"
+                            | "doc"
+                            | "docx"
+                            | "xls"
+                            | "xlsx"
+                            | "ppt"
+                            | "pptx"
+                            | "ttf"
+                            | "otf"
+                            | "woff"
+                            | "woff2"
+                            | "eot"
+                            | "mp3"
+                            | "mp4"
+                            | "wav"
+                            | "avi"
+                            | "mov"
+                            | "mkv"
+                            | "flac"
+                            | "db"
+                            | "sqlite"
+                            | "sqlite3"
                     );
                     if !is_binary_or_asset {
                         *ext_map.entry(ext_str).or_insert(0) += size;
@@ -136,7 +176,9 @@ pub fn detect_project_languages<P: AsRef<Path>>(dir: P) -> Vec<LanguageStat> {
             }
         }
         if !matched {
-            let entry = grouped_stats.entry("Other".to_string()).or_insert((0, (140, 140, 140)));
+            let entry = grouped_stats
+                .entry("Other".to_string())
+                .or_insert((0, (140, 140, 140)));
             entry.0 += bytes;
         }
     }

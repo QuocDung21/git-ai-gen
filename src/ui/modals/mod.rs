@@ -17,10 +17,10 @@ pub use settings::render_settings;
 
 pub use confirm::{
     render_amend_commit, render_branch_select, render_commit_diff, render_commit_tree,
-    render_diff_result, render_git_log, render_git_menu, render_go_confirm,
-    render_kilo_model_select, render_language_select, render_merge_confirm,
-    render_new_branch_input, render_remote_info, render_revert_confirm, render_stash_list,
-    render_theme_select, render_view_prompt, render_workspace_history, render_workspace_path_input,
+    render_diff_result, render_git_log, render_git_menu, render_go_confirm, render_language_select,
+    render_merge_confirm, render_new_branch_input, render_remote_info, render_revert_confirm,
+    render_stash_list, render_theme_select, render_view_prompt, render_workspace_history,
+    render_workspace_path_input,
 };
 pub use feature_commit::render_feature_commit;
 pub use github_download::{

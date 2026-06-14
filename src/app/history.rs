@@ -6,7 +6,10 @@ impl App {
     }
 
     pub fn save_workspace_history(&self) {
-        let _ = crate::helper::Helper::save_history_file("workspace_history.txt", &self.workspace_history);
+        let _ = crate::helper::Helper::save_history_file(
+            "workspace_history.txt",
+            &self.workspace_history,
+        );
     }
 
     pub fn add_to_workspace_history(&mut self, path: &str) {
@@ -33,9 +36,9 @@ impl App {
     }
 
     pub fn save_github_history(&self) {
-        let _ = crate::helper::Helper::save_history_file("github_history.txt", &self.github_history);
+        let _ =
+            crate::helper::Helper::save_history_file("github_history.txt", &self.github_history);
     }
-
 
     pub fn add_to_github_history(&mut self, url: &str) {
         self.github_history.retain(|u| u != url);

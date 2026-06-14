@@ -1,12 +1,11 @@
+use rust_i18n::t;
 use std::env;
 use std::process::Command;
-use rust_i18n::t;
 
 pub mod events;
 pub mod fetch;
 pub mod github;
 pub mod history;
-pub mod kilo;
 
 pub use crate::models::*;
 
@@ -34,15 +33,7 @@ pub struct App {
     pub diff_snapshot: String,
     pub diff_added_lines: usize,
     pub diff_removed_lines: usize,
-    pub diff_kilo_generated: String,
     pub last_staged_diff: String,
-    pub current_kilo_model: String,
-    pub kilo_models: Vec<String>,
-    pub selected_kilo_model_index: usize,
-    pub kilo_generating: bool,
-    pub kilo_generation_status: String,
-    pub kilo_model_filter: String,
-    pub kilo_model_search_mode: bool,
     pub manual_commit_message: String,
     pub selected_git_action: usize,
     pub feature_groups: Vec<FeatureGroup>,
@@ -107,7 +98,6 @@ pub struct App {
     pub diff_copy_failed: bool,
     pub diff_snapshot_scroll: usize,
 }
-
 
 #[cfg(target_os = "windows")]
 pub const DEFAULT_OPEN_CMD: &str = "explorer";
@@ -234,9 +224,7 @@ impl App {
                 .args(["config", "--global", "--get", "git-ai.editor"])
                 .output()
             {
-                let text = String::from_utf8_lossy(&output.stdout)
-                    .trim()
-                    .to_string();
+                let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
                 if text.is_empty() {
                     "code".to_string()
                 } else {
@@ -277,15 +265,7 @@ impl App {
             diff_snapshot: String::new(),
             diff_added_lines: 0,
             diff_removed_lines: 0,
-            diff_kilo_generated: String::new(),
             last_staged_diff: String::new(),
-            current_kilo_model: String::new(),
-            kilo_models: Vec::new(),
-            selected_kilo_model_index: 0,
-            kilo_generating: false,
-            kilo_generation_status: String::new(),
-            kilo_model_filter: String::new(),
-            kilo_model_search_mode: false,
             manual_commit_message: String::new(),
             selected_git_action: 0,
             feature_groups: Vec::new(),
@@ -388,10 +368,9 @@ impl App {
                     }
                 }
             }
-            } else {
-                self.git_status_lines.push(t!("status_fail").to_string());
-            }
-
+        } else {
+            self.git_status_lines.push(t!("status_fail").to_string());
+        }
 
         self.current_branch = crate::git::status::get_current_branch();
 
@@ -471,9 +450,7 @@ impl App {
                 diff_output = crate::git::status::get_diff_staged(&file.path);
             }
 
-            diff_output.unwrap_or_else(|| {
-                t!("no_changes_compared_to_last_commit").to_string()
-            })
+            diff_output.unwrap_or_else(|| t!("no_changes_compared_to_last_commit").to_string())
         };
         self.selected_file_diff = output;
     }

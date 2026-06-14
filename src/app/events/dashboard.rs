@@ -58,10 +58,6 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
             continue;
         }
 
-        if handlers::diff_result::handle_kilo_generation(app) {
-            continue;
-        }
-
         if handlers::github::handle_github_cloning(app) {
             continue;
         }
@@ -74,7 +70,9 @@ fn run_app<B: Backend + std::io::Write>(terminal: &mut Terminal<B>, app: &mut Ap
             match event::read()? {
                 Event::Key(key) => {
                     if app.show_splash {
-                        if key.code == event::KeyCode::Char('q') || key.code == event::KeyCode::Char('Q') {
+                        if key.code == event::KeyCode::Char('q')
+                            || key.code == event::KeyCode::Char('Q')
+                        {
                             return Ok(());
                         }
                         app.show_splash = false;
