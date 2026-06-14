@@ -334,29 +334,16 @@ branch_select_title: " 🌿 SELECT BRANCH "
 diff_result_clipboard_failed_header: "⚠️ CLIPBOARD FAILED - SAVED TO .git-ai-prompt.txt ⚠️"
 diff_result_clipboard_ok_header: "🤖 DIFF SNAPSHOT COPIED TO CLIPBOARD 🤖"
 diff_result_unstaged_notice: "  💡 [Notice]: No staged files found, automatically captured unstaged changes."
-diff_result_long_diff: "  ... (long diff, see in KILO)"
+diff_result_long_diff: "  ... (long diff, scroll to see more)"
 diff_result_clipboard_fail_status: "Clipboard failed! Paste from file or run 'cat .git-ai-prompt.txt' 💡"
 diff_result_clipboard_ok_status: "Prompt + Diff copied! Paste into your AI now. 🚀"
-diff_result_kilo_header: "  🤖 KILO GENERATED COMMIT MESSAGE:"
-diff_result_kilo_actions: "  [C] Copy  [Enter/G] Use this message  [Esc] Close"
-diff_result_kilo_asking: "  ⏳ ASKING KILO..."
-diff_result_kilo_prompt: "  Press [K] to let KILO generate the commit message!"
 
 # messages used by handlers/diff_result.rs
-kilo_fetching_models: "⏳ Fetching Kilo model list..."
 diff_result_scroll_hint: "  Press [↑/↓] to scroll, [Enter] or [Esc] to close."
-diff_result_model_default: "Default (Kilo config)"
 
 # messages used by handlers/diff_result.rs
-diff_kilo_clipboard_copied: "✅ KILO commit message copied to clipboard."
-diff_kilo_using_message: "✅ Using KILO message. Press [G] to commit & push."
 kilo_disabled: "⚠️ Kilo AI Generation is disabled in Settings!"
 kilo_no_staged_diff: "⚠️ No staged diff."
-kilo_asking: "⏳ Asking KILO..."
-kilo_finished: "✅ KILO finished generating!"
-kilo_cmd_not_found: "'kilo' command not found. Please install @kilocode/cli (npm i -g @kilocode/cli) and ensure it is in PATH. Error: {err}"
-kilo_run_failed: "kilo run failed: {err}"
-kilo_empty_output: "kilo returned empty output."
 diff_result_preview_label: "  ── DIFF PREVIEW (first 40 lines) ──"
 
 # go_confirm modal
@@ -445,13 +432,6 @@ workspace_history_title: " 📂 WORKSPACE HISTORY "
 # view_prompt modal
 view_prompt_heading: "🤖 CONFIGURED AI PROMPT"
 view_prompt_close_hint: "  [Esc] [q] [x] [Enter] to close"
-
-# kilo_model_select modal
-kilo_model_heading: "🤖 SELECT KILO MODEL"
-kilo_model_search_empty_label: "  Search: _"
-kilo_model_search_label: "  Search: {filter}"
-kilo_model_no_match: "  No matching models found."
-kilo_model_actions_hint: "  [/] Search  [↑/↓] Move  [Enter] Select  [Esc] Cancel"
 
 # git_menu modal
 git_menu_heading: "🛠️  GIT OPERATIONS MENU"
