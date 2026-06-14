@@ -1,7 +1,7 @@
 #![allow(clippy::collapsible_match)]
 
 use crate::app::App;
-use crate::models::GoStep;
+use crate::models::{AiTemp, GoStep};
 use crossterm::event::{KeyCode, KeyEvent};
 use rust_i18n::t;
 
@@ -14,19 +14,7 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
                 app.status_message = t!("kilo_disabled").to_string();
                 return;
             }
-            let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() {
-                cb.get_text().unwrap_or_default()
-            } else {
-                String::new()
-            };
-            app.commit_message_preview = if clipboard_msg.trim().is_empty() {
-                t!("no_commit_in_clipboard").to_string()
-            } else {
-                clipboard_msg.trim().to_string()
-            };
-            app.go_step = GoStep::Confirm;
-            app.auto_stage_all_if_enabled();
-            app.active_modal = crate::models::ActiveModal::GoConfirm;
+            open_ai_commit_confirm(app);
         }
         KeyCode::Char('n') | KeyCode::Char('N') => {
             app.github_download_url.clear();
@@ -118,19 +106,7 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
                     if !app.kilo_ai_enabled {
                         app.status_message = t!("kilo_disabled").to_string();
                     } else {
-                        let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() {
-                            cb.get_text().unwrap_or_default()
-                        } else {
-                            String::new()
-                        };
-                        app.commit_message_preview = if clipboard_msg.trim().is_empty() {
-                            t!("no_commit_in_clipboard").to_string()
-                        } else {
-                            clipboard_msg.trim().to_string()
-                        };
-                        app.go_step = GoStep::Confirm;
-                        app.auto_stage_all_if_enabled();
-                        app.active_modal = crate::models::ActiveModal::GoConfirm;
+                        open_ai_commit_confirm(app);
                     }
                 }
                 1 => {
@@ -224,4 +200,23 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
         }
         _ => {}
     }
+}
+
+fn open_ai_commit_confirm(app: &mut App) {
+    let clipboard_msg = if let Ok(mut cb) = arboard::Clipboard::new() {
+        cb.get_text().unwrap_or_default()
+    } else {
+        String::new()
+    };
+
+    app.commit_message_preview = if clipboard_msg.trim().is_empty() {
+        t!("no_commit_in_clipboard").to_string()
+    } else {
+        let message = clipboard_msg.trim().to_string();
+        app.ai_temp = AiTemp::GeneratedMessage(message.clone());
+        message
+    };
+    app.go_step = GoStep::Confirm;
+    app.auto_stage_all_if_enabled();
+    app.active_modal = crate::models::ActiveModal::GoConfirm;
 }

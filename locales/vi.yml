@@ -172,6 +172,10 @@ nav_reset_ok: "🔄 Đã reset cấu hình hệ thống."
 nav_lang_analyze_start: "⏳ Đang phân tích ngôn ngữ dự án..."
 nav_lang_analyze_ok: "✅ Đã phân tích xong!"
 nav_dev_opened: "🛠️ Đã mở cửa sổ thử nghiệm Dev"
+nav_dev_open_err: "❌ Không thể mở hoặc paste text test:"
+ai_temp_generated_exists: "⚠️ Đã có AI message, dùng hoặc xoá trước."
+ai_temp_diff_already_sent: "⚠️ Diff này đã gửi rồi."
+ai_prompt_sent: "✅ Đã copy prompt diff và gửi sang browser."
 nav_system_default: "Mặc định hệ thống"
 
 # go_confirm messages

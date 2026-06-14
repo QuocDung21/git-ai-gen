@@ -172,6 +172,10 @@ nav_reset_ok: "🔄 System configuration reset."
 nav_lang_analyze_start: "⏳ Analyzing project languages..."
 nav_lang_analyze_ok: "✅ Project languages analyzed successfully!"
 nav_dev_opened: "🛠️ Opened Developer Test Panel"
+nav_dev_open_err: "❌ Could not open or paste test text:"
+ai_temp_generated_exists: "⚠️ AI message already exists. Use or clear it first."
+ai_temp_diff_already_sent: "⚠️ This diff was already sent."
+ai_prompt_sent: "✅ Diff prompt copied and sent to browser."
 nav_system_default: "System Default"
 
 # go_confirm messages

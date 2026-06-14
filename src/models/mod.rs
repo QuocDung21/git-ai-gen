@@ -26,6 +26,13 @@ pub struct DiffViewLine {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum AiTemp {
+    None,
+    DiffPrompt { diff: String, prompt: String },
+    GeneratedMessage(String),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct CommitLogEntry {
     pub hash: String,
     pub short_hash: String,

@@ -3,6 +3,7 @@ use crossterm::event::KeyEvent;
 use crate::app::App;
 use crate::models::ActiveModal;
 
+pub(crate) mod close_modal;
 mod confirm;
 pub(crate) mod diff_result;
 pub(crate) mod git_menu;
@@ -10,6 +11,7 @@ pub(crate) mod github;
 pub(crate) mod go_confirm;
 pub(crate) mod input_modal;
 pub(crate) mod navigation;
+pub(crate) mod open_url;
 pub(crate) mod paste;
 pub(crate) mod select_modal;
 pub(crate) mod stash;

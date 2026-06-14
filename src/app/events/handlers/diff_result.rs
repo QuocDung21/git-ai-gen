@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::{events::handlers::close_modal::close_modal, App};
 use crossterm::event::{KeyCode, KeyEvent};
 
 pub fn handle_diff_result(app: &mut App, key: &KeyEvent) {
@@ -35,8 +35,4 @@ pub fn handle_diff_result(app: &mut App, key: &KeyEvent) {
         }
         _ => {}
     }
-}
-
-pub fn close_modal(app: &mut App) {
-    app.active_modal = crate::models::ActiveModal::None;
 }

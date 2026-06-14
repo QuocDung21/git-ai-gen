@@ -7,9 +7,11 @@ use ratatui::backend::Backend;
 use ratatui::Terminal;
 use rust_i18n::t;
 
+use crate::app::events::handlers::open_url::open_url;
 use crate::app::App;
 use crate::git::remote::{git_fetch, git_pull};
 use crate::git::status::{stage_all, stage_file, unstage_all, unstage_file};
+use crate::models::AiTemp;
 
 use crate::app::events::run_cli_command;
 
@@ -286,8 +288,7 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             app.active_modal = crate::models::ActiveModal::ThemeSelect;
         }
         KeyCode::Char('y') | KeyCode::Char('Y') => {
-            app.status_message = t!("nav_dev_opened").to_string();
-            app.active_modal = crate::models::ActiveModal::HandleTest;
+            handle_ai_prompt_send(app);
         }
         KeyCode::Char(',') => {
             app.selected_setting_index = 0;
@@ -296,6 +297,49 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
         _ => {}
     }
     Ok(false)
+}
+
+fn handle_ai_prompt_send(app: &mut App) {
+    let (diff, _) = match current_filtered_diff() {
+        Ok(Some(result)) => result,
+        Ok(None) => {
+            app.status_message = t!("diff_no_changes").to_string();
+            return;
+        }
+        Err(err) => {
+            app.status_message = format!("❌ Error capturing diff: {}", err);
+            return;
+        }
+    };
+
+    match &app.ai_temp {
+        AiTemp::GeneratedMessage(_) => {
+            app.status_message = t!("ai_temp_generated_exists").to_string();
+            return;
+        }
+        AiTemp::DiffPrompt {
+            diff: temp_diff, ..
+        } if temp_diff == &diff => {
+            app.status_message = t!("ai_temp_diff_already_sent").to_string();
+            return;
+        }
+        _ => {}
+    }
+
+    let prompt = build_diff_prompt(&diff);
+    app.ai_temp = AiTemp::DiffPrompt {
+        diff,
+        prompt: prompt.clone(),
+    };
+
+    match open_url("https://chat.deepseek.com/a/chat", &prompt) {
+        Ok(_) => {
+            app.status_message = t!("ai_prompt_sent").to_string();
+        }
+        Err(err) => {
+            app.status_message = format!("{} {}", t!("nav_dev_open_err"), err);
+        }
+    }
 }
 
 fn filter_diff(diff: &str) -> String {
@@ -344,26 +388,10 @@ fn filter_diff(diff: &str) -> String {
 }
 
 fn handle_diff_capture(app: &mut App) {
-    let mut is_unstaged = false;
-    let mut diff_output = Command::new("git").args(["diff", "--cached"]).output();
-
-    if let Ok(ref out) = diff_output {
-        let staged_diff = String::from_utf8_lossy(&out.stdout).to_string();
-        if staged_diff.trim().is_empty() {
-            diff_output = Command::new("git").args(["diff"]).output();
-            is_unstaged = true;
-        }
-    }
-
-    match diff_output {
-        Ok(out) => {
-            let diff_str = String::from_utf8_lossy(&out.stdout).to_string();
-            if diff_str.trim().is_empty() {
-                app.status_message = t!("diff_no_changes").to_string();
-            } else {
+    match current_filtered_diff() {
+        Ok(result) => {
+            if let Some((clean_diff, is_unstaged)) = result {
                 app.diff_captured_unstaged = is_unstaged;
-
-                let clean_diff = filter_diff(&diff_str);
 
                 app.diff_added_lines = clean_diff
                     .lines()
@@ -378,13 +406,7 @@ fn handle_diff_capture(app: &mut App) {
                 app.diff_snapshot_scroll = 0;
                 app.last_staged_diff = clean_diff.clone();
 
-                let ai_lang = crate::helper::Helper::get_ai_language_name();
-                let prompt = format!(
-                    "{} {}.\n\nDiff:\n\n{}",
-                    crate::constant::Constant::PROMPT_EXPERT,
-                    ai_lang,
-                    clean_diff
-                );
+                let prompt = build_diff_prompt(&clean_diff);
 
                 let mut copy_failed = false;
                 if let Ok(mut cb) = arboard::Clipboard::new() {
@@ -408,12 +430,48 @@ fn handle_diff_capture(app: &mut App) {
                 }
 
                 app.active_modal = crate::models::ActiveModal::DiffResult;
+            } else {
+                app.status_message = t!("diff_no_changes").to_string();
             }
         }
         Err(e) => {
             app.status_message = format!("❌ Error capturing diff: {}", e);
         }
     }
+}
+
+fn current_filtered_diff() -> Result<Option<(String, bool)>, String> {
+    let mut is_unstaged = false;
+    let mut output = Command::new("git")
+        .args(["diff", "--cached"])
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    let staged_diff = String::from_utf8_lossy(&output.stdout).to_string();
+    if staged_diff.trim().is_empty() {
+        output = Command::new("git")
+            .args(["diff"])
+            .output()
+            .map_err(|e| e.to_string())?;
+        is_unstaged = true;
+    }
+
+    let diff = String::from_utf8_lossy(&output.stdout).to_string();
+    if diff.trim().is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some((filter_diff(&diff), is_unstaged)))
+    }
+}
+
+fn build_diff_prompt(diff: &str) -> String {
+    let ai_lang = crate::helper::Helper::get_ai_language_name();
+    format!(
+        "{} {}.\n\nDiff:\n\n{}",
+        crate::constant::Constant::PROMPT_EXPERT,
+        ai_lang,
+        diff
+    )
 }
 
 pub fn handle_language_analysis(app: &mut App) -> bool {
