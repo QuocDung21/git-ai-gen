@@ -1,7 +1,7 @@
 #![allow(clippy::collapsible_match)]
 
 use crate::app::App;
-use crate::models::GoStep;
+use crate::models::{AiTemp, GoStep};
 use crossterm::event::{KeyCode, KeyEvent};
 use rust_i18n::t;
 
@@ -77,6 +77,7 @@ pub fn handle_go_pushing(app: &mut App) -> bool {
         if !commit_ok {
             app.go_step = GoStep::Done(t!("go_commit_fail").to_string());
         } else {
+            app.ai_temp = AiTemp::None;
             if app.auto_push {
                 match crate::git::remote::git_push() {
                     Ok(_) => {

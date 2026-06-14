@@ -132,12 +132,16 @@ pub enum ActiveModal {
     GithubDownloadUrlInput,
     GithubDownloadTree,
     GithubDownloadTargetInput,
-    GithubQuickView { path: String, name: String },
+    GithubQuickView {
+        path: String,
+        name: String,
+    },
     GithubBranchSelect,
     BranchDeleteConfirm(String),
     Settings,
     EditorSelect,
     WorkspacePathInput,
     ProjectLanguages,
+    #[allow(dead_code)]
     HandleTest,
 }

@@ -7,7 +7,7 @@ use ratatui::backend::Backend;
 use ratatui::Terminal;
 use rust_i18n::t;
 
-use crate::app::events::handlers::open_url::open_url;
+use crate::app::events::handlers::handle_browser::{handle_browser, BrowserAction};
 use crate::app::App;
 use crate::git::remote::{git_fetch, git_pull};
 use crate::git::status::{stage_all, stage_file, unstage_all, unstage_file};
@@ -332,7 +332,10 @@ fn handle_ai_prompt_send(app: &mut App) {
         prompt: prompt.clone(),
     };
 
-    match open_url("https://chat.deepseek.com/a/chat", &prompt) {
+    match handle_browser(
+        "https://chat.deepseek.com/a/chat",
+        &[BrowserAction::PasteTextAndEnter { text: &prompt }],
+    ) {
         Ok(_) => {
             app.status_message = t!("ai_prompt_sent").to_string();
         }
