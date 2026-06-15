@@ -332,6 +332,9 @@ fn handle_ai_prompt_send(app: &mut App) {
         prompt: prompt.clone(),
     };
 
+    // Future: Open AI chat in browser and submit the generated diff prompt automatically.
+    // TODO: Check whether auto-submit is enabled before submitting the prompt.
+    //
     match handle_browser(
         "https://chat.deepseek.com/a/chat",
         &[BrowserAction::PasteTextAndEnter { text: &prompt }],
@@ -443,6 +446,7 @@ fn handle_diff_capture(app: &mut App) {
     }
 }
 
+// future: add unstaged diff support
 fn current_filtered_diff() -> Result<Option<(String, bool)>, String> {
     let mut is_unstaged = false;
     let mut output = Command::new("git")
