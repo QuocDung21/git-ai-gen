@@ -335,8 +335,10 @@ fn handle_ai_prompt_send(app: &mut App) {
     // Future: Open AI chat in browser and submit the generated diff prompt automatically.
     // TODO: Check whether auto-submit is enabled before submitting the prompt.
     //
+    let chat_id = "c60dbe66-ff29-4efe-8ac6-1746caebd077";
+    let url = format!("https://chat.deepseek.com/a/chat/s/{}", chat_id);
     match handle_browser(
-        "https://chat.deepseek.com/a/chat",
+        url.as_str(),
         &[BrowserAction::PasteTextAndEnter { text: &prompt }],
     ) {
         Ok(_) => {
