@@ -284,8 +284,12 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             app.active_modal = crate::models::ActiveModal::WorkspaceHistory;
         }
         KeyCode::Char('t') | KeyCode::Char('T') => {
-            app.selected_theme_index = if app.is_light_theme { 1 } else { 0 };
-            app.active_modal = crate::models::ActiveModal::ThemeSelect;
+            app.status_message = app
+                .tr(
+                    "🎨 Đang dùng màu native của terminal.",
+                    "🎨 Using native terminal colors.",
+                )
+                .to_string();
         }
         KeyCode::Char('y') | KeyCode::Char('Y') => {
             handle_ai_prompt_send(app);

@@ -122,7 +122,6 @@ pub enum ActiveModal {
     CommitDiff(String),   // commit hash
     MergeConfirm(String), // Branch name to merge into current branch
     NewBranchInput,       // Text input modal to create and checkout a new branch
-    ThemeSelect,          // Interactive theme selection modal
     WorkspaceHistory,     // Workspace history selector modal
     ViewPrompt,
     ManualCommit,

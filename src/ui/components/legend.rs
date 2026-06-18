@@ -52,7 +52,6 @@ pub fn render_legend(f: &mut Frame, app: &App, area: Rect) {
                 ("W", t!("legend_sys_workspace"), theme.cyan),
                 ("E", t!("legend_sys_lang_stats"), theme.purple),
                 ("L", t!("legend_sys_lang"), theme.purple),
-                ("T", t!("legend_sys_theme"), theme.purple),
                 (",", t!("legend_sys_settings"), theme.purple),
                 ("R", t!("legend_sys_reset"), theme.red),
                 ("? / H", t!("legend_sys_manual"), theme.cyan),

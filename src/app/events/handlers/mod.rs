@@ -47,7 +47,6 @@ pub fn dispatch_modal_key(app: &mut App, key: &KeyEvent) -> bool {
     match &app.active_modal {
         ActiveModal::Help
         | ActiveModal::LanguageSelect
-        | ActiveModal::ThemeSelect
         | ActiveModal::Settings
         | ActiveModal::EditorSelect
         | ActiveModal::BranchSelect

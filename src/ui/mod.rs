@@ -12,8 +12,6 @@ use ratatui::{
 
 pub fn ui(f: &mut Frame, app: &App) {
     let theme = app.theme();
-    let root_bg = Block::default().style(Style::default().bg(theme.bg));
-    f.render_widget(root_bg, f.size());
 
     if app.show_splash {
         components::render_splash_screen(f, app);
@@ -74,7 +72,6 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::CommitDiff(_) => modals::centered_rect(88, 88, f.size()),
             ActiveModal::MergeConfirm(_) => modals::centered_rect(55, 30, f.size()),
             ActiveModal::NewBranchInput => modals::centered_rect(55, 30, f.size()),
-            ActiveModal::ThemeSelect => modals::centered_rect(45, 35, f.size()),
             ActiveModal::WorkspaceHistory => modals::centered_rect(60, 50, f.size()),
             ActiveModal::WorkspacePathInput => modals::centered_rect(55, 30, f.size()),
             ActiveModal::ProjectLanguages => modals::centered_rect(55, 48, f.size()),
@@ -118,7 +115,7 @@ pub fn ui(f: &mut Frame, app: &App) {
         }
 
         f.render_widget(Clear, area);
-        f.render_widget(Block::default().style(Style::default().bg(theme.bg)), area);
+        f.render_widget(Block::default().style(Style::default().bg(Color::Reset)), area);
 
         match &app.active_modal {
             ActiveModal::Help => modals::render_help_modal(f, app, area),
@@ -136,7 +133,6 @@ pub fn ui(f: &mut Frame, app: &App) {
                 modals::render_merge_confirm(f, app, selected_branch, area)
             }
             ActiveModal::NewBranchInput => modals::render_new_branch_input(f, app, area),
-            ActiveModal::ThemeSelect => modals::render_theme_select(f, app, area),
             ActiveModal::WorkspaceHistory => modals::render_workspace_history(f, app, area),
             ActiveModal::WorkspacePathInput => modals::render_workspace_path_input(f, app, area),
             ActiveModal::ProjectLanguages => modals::render_project_languages(f, app, area),

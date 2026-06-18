@@ -81,62 +81,6 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
             }
             _ => {}
         },
-        crate::models::ActiveModal::ThemeSelect => {
-            let themes = crate::theme::get_all_themes();
-            let themes_len = themes.len();
-            match key.code {
-                KeyCode::Esc => {
-                    app.active_modal = crate::models::ActiveModal::None;
-                }
-                KeyCode::Char(c) => {
-                    let lower_c = c.to_lowercase().to_string();
-                    if lower_c == "q" {
-                        app.active_modal = crate::models::ActiveModal::None;
-                    } else if lower_c == "j" {
-                        if app.selected_theme_index < themes_len - 1 {
-                            app.selected_theme_index += 1;
-                        } else {
-                            app.selected_theme_index = 0;
-                        }
-                    } else if lower_c == "k" {
-                        if app.selected_theme_index > 0 {
-                            app.selected_theme_index -= 1;
-                        } else {
-                            app.selected_theme_index = themes_len - 1;
-                        }
-                    } else {
-                        if let Some((idx, t_info)) = themes
-                            .iter()
-                            .enumerate()
-                            .find(|(_, t)| t.hotkey.to_lowercase().to_string() == lower_c)
-                        {
-                            apply_theme(app, idx, t_info);
-                        }
-                    }
-                }
-                KeyCode::Up => {
-                    if app.selected_theme_index > 0 {
-                        app.selected_theme_index -= 1;
-                    } else {
-                        app.selected_theme_index = themes_len - 1;
-                    }
-                }
-                KeyCode::Down => {
-                    if app.selected_theme_index < themes_len - 1 {
-                        app.selected_theme_index += 1;
-                    } else {
-                        app.selected_theme_index = 0;
-                    }
-                }
-                KeyCode::Enter => {
-                    if app.selected_theme_index < themes_len {
-                        let t_info = &themes[app.selected_theme_index];
-                        apply_theme(app, app.selected_theme_index, t_info);
-                    }
-                }
-                _ => {}
-            }
-        }
         crate::models::ActiveModal::Settings => match key.code {
             KeyCode::Esc | KeyCode::Char('q') => {
                 app.active_modal = crate::models::ActiveModal::None;
@@ -377,12 +321,8 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                     app.active_modal = crate::models::ActiveModal::None;
                 }
                 KeyCode::Char('1') => {
-                    app.is_light_theme = !app.is_light_theme;
-                    app.theme_id = if app.is_light_theme {
-                        "light".to_string()
-                    } else {
-                        "vscode".to_string()
-                    };
+                    app.is_light_theme = false;
+                    app.theme_id = "native".to_string();
                 }
                 KeyCode::Char('2') => {
                     app.status_message = app
@@ -828,20 +768,4 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
         },
         _ => {}
     }
-}
-
-fn apply_theme(app: &mut App, index: usize, t_info: &crate::theme::ThemeInfo) {
-    app.theme_id = t_info.id.to_string();
-    app.is_light_theme = t_info.id == "light";
-    app.selected_theme_index = index;
-    let _ = Command::new("git")
-        .args(["config", "--global", "git-ai.theme", t_info.id])
-        .output();
-    let label = if app.current_lang == "vi" {
-        t_info.name_vi
-    } else {
-        t_info.name_en
-    };
-    app.status_message = t!("theme_switched", name = label).to_string();
-    app.active_modal = crate::models::ActiveModal::None;
 }

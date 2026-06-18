@@ -61,7 +61,6 @@ pub struct App {
     pub new_branch_name: String,
     pub workspace_path_input: String,
     pub is_light_theme: bool,
-    pub selected_theme_index: usize,
     pub focus_diff: bool,
     pub workspace_history: Vec<String>,
     pub language_stats: Vec<crate::models::LanguageStat>,
@@ -129,41 +128,8 @@ impl App {
         let current_lang = crate::helper::Helper::get_ai_language();
         let init_msg = t!("init_ready").to_string();
 
-        let theme_id = {
-            if let Ok(output) = Command::new("git")
-                .args(["config", "--global", "--get", "git-ai.theme"])
-                .output()
-            {
-                let text = String::from_utf8_lossy(&output.stdout)
-                    .trim()
-                    .to_lowercase();
-                if text.is_empty() {
-                    if crate::helper::Helper::get_os_theme() == dark_light::Mode::Light {
-                        "light".to_string()
-                    } else {
-                        "dark".to_string()
-                    }
-                } else {
-                    text
-                }
-            } else {
-                if crate::helper::Helper::get_os_theme() == dark_light::Mode::Light {
-                    "light".to_string()
-                } else {
-                    "dark".to_string()
-                }
-            }
-        };
-
-        let is_light_theme = theme_id == "light";
-
-        let selected_theme_index = match theme_id.as_str() {
-            "dark" => 0,
-            "light" => 1,
-            "nord" => 2,
-            "gruvbox" => 3,
-            _ => 0,
-        };
+        let theme_id = "native".to_string();
+        let is_light_theme = false;
 
         let auto_push = {
             if let Ok(output) = Command::new("git")
@@ -295,7 +261,6 @@ impl App {
             new_branch_name: String::new(),
             workspace_path_input: String::new(),
             is_light_theme,
-            selected_theme_index,
             focus_diff: false,
             workspace_history: Vec::new(),
             language_stats: Vec::new(),
