@@ -322,7 +322,7 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                 }
                 KeyCode::Char('1') => {
                     app.is_light_theme = false;
-                    app.theme_id = "native".to_string();
+                    app.theme_id = "midnight".to_string();
                 }
                 KeyCode::Char('2') => {
                     app.status_message = app

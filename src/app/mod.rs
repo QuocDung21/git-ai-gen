@@ -128,7 +128,7 @@ impl App {
         let current_lang = crate::helper::Helper::get_ai_language();
         let init_msg = t!("init_ready").to_string();
 
-        let theme_id = "native".to_string();
+        let theme_id = "midnight".to_string();
         let is_light_theme = false;
 
         let auto_push = {

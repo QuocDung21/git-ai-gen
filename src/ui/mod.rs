@@ -5,13 +5,17 @@ use crate::app::App;
 use crate::models::ActiveModal;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Clear},
     Frame,
 };
 
 pub fn ui(f: &mut Frame, app: &App) {
     let theme = app.theme();
+    f.render_widget(
+        Block::default().style(Style::default().bg(theme.bg).fg(theme.fg)),
+        f.size(),
+    );
 
     if app.show_splash {
         components::render_splash_screen(f, app);
@@ -99,23 +103,14 @@ pub fn ui(f: &mut Frame, app: &App) {
                 width: area.width.saturating_sub(2),
                 height: area.height.saturating_sub(1),
             };
-            let shadow_bg = if theme.bg == Color::Rgb(248, 249, 250) {
-                Color::Rgb(180, 185, 195)
-            } else if theme.bg == Color::Rgb(46, 52, 64) {
-                Color::Rgb(20, 22, 28)
-            } else if theme.bg == Color::Rgb(40, 40, 40) {
-                Color::Rgb(20, 20, 20)
-            } else {
-                Color::Rgb(10, 10, 15)
-            };
             f.render_widget(
-                Block::default().style(Style::default().bg(shadow_bg)),
+                Block::default().style(Style::default().bg(theme.shadow())),
                 shadow_area,
             );
         }
 
         f.render_widget(Clear, area);
-        f.render_widget(Block::default().style(Style::default().bg(Color::Reset)), area);
+        f.render_widget(Block::default().style(Style::default().bg(theme.bg)), area);
 
         match &app.active_modal {
             ActiveModal::Help => modals::render_help_modal(f, app, area),

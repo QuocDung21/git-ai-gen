@@ -284,12 +284,7 @@ pub fn handle_standard_keys<B: Backend + std::io::Write>(
             app.active_modal = crate::models::ActiveModal::WorkspaceHistory;
         }
         KeyCode::Char('t') | KeyCode::Char('T') => {
-            app.status_message = app
-                .tr(
-                    "🎨 Đang dùng màu native của terminal.",
-                    "🎨 Using native terminal colors.",
-                )
-                .to_string();
+            app.status_message = t!("theme_active", name = "Git-AI Midnight").to_string();
         }
         KeyCode::Char('y') | KeyCode::Char('Y') => {
             handle_ai_prompt_send(app);

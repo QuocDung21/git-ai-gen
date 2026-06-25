@@ -1,7 +1,7 @@
 use crate::app::App;
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph, Wrap},
     Frame,
@@ -66,11 +66,7 @@ pub fn render_toast_message(f: &mut Frame, app: &App, area: Rect, message: &str)
         ToastKind::Warning => theme.yellow,
         ToastKind::Error => theme.red,
     };
-    let label_fg = if app.is_light_theme {
-        Color::Rgb(248, 249, 250)
-    } else {
-        theme.bg
-    };
+    let label_fg = theme.bg;
 
     let toast_text = Line::from(vec![
         Span::styled(
