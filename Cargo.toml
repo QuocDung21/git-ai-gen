@@ -58,6 +58,7 @@ chrono = { version = "0.4.44", optional = true }
 cli-log = { version = "2.1.0", optional = true }
 serde_json = "1.0.100"
 rust-i18n = "3.0"
+walkdir = "2.5.0"
 
 [dev-dependencies]
 tempfile = "3.27.0"

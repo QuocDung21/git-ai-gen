@@ -4,6 +4,7 @@ use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::PathBuf;
 
+pub mod clear_trash;
 pub mod install;
 pub mod logger;
 pub mod spinner;
@@ -17,10 +18,12 @@ pub const MARKERS: &[&str] = &[
     "# ULTIMATE GIT-AI WORKFLOW",
     "alias git-copydiff",
     "alias git-go",
+    "alias git-clear-trash",
     "alias git-ai-uninstall",
     "alias git-ai=",
     "function git-copydiff",
     "function git-go",
+    "function git-clear-trash",
     "function git-ai-uninstall",
     "function git-ai",
 ];
@@ -137,6 +140,7 @@ pub fn append_to_file(path: &PathBuf, content: &str) -> Result<()> {
 pub fn print_commands_help(locales: &Locales) {
     logger::info(&locales.cmd_help_diff);
     logger::info(&locales.cmd_help_go);
+    logger::info(&locales.cmd_help_clear_trash);
     logger::info(&locales.cmd_help_un);
     logger::info(&locales.cmd_help_base);
 }

@@ -45,8 +45,8 @@ pub fn handle_install() -> Result<()> {
         }
 
         let alias_lines = format!(
-            "\n# ULTIMATE GIT-AI WORKFLOW\nalias git-copydiff=\"'{}' diff\"\nalias git-go=\"'{}' go\"\nalias git-ai-uninstall=\"'{}' uninstall\"\nalias git-ai=\"'{}'\"\n",
-            exe_str, exe_str, exe_str, exe_str
+            "\n# ULTIMATE GIT-AI WORKFLOW\nalias git-copydiff=\"'{}' diff\"\nalias git-go=\"'{}' go\"\nalias git-clear-trash=\"'{}' clear-trash\"\nalias git-ai-uninstall=\"'{}' uninstall\"\nalias git-ai=\"'{}'\"\n",
+            exe_str, exe_str, exe_str, exe_str, exe_str
         );
 
         append_to_file(&target_profile, &alias_lines)?;
@@ -88,8 +88,8 @@ pub fn handle_install() -> Result<()> {
         }
 
         let func_lines = format!(
-            "\n# ULTIMATE GIT-AI WORKFLOW\nfunction git-copydiff {{ & \"{}\" diff }}\nfunction git-go {{ & \"{}\" go }}\nfunction git-ai-uninstall {{ & \"{}\" uninstall }}\nfunction git-ai {{ & \"{}\" }}\n",
-            exe_str, exe_str, exe_str, exe_str
+            "\n# ULTIMATE GIT-AI WORKFLOW\nfunction git-copydiff {{ & \"{}\" diff }}\nfunction git-go {{ & \"{}\" go }}\nfunction git-clear-trash {{ & \"{}\" clear-trash }}\nfunction git-ai-uninstall {{ & \"{}\" uninstall }}\nfunction git-ai {{ & \"{}\" }}\n",
+            exe_str, exe_str, exe_str, exe_str, exe_str
         );
 
         append_to_file(&profile_path, &func_lines)?;

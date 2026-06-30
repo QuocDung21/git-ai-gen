@@ -1668,6 +1668,7 @@ pub fn render_git_menu(f: &mut Frame, app: &App, area: Rect) {
                 (t!("git_menu_history").to_string(), 'v'),
                 (t!("git_menu_feature").to_string(), 'e'),
                 (t!("git_menu_download").to_string(), 'n'),
+                (t!("git_menu_clear_trash").to_string(), 'x'),
                 (t!("git_menu_settings").to_string(), 'y'),
             ],
         ),

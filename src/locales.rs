@@ -29,6 +29,7 @@ pub struct Locales {
     pub lang_invalid: String,
     pub cmd_help_diff: String,
     pub cmd_help_go: String,
+    pub cmd_help_clear_trash: String,
     pub cmd_help_un: String,
     pub cmd_help_base: String,
     pub setting_auto_push: String,

@@ -1,4 +1,5 @@
 pub mod branch_delete;
+pub mod clear_trash;
 pub mod confirm;
 pub mod editor_select;
 pub mod feature_commit;
@@ -10,6 +11,7 @@ pub mod project_languages;
 pub mod settings;
 
 pub use branch_delete::render_branch_delete_confirm;
+pub use clear_trash::render_clear_trash_confirm;
 pub use editor_select::render_editor_select;
 pub use handle_test::render_handle_test;
 pub use project_languages::render_project_languages;

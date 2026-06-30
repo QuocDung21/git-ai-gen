@@ -91,6 +91,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::GithubQuickView { .. } => modals::centered_rect(95, 90, f.size()),
             ActiveModal::GithubBranchSelect => modals::centered_rect(50, 45, f.size()),
             ActiveModal::BranchDeleteConfirm(_) => modals::centered_rect(55, 30, f.size()),
+            ActiveModal::ClearTrashConfirm => modals::centered_rect(55, 28, f.size()),
             ActiveModal::Settings => modals::centered_rect(55, 58, f.size()),
             ActiveModal::EditorSelect => modals::centered_rect(45, 36, f.size()),
             ActiveModal::None => f.size(),
@@ -151,6 +152,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             ActiveModal::BranchDeleteConfirm(branch_name) => {
                 modals::render_branch_delete_confirm(f, app, branch_name, area)
             }
+            ActiveModal::ClearTrashConfirm => modals::render_clear_trash_confirm(f, app, area),
             ActiveModal::Settings => modals::render_settings(f, app, area),
             ActiveModal::EditorSelect => modals::render_editor_select(f, app, area),
             ActiveModal::None => {}

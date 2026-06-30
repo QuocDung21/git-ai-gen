@@ -57,6 +57,21 @@ enum Commands {
 
     #[command(visible_alias = "t")]
     Test,
+
+    #[command(visible_alias = "ct", visible_alias = "trash")]
+    ClearTrash {
+        #[arg(long = "node-modules", visible_alias = "nm")]
+        node_modules: bool,
+
+        #[arg(long = "build-folders", visible_alias = "bf")]
+        build_folders: bool,
+
+        #[arg(long, visible_alias = "pick")]
+        select: bool,
+
+        #[arg(value_name = "PATH", default_value = ".")]
+        path: PathBuf,
+    },
 }
 
 // =========================================================================
@@ -90,6 +105,17 @@ fn run(cli: &Cli, locales: &crate::cli::Locales) -> Result<()> {
         Some(Commands::Uninstall) => crate::cli::uninstall::handle_uninstall()?,
         Some(Commands::Reset) => crate::cli::system::handle_restore(locales)?,
         Some(Commands::Test) => crate::cli::system::handle_test()?,
+        Some(Commands::ClearTrash {
+            node_modules,
+            build_folders,
+            select,
+            path,
+        }) => crate::cli::clear_trash::handle_clear_trash(
+            path,
+            *node_modules,
+            *build_folders,
+            *select,
+        )?,
         None => {
             if let Some(path) = &cli.path {
                 std::env::set_current_dir(path)?;

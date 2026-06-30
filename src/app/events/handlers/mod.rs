@@ -3,6 +3,7 @@ use crossterm::event::KeyEvent;
 use crate::app::App;
 use crate::models::ActiveModal;
 
+mod clear_trash;
 pub(crate) mod close_modal;
 mod confirm;
 pub(crate) mod diff_result;
@@ -18,6 +19,8 @@ pub(crate) mod stash;
 
 // Re-export all handler functions for crate-level access
 // These are consumed indirectly via pub(crate) modules in dashboard.rs
+#[allow(unused_imports)]
+pub use clear_trash::handle_clear_trash_confirm;
 #[allow(unused_imports)]
 pub use confirm::handle_revert_confirm;
 #[allow(unused_imports)]
@@ -68,6 +71,10 @@ pub fn dispatch_modal_key(app: &mut App, key: &KeyEvent) -> bool {
         }
         ActiveModal::RevertConfirm(_) => {
             confirm::handle_revert_confirm(app, key);
+            true
+        }
+        ActiveModal::ClearTrashConfirm => {
+            clear_trash::handle_clear_trash_confirm(app, key);
             true
         }
         ActiveModal::DiffResult => {

@@ -137,6 +137,7 @@ pub enum ActiveModal {
     },
     GithubBranchSelect,
     BranchDeleteConfirm(String),
+    ClearTrashConfirm,
     Settings,
     EditorSelect,
     WorkspacePathInput,

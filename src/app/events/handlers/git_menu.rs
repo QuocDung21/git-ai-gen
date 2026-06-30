@@ -6,7 +6,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use rust_i18n::t;
 
 pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
-    let max = 13;
+    let max = 14;
 
     match key.code {
         KeyCode::Char('g') | KeyCode::Char('G') => {
@@ -90,6 +90,9 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
         KeyCode::Char('y') | KeyCode::Char('Y') => {
             app.selected_setting_index = 0;
             app.active_modal = crate::models::ActiveModal::Settings;
+        }
+        KeyCode::Char('x') | KeyCode::Char('X') => {
+            app.active_modal = crate::models::ActiveModal::ClearTrashConfirm;
         }
         _ => {}
     }
@@ -182,6 +185,9 @@ pub fn handle_git_menu(app: &mut App, key: &KeyEvent) {
                     app.active_modal = crate::models::ActiveModal::GithubDownloadUrlInput;
                 }
                 13 => {
+                    app.active_modal = crate::models::ActiveModal::ClearTrashConfirm;
+                }
+                14 => {
                     app.selected_setting_index = 0;
                     app.active_modal = crate::models::ActiveModal::Settings;
                 }
