@@ -38,6 +38,9 @@ pub enum Commands {
     #[command(visible_alias = "t")]
     Test,
 
+    #[command(name = "enable-touch-id-sudo")]
+    EnableTouchIdSudo,
+
     #[command(visible_alias = "ct", visible_alias = "trash")]
     ClearTrash {
         #[arg(long = "node-modules", visible_alias = "nm")]
@@ -45,6 +48,9 @@ pub enum Commands {
 
         #[arg(long = "build-folders", visible_alias = "bf")]
         build_folders: bool,
+
+        #[arg(long = "devcleaner", visible_alias = "dc")]
+        devcleaner: bool,
 
         #[arg(long, visible_alias = "pick")]
         select: bool,

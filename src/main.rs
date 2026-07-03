@@ -1,6 +1,7 @@
 rust_i18n::i18n!("locales");
 
 mod app;
+mod cleanup;
 mod cli;
 mod constant;
 mod ffi;

@@ -1,6 +1,8 @@
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+use std::os::raw::c_void;
+use std::path::Path;
 use std::process::Command;
 
 fn setup_env_path() {
@@ -35,6 +37,57 @@ struct ChangedFileJson {
     path: String,
 }
 
+#[derive(Serialize)]
+struct CleanupScanJson {
+    items: Vec<CleanupItemJson>,
+}
+
+#[derive(Serialize)]
+struct CleanupItemJson {
+    path: String,
+    target: String,
+    size_bytes: u64,
+}
+
+#[derive(Serialize)]
+struct CleanupDeleteJson {
+    reports: Vec<crate::cleanup::DeleteReport>,
+}
+
+#[derive(Serialize)]
+struct CleanupStreamDoneJson {
+    done: bool,
+}
+
+#[derive(Serialize)]
+struct FfiErrorJson {
+    error: String,
+}
+
+type CleanupScanCallback = Option<
+    extern "C" fn(
+        path: *const c_char,
+        target: *const c_char,
+        size_bytes: u64,
+        user_data: *mut c_void,
+    ),
+>;
+type CleanupShouldCancelCallback = Option<extern "C" fn(user_data: *mut c_void) -> bool>;
+
+fn string_from_c_char(value: *const c_char) -> Option<String> {
+    if value.is_null() {
+        return None;
+    }
+
+    let c_str = unsafe { CStr::from_ptr(value) };
+    c_str.to_str().ok().map(str::to_string)
+}
+
+fn json_string<T: Serialize>(value: &T) -> *mut c_char {
+    let json = serde_json::to_string(value).unwrap_or_else(|_| "{}".to_string());
+    CString::new(json).unwrap().into_raw()
+}
+
 #[no_mangle]
 pub extern "C" fn git_ai_get_status() -> *mut c_char {
     setup_env_path();
@@ -51,6 +104,220 @@ pub extern "C" fn git_ai_get_status() -> *mut c_char {
     }
     let json = serde_json::to_string(&files).unwrap_or_else(|_| "[]".to_string());
     CString::new(json).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_scan_node_modules(path: *const c_char) -> *mut c_char {
+    cleanup_scan(path, crate::cleanup::CleanupTarget::NodeModules)
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_scan_build_folders(path: *const c_char) -> *mut c_char {
+    cleanup_scan(path, crate::cleanup::CleanupTarget::BuildFolders)
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_scan_devcleaner(path: *const c_char) -> *mut c_char {
+    cleanup_scan(path, crate::cleanup::CleanupTarget::DevCleaner)
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_scan_node_modules_stream(
+    path: *const c_char,
+    callback: CleanupScanCallback,
+    user_data: *mut c_void,
+) -> *mut c_char {
+    cleanup_scan_stream(
+        path,
+        crate::cleanup::CleanupTarget::NodeModules,
+        callback,
+        user_data,
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_scan_node_modules_stream_cancellable(
+    path: *const c_char,
+    callback: CleanupScanCallback,
+    should_cancel: CleanupShouldCancelCallback,
+    user_data: *mut c_void,
+) -> *mut c_char {
+    cleanup_scan_stream_cancellable(
+        path,
+        crate::cleanup::CleanupTarget::NodeModules,
+        callback,
+        should_cancel,
+        user_data,
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_scan_build_folders_stream(
+    path: *const c_char,
+    callback: CleanupScanCallback,
+    user_data: *mut c_void,
+) -> *mut c_char {
+    cleanup_scan_stream(
+        path,
+        crate::cleanup::CleanupTarget::BuildFolders,
+        callback,
+        user_data,
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_scan_build_folders_stream_cancellable(
+    path: *const c_char,
+    callback: CleanupScanCallback,
+    should_cancel: CleanupShouldCancelCallback,
+    user_data: *mut c_void,
+) -> *mut c_char {
+    cleanup_scan_stream_cancellable(
+        path,
+        crate::cleanup::CleanupTarget::BuildFolders,
+        callback,
+        should_cancel,
+        user_data,
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_scan_devcleaner_stream(
+    path: *const c_char,
+    callback: CleanupScanCallback,
+    user_data: *mut c_void,
+) -> *mut c_char {
+    cleanup_scan_stream(
+        path,
+        crate::cleanup::CleanupTarget::DevCleaner,
+        callback,
+        user_data,
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_scan_devcleaner_stream_cancellable(
+    path: *const c_char,
+    callback: CleanupScanCallback,
+    should_cancel: CleanupShouldCancelCallback,
+    user_data: *mut c_void,
+) -> *mut c_char {
+    cleanup_scan_stream_cancellable(
+        path,
+        crate::cleanup::CleanupTarget::DevCleaner,
+        callback,
+        should_cancel,
+        user_data,
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn git_ai_cleanup_delete_paths(paths_json: *const c_char) -> *mut c_char {
+    let Some(paths_json) = string_from_c_char(paths_json) else {
+        return json_string(&FfiErrorJson {
+            error: "Invalid paths JSON pointer".to_string(),
+        });
+    };
+
+    let paths = match serde_json::from_str::<Vec<String>>(&paths_json) {
+        Ok(paths) => paths,
+        Err(error) => {
+            return json_string(&FfiErrorJson {
+                error: error.to_string(),
+            });
+        }
+    };
+
+    let reports = crate::cleanup::delete_paths(&paths);
+    json_string(&CleanupDeleteJson { reports })
+}
+
+fn cleanup_scan(path: *const c_char, target: crate::cleanup::CleanupTarget) -> *mut c_char {
+    let Some(path) = string_from_c_char(path) else {
+        return json_string(&FfiErrorJson {
+            error: "Invalid path pointer".to_string(),
+        });
+    };
+
+    let items = crate::cleanup::scan_folders(Path::new(&path), target)
+        .into_iter()
+        .map(|task| CleanupItemJson {
+            path: task.path.display().to_string(),
+            target: format!("{:?}", task.target),
+            size_bytes: task.size_bytes,
+        })
+        .collect::<Vec<_>>();
+
+    json_string(&CleanupScanJson { items })
+}
+
+fn cleanup_scan_stream(
+    path: *const c_char,
+    target: crate::cleanup::CleanupTarget,
+    callback: CleanupScanCallback,
+    user_data: *mut c_void,
+) -> *mut c_char {
+    let Some(path) = string_from_c_char(path) else {
+        return json_string(&FfiErrorJson {
+            error: "Invalid path pointer".to_string(),
+        });
+    };
+
+    let Some(callback) = callback else {
+        return json_string(&FfiErrorJson {
+            error: "Invalid scan callback".to_string(),
+        });
+    };
+
+    crate::cleanup::scan_folders_each(Path::new(&path), target, |task| {
+        let Ok(path) = CString::new(task.path.display().to_string()) else {
+            return;
+        };
+        let Ok(target) = CString::new(format!("{:?}", task.target)) else {
+            return;
+        };
+        callback(path.as_ptr(), target.as_ptr(), task.size_bytes, user_data);
+    });
+
+    json_string(&CleanupStreamDoneJson { done: true })
+}
+
+fn cleanup_scan_stream_cancellable(
+    path: *const c_char,
+    target: crate::cleanup::CleanupTarget,
+    callback: CleanupScanCallback,
+    should_cancel: CleanupShouldCancelCallback,
+    user_data: *mut c_void,
+) -> *mut c_char {
+    let Some(path) = string_from_c_char(path) else {
+        return json_string(&FfiErrorJson {
+            error: "Invalid path pointer".to_string(),
+        });
+    };
+
+    let Some(callback) = callback else {
+        return json_string(&FfiErrorJson {
+            error: "Invalid scan callback".to_string(),
+        });
+    };
+
+    crate::cleanup::scan_folders_each_until(Path::new(&path), target, |task| {
+        if should_cancel.is_some_and(|should_cancel| should_cancel(user_data)) {
+            return false;
+        }
+
+        let Ok(path) = CString::new(task.path.display().to_string()) else {
+            return true;
+        };
+        let Ok(target) = CString::new(format!("{:?}", task.target)) else {
+            return true;
+        };
+        callback(path.as_ptr(), target.as_ptr(), task.size_bytes, user_data);
+
+        !should_cancel.is_some_and(|should_cancel| should_cancel(user_data))
+    });
+
+    json_string(&CleanupStreamDoneJson { done: true })
 }
 
 #[no_mangle]

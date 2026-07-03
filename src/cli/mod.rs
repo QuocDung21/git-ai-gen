@@ -7,11 +7,12 @@ pub mod prompt;
 pub mod router;
 pub mod spinner;
 pub mod system;
+pub mod touch_id;
 pub mod uninstall;
 
 pub use crate::locales::Locales;
 pub use profile::{append_to_file, clean_profile_file};
-pub use prompt::{ask_confirm, ask_confirm_default_no};
+pub use prompt::{ask_confirm, ask_confirm_default_no, ask_confirm_default_yes};
 
 #[cfg(target_family = "unix")]
 pub use profile::get_active_unix_profile;

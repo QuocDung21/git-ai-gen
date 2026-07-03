@@ -14,6 +14,7 @@
 // Default: cargo build          → includes TUI (for the git-ai binary)
 //          cargo build --no-default-features → slim FFI-only library
 
+pub mod cleanup;
 pub mod constant;
 pub mod git;
 pub mod helper;

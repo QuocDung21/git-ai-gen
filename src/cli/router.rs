@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use crate::cli::args::{Cli, Commands};
-use crate::cli::{clear_trash, install, logger, system, uninstall, Locales};
+use crate::cli::{clear_trash, install, logger, system, touch_id, uninstall, Locales};
 
 pub fn run(cli: &Cli, locales: &Locales) -> Result<()> {
     match &cli.command {
@@ -18,12 +18,20 @@ pub fn run(cli: &Cli, locales: &Locales) -> Result<()> {
         Some(Commands::Uninstall) => uninstall::handle_uninstall()?,
         Some(Commands::Reset) => system::handle_restore(locales)?,
         Some(Commands::Test) => system::handle_test()?,
+        Some(Commands::EnableTouchIdSudo) => touch_id::handle_enable_touch_id_sudo()?,
         Some(Commands::ClearTrash {
             node_modules,
             build_folders,
+            devcleaner,
             select,
             path,
-        }) => clear_trash::handle_clear_trash(path, *node_modules, *build_folders, *select)?,
+        }) => clear_trash::handle_clear_trash(
+            path,
+            *node_modules,
+            *build_folders,
+            *devcleaner,
+            *select,
+        )?,
         None => {
             if let Some(path) = &cli.path {
                 std::env::set_current_dir(path)?;

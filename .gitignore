@@ -1,2 +1,6 @@
 /target
 /git-chill
+/examples/**/.build
+/examples/**/.swiftpm
+/examples/**/xcuserdata
+.DS_Store

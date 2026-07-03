@@ -1,68 +1,17 @@
+use crate::cleanup::{delete_folders, format_size_bytes, scan_folders, CleanupTarget, CleanupTask};
 use crate::cli::{ask_confirm_default_no, logger};
 use anyhow::Result;
 use rust_i18n::t;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use super::scanner::find_matching_folders;
 use super::selector::select_cleanup_folders;
 
-#[derive(Clone, Copy)]
-pub(super) enum CleanupTarget {
-    NodeModules,
-    BuildFolders,
-}
-
 impl CleanupTarget {
-    pub(super) fn folder_names(self) -> &'static [&'static str] {
-        match self {
-            CleanupTarget::NodeModules => &["node_modules"],
-            CleanupTarget::BuildFolders => &[
-                "target",
-                "build",
-                "dist",
-                "out",
-                ".next",
-                ".nuxt",
-                ".svelte-kit",
-                ".vite",
-                ".cache",
-                ".parcel-cache",
-                "coverage",
-                "__pycache__",
-                ".pytest_cache",
-                ".mypy_cache",
-                ".ruff_cache",
-                ".tox",
-                ".gradle",
-                ".build",
-                "DerivedData",
-                "cmake-build-debug",
-                "cmake-build-release",
-            ],
-        }
-    }
-
-    pub(super) fn skip_folder_names(self) -> &'static [&'static str] {
-        match self {
-            CleanupTarget::NodeModules => &[],
-            CleanupTarget::BuildFolders => &[
-                "node_modules",
-                "vendor",
-                ".git",
-                ".svn",
-                ".hg",
-                ".pnpm-store",
-                ".yarn",
-                "Pods",
-            ],
-        }
-    }
-
     pub(super) fn heading_key(self) -> &'static str {
         match self {
             CleanupTarget::NodeModules => "node_modules_search_heading",
             CleanupTarget::BuildFolders => "build_folders_search_heading",
+            CleanupTarget::DevCleaner => "devcleaner_search_heading",
         }
     }
 
@@ -70,13 +19,7 @@ impl CleanupTarget {
         match self {
             CleanupTarget::NodeModules => "node_modules_search_root",
             CleanupTarget::BuildFolders => "build_folders_search_root",
-        }
-    }
-
-    pub(super) fn read_failed_key(self) -> &'static str {
-        match self {
-            CleanupTarget::NodeModules => "node_modules_search_read_failed",
-            CleanupTarget::BuildFolders => "build_folders_search_read_failed",
+            CleanupTarget::DevCleaner => "devcleaner_search_root",
         }
     }
 
@@ -84,6 +27,7 @@ impl CleanupTarget {
         match self {
             CleanupTarget::NodeModules => "node_modules_search_empty",
             CleanupTarget::BuildFolders => "build_folders_search_empty",
+            CleanupTarget::DevCleaner => "devcleaner_search_empty",
         }
     }
 
@@ -91,6 +35,7 @@ impl CleanupTarget {
         match self {
             CleanupTarget::NodeModules => "node_modules_search_done",
             CleanupTarget::BuildFolders => "build_folders_search_done",
+            CleanupTarget::DevCleaner => "devcleaner_search_done",
         }
     }
 
@@ -98,6 +43,7 @@ impl CleanupTarget {
         match self {
             CleanupTarget::NodeModules => "node_modules_delete_confirm",
             CleanupTarget::BuildFolders => "build_folders_delete_confirm",
+            CleanupTarget::DevCleaner => "devcleaner_delete_confirm",
         }
     }
 
@@ -105,6 +51,7 @@ impl CleanupTarget {
         match self {
             CleanupTarget::NodeModules => "node_modules_delete_cancelled",
             CleanupTarget::BuildFolders => "build_folders_delete_cancelled",
+            CleanupTarget::DevCleaner => "devcleaner_delete_cancelled",
         }
     }
 
@@ -112,6 +59,7 @@ impl CleanupTarget {
         match self {
             CleanupTarget::NodeModules => "node_modules_delete_success",
             CleanupTarget::BuildFolders => "build_folders_delete_success",
+            CleanupTarget::DevCleaner => "devcleaner_delete_success",
         }
     }
 
@@ -119,6 +67,7 @@ impl CleanupTarget {
         match self {
             CleanupTarget::NodeModules => "node_modules_delete_failed",
             CleanupTarget::BuildFolders => "build_folders_delete_failed",
+            CleanupTarget::DevCleaner => "devcleaner_delete_failed",
         }
     }
 
@@ -126,6 +75,7 @@ impl CleanupTarget {
         match self {
             CleanupTarget::NodeModules => "node_modules_delete_done",
             CleanupTarget::BuildFolders => "build_folders_delete_done",
+            CleanupTarget::DevCleaner => "devcleaner_delete_done",
         }
     }
 
@@ -133,15 +83,8 @@ impl CleanupTarget {
         match self {
             CleanupTarget::NodeModules => "node_modules_select_title",
             CleanupTarget::BuildFolders => "build_folders_select_title",
+            CleanupTarget::DevCleaner => "devcleaner_select_title",
         }
-    }
-
-    pub(super) fn should_skip_children(self, path: &Path) -> bool {
-        path.file_name().is_some_and(|name| {
-            self.skip_folder_names()
-                .iter()
-                .any(|folder| name == *folder)
-        })
     }
 }
 
@@ -150,16 +93,16 @@ pub(super) fn handle_folder_cleanup(
     target: CleanupTarget,
     select: bool,
 ) -> Result<()> {
-    let mut folders = find_matching_folders(root_path, target);
-    folders.sort();
-    print_cleanup_folders(root_path, target, &folders);
+    let mut tasks = scan_folders(root_path, target);
+    tasks.sort_by(|a, b| a.path.cmp(&b.path));
+    print_cleanup_tasks(root_path, target, &tasks);
 
-    if folders.is_empty() {
+    if tasks.is_empty() {
         return Ok(());
     }
 
-    let folders = if select {
-        match select_cleanup_folders(target, &folders)? {
+    let tasks = if select {
+        match select_cleanup_folders(target, &tasks)? {
             Some(selected) => selected,
             None => {
                 logger::success(&t!(target.cancelled_key()).to_string());
@@ -172,15 +115,15 @@ pub(super) fn handle_folder_cleanup(
             return Ok(());
         }
 
-        folders
+        tasks
     };
 
-    delete_folders(target, folders);
+    delete_and_print_reports(target, &tasks);
 
     Ok(())
 }
 
-fn print_cleanup_folders(root_path: &Path, target: CleanupTarget, folders: &[PathBuf]) {
+fn print_cleanup_tasks(root_path: &Path, target: CleanupTarget, tasks: &[CleanupTask]) {
     logger::heading(&t!(target.heading_key()).to_string());
     logger::info(&format!(
         "{} {}",
@@ -188,36 +131,47 @@ fn print_cleanup_folders(root_path: &Path, target: CleanupTarget, folders: &[Pat
         root_path.display()
     ));
 
-    for path in folders {
-        logger::text(&path.display().to_string());
+    for task in tasks {
+        logger::text(&format!(
+            "{} ({})",
+            task.path.display(),
+            format_size_bytes(task.size_bytes)
+        ));
     }
 
-    if folders.is_empty() {
+    if tasks.is_empty() {
         logger::info(&t!(target.empty_key()).to_string());
     } else {
-        logger::success(&format!("{} {}", t!(target.found_key()), folders.len()));
+        logger::success(&format!("{} {}", t!(target.found_key()), tasks.len()));
+        logger::info(&format!(
+            "{} {}",
+            t!("cleanup_total_size"),
+            format_size_bytes(total_size(tasks))
+        ));
     }
 }
 
-fn delete_folders(target: CleanupTarget, folders: Vec<PathBuf>) {
+fn delete_and_print_reports(target: CleanupTarget, tasks: &[CleanupTask]) {
+    let reports = delete_folders(tasks);
     let mut deleted_count = 0;
 
-    for path in folders {
-        match fs::remove_dir_all(&path) {
-            Ok(_) => {
-                deleted_count += 1;
-                logger::success(&format!("{} {}", t!(target.success_key()), path.display()));
-            }
-            Err(error) => {
-                logger::warn(&format!(
-                    "{} {} ({})",
-                    t!(target.failed_key()),
-                    path.display(),
-                    error
-                ));
-            }
+    for report in reports {
+        if report.deleted {
+            deleted_count += 1;
+            logger::success(&format!("{} {}", t!(target.success_key()), report.path));
+        } else {
+            logger::warn(&format!(
+                "{} {} ({})",
+                t!(target.failed_key()),
+                report.path,
+                report.error.unwrap_or_default()
+            ));
         }
     }
 
     logger::success(&format!("{} {}", t!(target.done_key()), deleted_count));
+}
+
+fn total_size(tasks: &[CleanupTask]) -> u64 {
+    tasks.iter().map(|task| task.size_bytes).sum()
 }
