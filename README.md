@@ -142,14 +142,12 @@ apps/tui/
 │   ├── main.rs      # Clap CLI entrypoint
 │   ├── app/         # TUI state + event loop
 │   ├── ui/          # ratatui rendering
-│   ├── git/         # Thin wrappers around `git` CLI commands
-│   ├── cli/         # Non-TUI commands + shell install
-│   └── helper/      # Language & theme detection
-└── locales/         # bilingual strings
+│   └── cli/         # Non-TUI commands + shell install
 
 bridge/ffi/          # dedicated C ABI crate
 core/git-ai-core/    # pure/shared Rust logic
 packaging/           # release artifacts and package recipes
+scripts/             # check/build helpers
 ```
 
 **Important rules** (see `AGENTS.md` for full details):
@@ -159,6 +157,14 @@ packaging/           # release artifacts and package recipes
 - No comments in source code
 - New features → add to `ActiveModal` enum + `App` state
 - Always use `app.theme()` for colors
+
+Run the full local verification suite with:
+
+```bash
+scripts/check.sh
+```
+
+See `docs/architecture.md`, `docs/ffi.md`, and `docs/build-and-release.md` for the workspace, ABI, and release flows.
 
 ---
 

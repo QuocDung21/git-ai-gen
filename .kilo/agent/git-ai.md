@@ -110,6 +110,6 @@ Style::default().fg(theme.green)
 | Bilingual text          | `core/git-ai-core/locales/en.yml`, `core/git-ai-core/locales/vi.yml` |
 | CLI command             | `apps/tui/src/cli/args.rs`, `apps/tui/src/cli/system/` |
 | Theme colors            | `apps/tui/src/app/mod.rs:theme()` |
-| Language detection      | `apps/tui/src/helper/mod.rs:get_ai_language()`, `get_ai_language_name()` |
+| Language detection      | `core/git-ai-core/src/helper/mod.rs:get_ai_language()`, `get_ai_language_name()` |
 
 Update this file when architecture changes significantly.

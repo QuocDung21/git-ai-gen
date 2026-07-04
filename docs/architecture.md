@@ -62,6 +62,12 @@ cargo clippy --no-default-features -p git-ai -- -D warnings
 cargo clippy -p git-ai-ffi -- -D warnings
 ```
 
+The same verification flow is available through:
+
+```bash
+scripts/check.sh
+```
+
 ## Migration Rule
 
 Keep each migration step buildable. The `git-ai-ffi` package owns ABI exports and keeps the `libgit_ai_core` library name for downstream native consumers.

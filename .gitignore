@@ -1,6 +1,11 @@
-/target
-/git-chill
-/examples/**/.build
-/examples/**/.swiftpm
-/examples/**/xcuserdata
+target/
+git-chill/
+examples/**/.build/
+examples/**/.swiftpm/
+examples/**/xcuserdata/
+logs/*.log
+packaging/dist/artifacts/*
+packaging/macos/app-artifacts/*
+!packaging/dist/artifacts/.gitkeep
+!packaging/macos/app-artifacts/.gitkeep
 .DS_Store

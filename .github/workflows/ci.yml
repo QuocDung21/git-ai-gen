@@ -20,26 +20,11 @@ jobs:
         with:
           components: clippy, rustfmt
 
-      - name: Check formatting
-        run: cargo fmt --all --check
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
 
-      - name: Check full TUI
-        run: cargo check
+      - name: Verify workspace
+        run: scripts/check.sh
 
-      - name: Check TUI library without default features
-        run: cargo check --no-default-features -p git-ai
-
-      - name: Check FFI bridge
-        run: cargo check -p git-ai-ffi
-
-      - name: Test
-        run: cargo test
-
-      - name: Clippy full TUI
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Clippy TUI library without default features
-        run: cargo clippy --no-default-features -p git-ai -- -D warnings
-
-      - name: Clippy FFI bridge
-        run: cargo clippy -p git-ai-ffi -- -D warnings
+      - name: Build FFI bridge
+        run: scripts/build-ffi.sh
