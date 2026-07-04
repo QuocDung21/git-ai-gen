@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		AA0000010000000000000001 /* GitAi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GitAi.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0000010000000000000001 /* GitAi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitAi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -64,10 +64,10 @@
 			fileSystemSynchronizedGroups = (
 				AA0000010000000000000002 /* git-ai-app */,
 			);
-			name = "GitAi";
+			name = GitAi;
 			packageProductDependencies = (
 			);
-			productName = "GitAi";
+			productName = GitAi;
 			productReference = AA0000010000000000000001 /* GitAi.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -266,6 +266,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 266F5S6AUZ;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -285,12 +286,9 @@
 					"-Wl,-force_load,$(PROJECT_DIR)/RustBuild/libgit_ai_core.a",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "dev.git-ai.GitAi";
-				PRODUCT_NAME = "GitAi";
+				PRODUCT_NAME = GitAi;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG XCODE_DIRECT_BUILD $(inherited)";
-				SWIFT_INCLUDE_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/CGitAiCore/include",
-				);
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(PROJECT_DIR)/CGitAiCore/include";
 				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
@@ -301,6 +299,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 266F5S6AUZ;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -320,12 +319,9 @@
 					"-Wl,-force_load,$(PROJECT_DIR)/RustBuild/libgit_ai_core.a",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "dev.git-ai.GitAi";
-				PRODUCT_NAME = "GitAi";
+				PRODUCT_NAME = GitAi;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "XCODE_DIRECT_BUILD $(inherited)";
-				SWIFT_INCLUDE_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/CGitAiCore/include",
-				);
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(PROJECT_DIR)/CGitAiCore/include";
 				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
@@ -333,20 +329,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA000001000000000000000C /* Build configuration list for PBXProject "git-ai-app" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA000001000000000000000D /* Debug */,
-				AA000001000000000000000E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		AA0000010000000000000007 /* Build configuration list for PBXNativeTarget "GitAi" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA000001000000000000000F /* Debug */,
 				AA0000010000000000000010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA000001000000000000000C /* Build configuration list for PBXProject "git-ai-app" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000001000000000000000D /* Debug */,
+				AA000001000000000000000E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

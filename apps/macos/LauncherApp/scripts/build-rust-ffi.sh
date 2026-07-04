@@ -9,7 +9,7 @@ if [ -f "$HOME/.cargo/env" ]; then
   . "$HOME/.cargo/env"
 fi
 
-export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="$HOME/.cargo/bin:/opt/homebrew/opt/rustup/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 export CARGO_TARGET_DIR="$REPO_ROOT/target"
 
 if [ "$CONFIGURATION" = "Release" ]; then
@@ -20,12 +20,20 @@ else
   CARGO_FLAGS=""
 fi
 
-if ! command -v cargo >/dev/null 2>&1; then
-  echo "error: cargo not found. Install Rust or ensure ~/.cargo/bin is available to Xcode." >&2
+CARGO_BIN="${CARGO_BIN:-}"
+if [ -z "$CARGO_BIN" ]; then
+  CARGO_BIN="$(command -v cargo || true)"
+fi
+if [ -z "$CARGO_BIN" ]; then
+  CARGO_BIN="$(/bin/zsh -lc 'command -v cargo' 2>/dev/null || true)"
+fi
+if [ -z "$CARGO_BIN" ]; then
+  echo "error: cargo not found. Install Rust or set CARGO_BIN to the cargo executable path for Xcode." >&2
+  echo "hint: common paths are ~/.cargo/bin/cargo and /opt/homebrew/opt/rustup/bin/cargo." >&2
   exit 1
 fi
 
-cargo build --manifest-path "$REPO_ROOT/bridge/ffi/Cargo.toml" $CARGO_FLAGS
+"$CARGO_BIN" build --manifest-path "$REPO_ROOT/bridge/ffi/Cargo.toml" $CARGO_FLAGS
 
 LIB_PATH="$REPO_ROOT/target/$PROFILE/libgit_ai_core.a"
 if [ ! -f "$LIB_PATH" ]; then
