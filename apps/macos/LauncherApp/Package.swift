@@ -21,15 +21,24 @@ let package = Package(
             name: "GitAiMacLogic",
             dependencies: ["CGitAiCore"],
             path: "git-ai-app",
-            exclude: ["App"],
+            exclude: [
+                "Assets.xcassets",
+                "git_ai_appApp.swift"
+            ],
             sources: [
-                "Features/Cleanup/Models/CleanupModels.swift",
-                "Features/Cleanup/Services/RustCleanupBridge.swift",
-                "Features/Cleanup/Views/CleanupBroadScanWarningView.swift",
-                "Features/Cleanup/Views/CleanupPreview.swift",
-                "Features/Cleanup/Views/CleanupResultsView.swift",
-                "Features/Cleanup/Views/CleanupSettingsView.swift",
-                "Features/Cleanup/Views/CleanupView.swift"
+                "ContentView.swift",
+                "Models/CleanupModels.swift",
+                "Support/AppDelegate.swift",
+                "Support/AppConstants.swift",
+                "Support/Cleanup/CleanupBroadScanPolicy.swift",
+                "Support/Cleanup/CleanupFormatting.swift",
+                "Support/Cleanup/CleanupSelectionLogic.swift",
+                "Support/Cleanup/RustCleanupBridge.swift",
+                "Views/Cleanup/CleanupBroadScanWarningView.swift",
+                "Views/Cleanup/CleanupPreview.swift",
+                "Views/Cleanup/CleanupResultsView.swift",
+                "Views/Cleanup/CleanupView.swift",
+                "Views/Settings/CleanupSettingsView.swift"
             ],
             linkerSettings: [
                 .unsafeFlags(["-L", "../../../target/debug", "-L", "../../../target/release"]),
@@ -39,7 +48,16 @@ let package = Package(
         .executableTarget(
             name: "GitAiMacApp",
             dependencies: ["GitAiMacLogic"],
-            path: "git-ai-app/App"
+            path: "git-ai-app",
+            exclude: [
+                "Assets.xcassets",
+                "Models",
+                "Support",
+                "Views"
+            ],
+            sources: [
+                "git_ai_appApp.swift"
+            ]
         ),
         .testTarget(
             name: "LauncherLogicTests",

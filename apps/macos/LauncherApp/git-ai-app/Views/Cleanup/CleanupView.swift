@@ -181,21 +181,15 @@ public struct CleanupView: View {
     }
 
     private var formattedTotalSize: String {
-        formatSize(items.map(\.sizeBytes).reduce(0, +))
+        CleanupFormatting.formatSize(items.map(\.sizeBytes).reduce(0, +))
     }
 
     private var formattedSelectedSize: String {
-        let size =
-            items
-            .filter { selected.contains($0.id) }
-            .map(\.sizeBytes)
-            .reduce(0, +)
-
-        return formatSize(size)
+        CleanupFormatting.formatSize(CleanupSelectionLogic.selectedSize(items: items, selected: selected))
     }
 
     private var deleteConfirmationMessage: String {
-        if isBroadScanPath(rootPath) {
+        if CleanupBroadScanPolicy.isBroadScanPath(rootPath) {
             return "This scan started from a broad root: \(rootPath).\n\nYou are about to permanently delete \(selected.count) selected folder(s), freeing about \(formattedSelectedSize). Review each selected path carefully. This cannot be undone."
         }
 
@@ -203,7 +197,7 @@ public struct CleanupView: View {
     }
 
     private var deleteConfirmationTitle: String {
-        isBroadScanPath(rootPath) ? "Delete results from broad root?" : "Delete selected folders?"
+        CleanupBroadScanPolicy.isBroadScanPath(rootPath) ? "Delete results from broad root?" : "Delete selected folders?"
     }
 
     private func chooseFolder() {
@@ -219,7 +213,7 @@ public struct CleanupView: View {
     }
 
     private func scan() {
-        if isBroadScanPath(rootPath) && !skipsBroadScanWarning {
+        if CleanupBroadScanPolicy.isBroadScanPath(rootPath) && !skipsBroadScanWarning {
             broadScanDontAskAgainDraft = skipsBroadScanWarning
             showsBroadScanConfirmation = true
             return
@@ -283,10 +277,7 @@ public struct CleanupView: View {
         isWorking = true
         status = "Deleting..."
 
-        let paths =
-            items
-            .filter { selected.contains($0.id) }
-            .map(\.path)
+        let paths = CleanupSelectionLogic.selectedPaths(items: items, selected: selected)
 
         do {
             reports = try RustCleanupBridge.delete(paths: paths)
@@ -302,20 +293,7 @@ public struct CleanupView: View {
         isWorking = false
     }
 
-    private func formatSize(_ sizeBytes: UInt64) -> String {
-        ByteCountFormatter.string(fromByteCount: Int64(sizeBytes), countStyle: .file)
-    }
-
     private var activeCleanupKind: CleanupKind {
         showsCustomOptions ? cleanupKind : .nodeModules
-    }
-
-    private func isBroadScanPath(_ path: String) -> Bool {
-        let standardizedPath = NSString(string: path).expandingTildeInPath
-        let homePath = FileManager.default.homeDirectoryForCurrentUser.path
-        return standardizedPath == "/"
-            || standardizedPath == "/Users"
-            || standardizedPath == homePath
-            || standardizedPath == "\(homePath)/Documents"
     }
 }

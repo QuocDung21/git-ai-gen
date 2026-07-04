@@ -13,9 +13,9 @@ struct CleanupScanResponse: Decodable, Sendable {
 }
 
 public struct CleanupItem: Decodable, Identifiable, Hashable, Sendable {
-    let path: String
-    let target: String
-    let sizeBytes: UInt64
+    public let path: String
+    public let target: String
+    public let sizeBytes: UInt64
 
     public init(path: String, target: String, sizeBytes: UInt64) {
         self.path = path
@@ -26,7 +26,7 @@ public struct CleanupItem: Decodable, Identifiable, Hashable, Sendable {
     public var id: String { path }
 
     public var formattedSize: String {
-        ByteCountFormatter.string(fromByteCount: Int64(sizeBytes), countStyle: .file)
+        CleanupFormatting.formatSize(sizeBytes)
     }
 
     public var displayName: String {
@@ -101,7 +101,7 @@ struct CleanupItemGroup: Identifiable, Sendable {
     }
 
     var formattedSize: String {
-        ByteCountFormatter.string(fromByteCount: Int64(sizeBytes), countStyle: .file)
+        CleanupFormatting.formatSize(sizeBytes)
     }
 }
 
