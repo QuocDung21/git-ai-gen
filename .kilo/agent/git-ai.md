@@ -16,13 +16,7 @@ apps/tui/
 │   ├── main.rs      # Clap CLI router
 │   ├── app/         # App state, config, event loop, key handlers
 │   ├── ui/          # Layout, components, modal renderers
-│   ├── git/         # Thin wrappers around git CLI commands
-│   ├── cli/         # Non-TUI commands and shell install
-│   ├── helper/      # Language/theme/history helpers
-│   ├── models/      # Enums and shared data models
-│   ├── ffi.rs       # Current C ABI exports
-│   └── constant/    # Prompt and marker constants
-└── tests/
+│   └── cli/         # Non-TUI commands and shell install
 bridge/ffi/          # Dedicated C ABI crate
 core/git-ai-core/    # Pure/shared Rust logic and locales
 ```
@@ -37,7 +31,7 @@ core/git-ai-core/    # Pure/shared Rust logic and locales
 
 4. **State lives in App**: Add new UI state fields to `App` struct in `apps/tui/src/app/mod.rs`. Never use global statics or separate stores.
 
-5. **Modals via ActiveModal enum**: New floating panels must be added as variants in `apps/tui/src/models/mod.rs:ActiveModal`, rendered in `apps/tui/src/ui/mod.rs`, and handled in `apps/tui/src/app/events/handlers/`.
+5. **Modals via ActiveModal enum**: New floating panels must be added as variants in `core/git-ai-core/src/models/mod.rs:ActiveModal`, rendered in `apps/tui/src/ui/mod.rs`, and handled in `apps/tui/src/app/events/handlers/`.
 
 6. **No comments in code** unless explicitly requested. Existing code has zero comments — keep it that way.
 
@@ -49,12 +43,12 @@ core/git-ai-core/    # Pure/shared Rust logic and locales
 
 **Adding a new Git operation**:
 - Add wrapper in `core/git-ai-core/src/git/<module>.rs`
-- Call from focused event handlers or `apps/tui/src/cli/system/`
+- Call from focused event handlers or a focused module under `apps/tui/src/cli/`
 - Update `App` state if needed
 - Add bilingual messages in locales
 
 **Adding a new Modal**:
-1. Add variant to `ActiveModal` enum (`apps/tui/src/models/mod.rs`)
+1. Add variant to `ActiveModal` enum (`core/git-ai-core/src/models/mod.rs`)
 2. Add state fields to `App` struct if required
 3. Add render function in `apps/tui/src/ui/modals/<new>.rs` + export in `mod.rs`
 4. Wire size + dispatch in `apps/tui/src/ui/mod.rs`
@@ -62,7 +56,7 @@ core/git-ai-core/    # Pure/shared Rust logic and locales
 
 **Adding a new CLI subcommand**:
 - Add variant to `Commands` enum in `apps/tui/src/cli/args.rs`
-- Implement handler in `apps/tui/src/cli/system/` or a new module
+- Implement handler in an existing focused module under `apps/tui/src/cli/` or a new module
 - Wire in `run()` match
 
 **Reading/writing git config** (global):
@@ -105,10 +99,10 @@ Style::default().fg(theme.green)
 | Task                    | Primary Files                              |
 |-------------------------|--------------------------------------------|
 | New TUI feature         | `apps/tui/src/app/`, `apps/tui/src/ui/` |
-| New modal               | `apps/tui/src/models/mod.rs`, `apps/tui/src/ui/modals/*.rs` |
+| New modal               | `core/git-ai-core/src/models/mod.rs`, `apps/tui/src/ui/modals/*.rs` |
 | Git wrapper             | `core/git-ai-core/src/git/*.rs` |
 | Bilingual text          | `core/git-ai-core/locales/en.yml`, `core/git-ai-core/locales/vi.yml` |
-| CLI command             | `apps/tui/src/cli/args.rs`, `apps/tui/src/cli/system/` |
+| CLI command             | `apps/tui/src/cli/args.rs`, `apps/tui/src/cli/*.rs` |
 | Theme colors            | `apps/tui/src/app/mod.rs:theme()` |
 | Language detection      | `core/git-ai-core/src/helper/mod.rs:get_ai_language()`, `get_ai_language_name()` |
 

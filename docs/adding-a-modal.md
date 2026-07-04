@@ -12,7 +12,7 @@ This document describes the **preferred modern way** to add a new modal in git-a
 
 ### 1. Add the Modal Variant
 
-Edit `apps/tui/src/models/mod.rs`:
+Edit `core/git-ai-core/src/models/mod.rs`:
 
 ```rust
 pub enum ActiveModal {

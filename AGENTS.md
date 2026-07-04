@@ -16,25 +16,26 @@ This file provides the **standard context** for AI agents to work on this Rust T
 apps/
 └── tui/
     ├── Cargo.toml             # Current git-ai package
-    ├── locales/               # Bilingual locale files for rust_i18n
-    ├── tests/
     └── src/
         ├── main.rs            # Binary entry point
         ├── lib.rs             # Library root — uses Cargo feature "tui"
-        ├── ffi.rs             # C ABI layer — currently still here
-        ├── constant/          # Pure constants
-        ├── git/               # Pure Git command wrappers
-        ├── helper/            # Helper utilities
-        ├── locales.rs         # i18n helper struct/tests
-        ├── models/            # Shared data models
-        ├── theme/             # Theme definitions
         ├── app/               # TUI state & logic
         ├── ui/                # Ratatui rendering + modals
         └── cli/               # Interactive CLI commands
 bridge/
 └── ffi/                       # Dedicated C ABI crate
 core/
-└── git-ai-core/               # Pure/shared Rust logic
+└── git-ai-core/
+    ├── locales/               # Bilingual locale files for rust_i18n
+    ├── tests/
+    └── src/
+        ├── cleanup/           # Dev cleanup scanner/deleter
+        ├── constant/          # Pure constants
+        ├── git/               # Pure Git command wrappers
+        ├── helper/            # Helper utilities
+        ├── locales.rs         # i18n helper struct/tests
+        ├── models/            # Shared data models
+        └── theme/             # Theme definitions
 packaging/                     # Homebrew, macOS, and release artifacts
 scripts/                       # Release/build scripts
 ```
@@ -47,7 +48,7 @@ scripts/                       # Release/build scripts
 
 This allows building a tiny staticlib/rlib for Swift, Kotlin, Node, etc. without pulling the entire dashboard.
 
-**Key Principle**: Keep files small and focused. One concept = one file when reasonable. Pure/shared logic lives at the top level (`models/`, `locales.rs`, `git/`, `helper/`). Heavy interactive code lives behind the `tui` feature.
+**Key Principle**: Keep files small and focused. One concept = one file when reasonable. Pure/shared logic lives in `core/git-ai-core`. Heavy interactive code lives in `apps/tui`. C ABI exports live in `bridge/ffi`.
 
 ## Critical Rules (Always Follow)
 
@@ -64,7 +65,7 @@ Every user-facing string must exist in both `core/git-ai-core/locales/en.yml` an
    Add new UI state to the `App` struct in `app/mod.rs`. No global statics.
 
 5. **Modals via ActiveModal**  
-   New floating panels **must** be added as variants in `app/models.rs`, rendered via `ui/mod.rs`, and handled in `events.rs`.
+   New floating panels **must** be added as variants in `core/git-ai-core/src/models/mod.rs`, rendered via `apps/tui/src/ui/mod.rs`, and handled in focused handlers under `apps/tui/src/app/events/handlers/`.
 
 6. **No comments in source code** (unless explicitly requested).
 
@@ -95,7 +96,7 @@ Every user-facing string must exist in both `core/git-ai-core/locales/en.yml` an
 
 ### Adding a New Modal (Preferred Modern Way)
 
-1. Add variant to `ActiveModal` enum (`apps/tui/src/models/mod.rs`)
+1. Add variant to `ActiveModal` enum (`core/git-ai-core/src/models/mod.rs`)
 2. (Optional) Add state fields to `App` struct
 3. **Create new file**: `ui/modals/<name>.rs`
 4. Export the render function in `ui/modals/mod.rs`
@@ -105,7 +106,7 @@ Every user-facing string must exist in both `core/git-ai-core/locales/en.yml` an
 ### Adding a Git Operation
 
 - Add pure wrapper in `core/git-ai-core/src/git/<module>.rs`
-- Call it from `events.rs` or `cli/system.rs`
+- Call it from focused event handlers or a focused module under `apps/tui/src/cli/`
 - Update relevant `App` state
 - Add bilingual status messages
 
@@ -129,7 +130,7 @@ Style::default().fg(theme.green).add_modifier(Modifier::BOLD)
 
 | Task                    | Primary Files                           | Notes                         |
 | ----------------------- | --------------------------------------- | ----------------------------- |
-| New Modal (recommended) | `apps/tui/src/models/mod.rs` + `apps/tui/src/ui/modals/<name>.rs` | One file per modal |
+| New Modal (recommended) | `core/git-ai-core/src/models/mod.rs` + `apps/tui/src/ui/modals/<name>.rs` | One file per modal |
 | New Git wrapper         | `core/git-ai-core/src/git/<module>.rs`  | Keep pure                     |
 | Add UI state            | `app/mod.rs` (App struct)               | Keep struct manageable        |
 | Handle keys for modal   | `apps/tui/src/app/events/handlers/<name>.rs` | Keep handlers focused    |
