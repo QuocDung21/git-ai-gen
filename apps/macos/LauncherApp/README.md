@@ -102,6 +102,7 @@ open apps/macos/LauncherApp/git-ai-app.xcodeproj
 ```
 
 The `GitAi` scheme has a `Build Rust FFI` phase that builds `bridge/ffi` and links `libgit_ai_core.a`.
+The build phase delegates to `scripts/build-rust-ffi.sh`, which loads `~/.cargo/env` so Xcode GUI builds can find `cargo`.
 
 ## Xcode Previews
 

@@ -133,7 +133,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\nif [ \"$CONFIGURATION\" = \"Release\" ]; then\n  PROFILE=release\n  CARGO_FLAGS=--release\nelse\n  PROFILE=debug\n  CARGO_FLAGS=\"\"\nfi\n\nif [ -x \"$HOME/.cargo/bin/cargo\" ]; then\n  CARGO_BIN=\"$HOME/.cargo/bin/cargo\"\nelse\n  CARGO_BIN=cargo\nfi\n\nmkdir -p \"$PROJECT_DIR/RustBuild\"\n\"$CARGO_BIN\" build --manifest-path \"$PROJECT_DIR/../../../bridge/ffi/Cargo.toml\" $CARGO_FLAGS\ncp \"$PROJECT_DIR/../../../target/$PROFILE/libgit_ai_core.a\" \"$PROJECT_DIR/RustBuild/libgit_ai_core.a\"\n";
+			shellScript = "\"$PROJECT_DIR/scripts/build-rust-ffi.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
