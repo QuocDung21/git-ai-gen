@@ -7,6 +7,7 @@ apps/macos/**/.build/
 apps/macos/**/.swiftpm/
 apps/macos/**/xcuserdata/
 apps/macos/**/*.xcuserdata/
+apps/macos/**/RustBuild/
 logs/*.log
 packaging/dist/artifacts/*
 packaging/macos/app-artifacts/*

@@ -7,9 +7,12 @@ Canonical SwiftUI macOS app shell for `git-ai`, organized in the same shape as `
 ```text
 apps/macos/LauncherApp/
 ├── Package.swift
+├── git-ai-app.xcodeproj/
 ├── CGitAiCore/
 │   ├── git_ai_core.c
-│   └── include/git_ai_core.h
+│   └── include/
+│       ├── git_ai_core.h
+│       └── module.modulemap
 ├── LauncherLogicTests/
 └── git-ai-app/
     ├── App/
@@ -89,6 +92,16 @@ swift run
 ```
 
 The package links against `../../../target/debug/libgit_ai_core.a` or `../../../target/release/libgit_ai_core.a`.
+
+## Open in Xcode
+
+Open the native project:
+
+```bash
+open apps/macos/LauncherApp/git-ai-app.xcodeproj
+```
+
+The `GitAi` scheme has a `Build Rust FFI` phase that builds `bridge/ffi` and links `libgit_ai_core.a`.
 
 ## Xcode Previews
 

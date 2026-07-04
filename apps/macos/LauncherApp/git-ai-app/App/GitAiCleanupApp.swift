@@ -1,5 +1,7 @@
 import AppKit
+#if !XCODE_DIRECT_BUILD
 import GitAiMacLogic
+#endif
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {

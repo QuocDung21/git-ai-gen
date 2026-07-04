@@ -1,0 +1,4 @@
+module CGitAiCore {
+  header "git_ai_core.h"
+  export *
+}

@@ -1,6 +1,6 @@
 import Foundation
 
-public enum CleanupKind: String, CaseIterable, Identifiable {
+public enum CleanupKind: String, CaseIterable, Identifiable, Sendable {
     case nodeModules = "Node Modules"
     case buildFolders = "Build Folders"
     case devCleaner = "DevCleaner"
@@ -8,11 +8,11 @@ public enum CleanupKind: String, CaseIterable, Identifiable {
     public var id: String { rawValue }
 }
 
-struct CleanupScanResponse: Decodable {
+struct CleanupScanResponse: Decodable, Sendable {
     let items: [CleanupItem]
 }
 
-public struct CleanupItem: Decodable, Identifiable, Hashable {
+public struct CleanupItem: Decodable, Identifiable, Hashable, Sendable {
     let path: String
     let target: String
     let sizeBytes: UInt64
@@ -90,7 +90,7 @@ public struct CleanupItem: Decodable, Identifiable, Hashable {
     }
 }
 
-struct CleanupItemGroup: Identifiable {
+struct CleanupItemGroup: Identifiable, Sendable {
     let name: String
     let items: [CleanupItem]
 
@@ -105,11 +105,11 @@ struct CleanupItemGroup: Identifiable {
     }
 }
 
-struct CleanupDeleteResponse: Decodable {
+struct CleanupDeleteResponse: Decodable, Sendable {
     let reports: [CleanupDeleteReport]
 }
 
-struct CleanupDeleteReport: Decodable, Identifiable {
+struct CleanupDeleteReport: Decodable, Identifiable, Sendable {
     let path: String
     let deleted: Bool
     let error: String?
@@ -117,6 +117,6 @@ struct CleanupDeleteReport: Decodable, Identifiable {
     var id: String { path }
 }
 
-struct CleanupErrorResponse: Decodable {
+struct CleanupErrorResponse: Decodable, Sendable {
     let error: String
 }

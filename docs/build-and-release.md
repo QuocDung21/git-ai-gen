@@ -43,6 +43,12 @@ scripts/build-macos-app.sh
 
 This builds the FFI debug library first, then runs `swift build` and `swift test` in `apps/macos/LauncherApp`.
 
+To build the native Xcode project directly:
+
+```bash
+xcodebuild -project apps/macos/LauncherApp/git-ai-app.xcodeproj -scheme GitAi -configuration Debug CODE_SIGNING_ALLOWED=NO build
+```
+
 ## Cleanup
 
 ```bash
