@@ -28,14 +28,15 @@ where
 
     for relative_path in target.known_relative_paths() {
         let path = root_path.join(relative_path);
-        if path.is_dir() && mark_emitted(&mut emitted, &path) {
-            if !on_task(CleanupTask::new(
+        if path.is_dir()
+            && mark_emitted(&mut emitted, &path)
+            && !on_task(CleanupTask::new(
                 path.clone(),
                 target,
                 directory_size(path.as_path()),
-            )) {
-                return;
-            }
+            ))
+        {
+            return;
         }
     }
 
@@ -61,14 +62,14 @@ where
                 .file_name()
                 .is_some_and(|name| target.folder_names().iter().any(|folder| name == *folder))
         {
-            if mark_emitted(&mut emitted, path) {
-                if !on_task(CleanupTask::new(
+            if mark_emitted(&mut emitted, path)
+                && !on_task(CleanupTask::new(
                     path.to_path_buf(),
                     target,
                     directory_size(path),
-                )) {
-                    return;
-                }
+                ))
+            {
+                return;
             }
             walker.skip_current_dir();
         }

@@ -4,7 +4,7 @@ use rust_i18n::t;
 use crate::cli::{ask_confirm_default_yes, logger};
 
 pub(super) fn require_system_authentication() -> Result<()> {
-    logger::heading(&t!("clear_trash_auth_heading").to_string());
+    logger::heading(t!("clear_trash_auth_heading").as_ref());
 
     #[cfg(target_family = "unix")]
     {
@@ -24,12 +24,12 @@ pub(super) fn require_system_authentication() -> Result<()> {
             bail!("{}", t!("clear_trash_auth_failed"));
         }
 
-        logger::success(&t!("clear_trash_auth_success").to_string());
+        logger::success(t!("clear_trash_auth_success").as_ref());
     }
 
     #[cfg(not(target_family = "unix"))]
     {
-        logger::success(&t!("clear_trash_auth_success").to_string());
+        logger::success(t!("clear_trash_auth_success").as_ref());
     }
 
     Ok(())
@@ -38,16 +38,16 @@ pub(super) fn require_system_authentication() -> Result<()> {
 #[cfg(target_os = "macos")]
 fn auth_prompt() -> String {
     if !sudo_touch_id_configured() {
-        logger::warn(&t!("clear_trash_touch_id_not_configured").to_string());
-        logger::info(&t!("clear_trash_password_hint").to_string());
+        logger::warn(t!("clear_trash_touch_id_not_configured").as_ref());
+        logger::info(t!("clear_trash_password_hint").as_ref());
         return t!("clear_trash_auth_prompt").to_string();
     }
 
-    if ask_confirm_default_yes(&t!("clear_trash_touch_id_confirm").to_string()).unwrap_or(false) {
-        logger::info(&t!("clear_trash_touch_id_hint").to_string());
+    if ask_confirm_default_yes(t!("clear_trash_touch_id_confirm").as_ref()).unwrap_or(false) {
+        logger::info(t!("clear_trash_touch_id_hint").as_ref());
         t!("clear_trash_auth_prompt_touch_id").to_string()
     } else {
-        logger::info(&t!("clear_trash_password_hint").to_string());
+        logger::info(t!("clear_trash_password_hint").as_ref());
         t!("clear_trash_auth_prompt").to_string()
     }
 }

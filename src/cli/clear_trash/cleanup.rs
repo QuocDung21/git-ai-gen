@@ -105,13 +105,13 @@ pub(super) fn handle_folder_cleanup(
         match select_cleanup_folders(target, &tasks)? {
             Some(selected) => selected,
             None => {
-                logger::success(&t!(target.cancelled_key()).to_string());
+                logger::success(t!(target.cancelled_key()).as_ref());
                 return Ok(());
             }
         }
     } else {
-        if !ask_confirm_default_no(&t!(target.confirm_key()).to_string())? {
-            logger::success(&t!(target.cancelled_key()).to_string());
+        if !ask_confirm_default_no(t!(target.confirm_key()).as_ref())? {
+            logger::success(t!(target.cancelled_key()).as_ref());
             return Ok(());
         }
 
@@ -124,7 +124,7 @@ pub(super) fn handle_folder_cleanup(
 }
 
 fn print_cleanup_tasks(root_path: &Path, target: CleanupTarget, tasks: &[CleanupTask]) {
-    logger::heading(&t!(target.heading_key()).to_string());
+    logger::heading(t!(target.heading_key()).as_ref());
     logger::info(&format!(
         "{} {}",
         t!(target.root_key()),
@@ -140,7 +140,7 @@ fn print_cleanup_tasks(root_path: &Path, target: CleanupTarget, tasks: &[Cleanup
     }
 
     if tasks.is_empty() {
-        logger::info(&t!(target.empty_key()).to_string());
+        logger::info(t!(target.empty_key()).as_ref());
     } else {
         logger::success(&format!("{} {}", t!(target.found_key()), tasks.len()));
         logger::info(&format!(

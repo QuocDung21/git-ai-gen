@@ -45,11 +45,12 @@ pub(super) fn select_cleanup_folders(
                 let selected_tasks = tasks
                     .iter()
                     .zip(selected.iter())
-                    .filter_map(|(task, selected)| selected.then(|| task.clone()))
+                    .filter(|(_, selected)| **selected)
+                    .map(|(task, _)| task.clone())
                     .collect::<Vec<_>>();
 
                 if selected_tasks.is_empty() {
-                    logger::warn(&t!("cleanup_select_empty").to_string());
+                    logger::warn(t!("cleanup_select_empty").as_ref());
                     continue;
                 }
 
@@ -74,8 +75,8 @@ fn render_select_cleanup_folders(
     offset: usize,
 ) -> Result<()> {
     term.clear_screen()?;
-    logger::heading(&t!(target.select_title_key()).to_string());
-    logger::info(&t!("cleanup_select_help").to_string());
+    logger::heading(t!(target.select_title_key()).as_ref());
+    logger::info(t!("cleanup_select_help").as_ref());
 
     let page_size = cleanup_select_page_size();
     let end = tasks.len().min(offset + page_size);

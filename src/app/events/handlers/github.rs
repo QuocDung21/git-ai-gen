@@ -47,7 +47,8 @@ pub fn handle_download_tree(app: &mut App, key: &KeyEvent) {
                     app.status_message = t!("github_branch_ok").to_string();
                 }
                 Err(e) => {
-                    app.status_message = format!("❌ Lỗi: {}", e);
+                    app.status_message =
+                        t!("github_branch_fetch_err", err = e.to_string()).to_string();
                 }
             }
         }
@@ -141,7 +142,8 @@ pub fn handle_github_cloning(app: &mut App) -> bool {
     {
         Ok(dir) => dir,
         Err(e) => {
-            app.github_cloning_error = Some(format!("Không thể tạo thư mục tạm: {}", e));
+            app.github_cloning_error =
+                Some(t!("github_temp_dir_err", err = e.to_string()).to_string());
             app.github_cloning = false;
             return true;
         }

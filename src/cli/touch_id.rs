@@ -7,27 +7,27 @@ use crate::cli::{ask_confirm_default_no, logger};
 pub fn handle_enable_touch_id_sudo() -> Result<()> {
     #[cfg(not(target_os = "macos"))]
     {
-        logger::warn(&t!("touch_id_sudo_unsupported").to_string());
+        logger::warn(t!("touch_id_sudo_unsupported").as_ref());
         return Ok(());
     }
 
     #[cfg(target_os = "macos")]
     {
-        logger::heading(&t!("touch_id_sudo_heading").to_string());
+        logger::heading(t!("touch_id_sudo_heading").as_ref());
 
         if sudo_touch_id_configured() {
-            logger::success(&t!("touch_id_sudo_already_enabled").to_string());
+            logger::success(t!("touch_id_sudo_already_enabled").as_ref());
             return Ok(());
         }
 
-        logger::warn(&t!("touch_id_sudo_warning").to_string());
-        if !ask_confirm_default_no(&t!("touch_id_sudo_confirm").to_string())? {
-            logger::success(&t!("touch_id_sudo_cancelled").to_string());
+        logger::warn(t!("touch_id_sudo_warning").as_ref());
+        if !ask_confirm_default_no(t!("touch_id_sudo_confirm").as_ref())? {
+            logger::success(t!("touch_id_sudo_cancelled").as_ref());
             return Ok(());
         }
 
         enable_touch_id_for_sudo()?;
-        logger::success(&t!("touch_id_sudo_enabled").to_string());
+        logger::success(t!("touch_id_sudo_enabled").as_ref());
     }
 
     Ok(())

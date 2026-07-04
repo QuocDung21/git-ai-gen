@@ -38,22 +38,22 @@ pub fn handle_clear_trash(
         return Ok(());
     }
 
-    logger::heading(&t!("clear_trash_heading").to_string());
+    logger::heading(t!("clear_trash_heading").as_ref());
     #[cfg(not(target_os = "macos"))]
     {
-        logger::warn(&t!("clear_trash_unsupported").to_string());
+        logger::warn(t!("clear_trash_unsupported").as_ref());
         return Ok(());
     }
 
     #[cfg(target_os = "macos")]
     {
         if !trash::confirm_empty_trash()? {
-            logger::success(&t!("clear_trash_cancelled").to_string());
+            logger::success(t!("clear_trash_cancelled").as_ref());
             return Ok(());
         }
 
         empty_macos_trash()?;
-        logger::success(&t!("clear_trash_success").to_string());
+        logger::success(t!("clear_trash_success").as_ref());
     }
 
     Ok(())

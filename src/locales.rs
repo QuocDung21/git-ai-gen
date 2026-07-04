@@ -120,3 +120,74 @@ impl Locales {
             .unwrap_or_else(|e| panic!("Trục trặc khi parse file ngôn ngữ '{}': {}", lang, e))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+    use std::path::PathBuf;
+
+    fn locale_keys(content: &str) -> BTreeSet<String> {
+        let value: serde_yaml::Value = serde_yaml::from_str(content).unwrap();
+        value
+            .as_mapping()
+            .unwrap()
+            .keys()
+            .map(|key| key.as_str().unwrap().to_string())
+            .collect()
+    }
+
+    #[test]
+    fn locale_files_have_matching_keys() {
+        let en_keys = locale_keys(include_str!("../locales/en.yml"));
+        let vi_keys = locale_keys(include_str!("../locales/vi.yml"));
+
+        assert_eq!(en_keys, vi_keys);
+    }
+
+    fn source_t_macro_keys() -> BTreeSet<String> {
+        let src_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut keys = BTreeSet::new();
+
+        for entry in walkdir::WalkDir::new(src_dir)
+            .into_iter()
+            .filter_map(Result::ok)
+        {
+            if entry
+                .path()
+                .extension()
+                .is_none_or(|extension| extension != "rs")
+            {
+                continue;
+            }
+
+            let content = std::fs::read_to_string(entry.path()).unwrap();
+            for (index, _) in content.match_indices("t!(\"") {
+                if index > 0 {
+                    let previous = content[..index].chars().next_back().unwrap();
+                    if previous.is_alphanumeric() || previous == '_' {
+                        continue;
+                    }
+                }
+
+                let part = &content[index + 4..];
+                if let Some((key, _)) = part.split_once('"') {
+                    keys.insert(key.to_string());
+                }
+            }
+        }
+
+        keys
+    }
+
+    #[test]
+    fn literal_t_macro_keys_exist_in_locale_files() {
+        let locale_keys = locale_keys(include_str!("../locales/en.yml"));
+        let source_keys = source_t_macro_keys();
+        let missing_keys = source_keys
+            .difference(&locale_keys)
+            .cloned()
+            .collect::<Vec<_>>();
+
+        assert!(missing_keys.is_empty(), "{missing_keys:?}");
+    }
+}

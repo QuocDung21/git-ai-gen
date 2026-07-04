@@ -1,6 +1,7 @@
 use crate::cli::clean_profile_file;
 use crate::cli::logger;
 use anyhow::Result;
+use rust_i18n::t;
 
 #[cfg(target_family = "unix")]
 use crate::cli::get_active_unix_profile;
@@ -8,18 +9,27 @@ use crate::cli::get_active_unix_profile;
 use crate::cli::get_windows_profile;
 
 pub fn handle_uninstall() -> Result<()> {
-    logger::warn("🗑️  Uninstalling configuration from system...");
+    logger::warn(t!("uninstall_start").as_ref());
     #[cfg(target_family = "unix")]
     {
         let profile = get_active_unix_profile();
         if clean_profile_file(&profile)? {
-            logger::success(&format!("Successfully removed from: {}", profile.display()));
-            logger::note(&format!(
-                "👉 Please restart Terminal or run 'source {}' to apply.",
-                profile.display()
-            ));
+            logger::success(
+                t!(
+                    "uninstall_removed_from",
+                    path = profile.display().to_string()
+                )
+                .as_ref(),
+            );
+            logger::note(
+                t!(
+                    "uninstall_restart_terminal",
+                    path = profile.display().to_string()
+                )
+                .as_ref(),
+            );
         } else {
-            logger::info("No git-ai configuration found to remove.");
+            logger::info(t!("uninstall_no_config").as_ref());
         }
     }
 
@@ -27,22 +37,22 @@ pub fn handle_uninstall() -> Result<()> {
     {
         let profile = get_windows_profile()?;
         if clean_profile_file(&profile)? {
-            logger::success("Removed functions from PowerShell Profile!");
-            logger::note("👉 Please restart PowerShell to apply changes.");
+            logger::success(t!("uninstall_removed_powershell").as_ref());
+            logger::note(t!("uninstall_restart_powershell").as_ref());
         } else {
-            logger::info("No PowerShell Profile configuration found to remove.");
+            logger::info(t!("uninstall_no_powershell_config").as_ref());
         }
     }
 
     let _ = std::process::Command::new("git")
         .args(["config", "--global", "--remove-section", "git-ai"])
         .output();
-    logger::success("Cleaned up all git-ai configurations in Git Config.");
+    logger::success(t!("uninstall_git_config_cleaned").as_ref());
 
     let chill_dir = crate::helper::Helper::get_git_chill_dir();
     if chill_dir.exists() {
         let _ = std::fs::remove_dir_all(&chill_dir);
-        logger::success("Cleaned up ~/.git-chill history directory.");
+        logger::success(t!("uninstall_history_cleaned").as_ref());
     }
 
     Ok(())

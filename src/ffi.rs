@@ -61,7 +61,10 @@ struct CleanupStreamDoneJson {
 
 #[derive(Serialize)]
 struct FfiErrorJson {
+    ok: bool,
+    code: &'static str,
     error: String,
+    message: String,
 }
 
 type CleanupScanCallback = Option<
@@ -86,6 +89,16 @@ fn string_from_c_char(value: *const c_char) -> Option<String> {
 fn json_string<T: Serialize>(value: &T) -> *mut c_char {
     let json = serde_json::to_string(value).unwrap_or_else(|_| "{}".to_string());
     CString::new(json).unwrap().into_raw()
+}
+
+fn ffi_error(code: &'static str, message: impl Into<String>) -> *mut c_char {
+    let message = message.into();
+    json_string(&FfiErrorJson {
+        ok: false,
+        code,
+        error: message.clone(),
+        message,
+    })
 }
 
 #[no_mangle]
@@ -214,17 +227,13 @@ pub extern "C" fn git_ai_cleanup_scan_devcleaner_stream_cancellable(
 #[no_mangle]
 pub extern "C" fn git_ai_cleanup_delete_paths(paths_json: *const c_char) -> *mut c_char {
     let Some(paths_json) = string_from_c_char(paths_json) else {
-        return json_string(&FfiErrorJson {
-            error: "Invalid paths JSON pointer".to_string(),
-        });
+        return ffi_error("invalid_paths_json_pointer", "Invalid paths JSON pointer");
     };
 
     let paths = match serde_json::from_str::<Vec<String>>(&paths_json) {
         Ok(paths) => paths,
         Err(error) => {
-            return json_string(&FfiErrorJson {
-                error: error.to_string(),
-            });
+            return ffi_error("invalid_paths_json", error.to_string());
         }
     };
 
@@ -234,9 +243,7 @@ pub extern "C" fn git_ai_cleanup_delete_paths(paths_json: *const c_char) -> *mut
 
 fn cleanup_scan(path: *const c_char, target: crate::cleanup::CleanupTarget) -> *mut c_char {
     let Some(path) = string_from_c_char(path) else {
-        return json_string(&FfiErrorJson {
-            error: "Invalid path pointer".to_string(),
-        });
+        return ffi_error("invalid_path_pointer", "Invalid path pointer");
     };
 
     let items = crate::cleanup::scan_folders(Path::new(&path), target)
@@ -258,15 +265,11 @@ fn cleanup_scan_stream(
     user_data: *mut c_void,
 ) -> *mut c_char {
     let Some(path) = string_from_c_char(path) else {
-        return json_string(&FfiErrorJson {
-            error: "Invalid path pointer".to_string(),
-        });
+        return ffi_error("invalid_path_pointer", "Invalid path pointer");
     };
 
     let Some(callback) = callback else {
-        return json_string(&FfiErrorJson {
-            error: "Invalid scan callback".to_string(),
-        });
+        return ffi_error("invalid_scan_callback", "Invalid scan callback");
     };
 
     crate::cleanup::scan_folders_each(Path::new(&path), target, |task| {
@@ -290,15 +293,11 @@ fn cleanup_scan_stream_cancellable(
     user_data: *mut c_void,
 ) -> *mut c_char {
     let Some(path) = string_from_c_char(path) else {
-        return json_string(&FfiErrorJson {
-            error: "Invalid path pointer".to_string(),
-        });
+        return ffi_error("invalid_path_pointer", "Invalid path pointer");
     };
 
     let Some(callback) = callback else {
-        return json_string(&FfiErrorJson {
-            error: "Invalid scan callback".to_string(),
-        });
+        return ffi_error("invalid_scan_callback", "Invalid scan callback");
     };
 
     crate::cleanup::scan_folders_each_until(Path::new(&path), target, |task| {
@@ -582,4 +581,24 @@ pub extern "C" fn get_ai_test() -> *mut c_char {
     let message = "Calling";
     let c_str = CString::new(message).unwrap();
     c_str.into_raw()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ffi_error_keeps_legacy_error_field_and_adds_code() {
+        let ptr = ffi_error("invalid_path_pointer", "Invalid path pointer");
+        let value = unsafe {
+            let raw = CString::from_raw(ptr);
+            let text = raw.to_str().unwrap().to_string();
+            serde_json::from_str::<serde_json::Value>(&text).unwrap()
+        };
+
+        assert_eq!(value["ok"], false);
+        assert_eq!(value["code"], "invalid_path_pointer");
+        assert_eq!(value["error"], "Invalid path pointer");
+        assert_eq!(value["message"], "Invalid path pointer");
+    }
 }

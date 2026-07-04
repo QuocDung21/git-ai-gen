@@ -5,9 +5,9 @@ use rust_i18n::t;
 pub(super) fn confirm_empty_trash() -> Result<bool> {
     show_macos_confirm_dialog(
         "git-ai-clean",
-        &t!("clear_trash_confirm").to_string(),
-        "Empty Trash",
-        "Cancel",
+        t!("clear_trash_confirm").as_ref(),
+        t!("clear_trash_button_confirm").as_ref(),
+        t!("clear_trash_button_cancel").as_ref(),
     )
 }
 
@@ -42,7 +42,7 @@ fn show_macos_confirm_dialog(
         .arg("-e")
         .arg(script)
         .output()
-        .context("failed to show macOS confirmation dialog")?;
+        .with_context(|| t!("clear_trash_dialog_failed").to_string())?;
 
     Ok(output.status.success())
 }
@@ -61,7 +61,7 @@ pub fn empty_macos_trash() -> Result<()> {
         .arg("-e")
         .arg(r#"tell application "Finder" to empty trash"#)
         .output()
-        .context("failed to run osascript")?;
+        .with_context(|| t!("clear_trash_osascript_failed").to_string())?;
 
     if output.status.success() {
         return Ok(());
@@ -70,11 +70,7 @@ pub fn empty_macos_trash() -> Result<()> {
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_owned();
 
     if stderr.contains("is in use") {
-        bail!(
-            "{}\n{}",
-            stderr,
-            "Trash contains an item currently in use. Close the related app/process, or use force clean."
-        );
+        bail!("{}\n{}", stderr, t!("clear_trash_item_in_use"));
     }
 
     if stderr.is_empty() {

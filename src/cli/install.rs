@@ -1,9 +1,8 @@
 use crate::cli::logger;
 use crate::cli::spinner::with_spinner;
-use crate::cli::{
-    append_to_file, ask_confirm_default_no, clean_profile_file, print_commands_help, Locales,
-};
+use crate::cli::{append_to_file, ask_confirm_default_no, clean_profile_file, print_commands_help};
 use anyhow::Result;
+use rust_i18n::t;
 use std::env;
 
 #[cfg(target_family = "unix")]
@@ -21,7 +20,7 @@ pub fn handle_install() -> Result<()> {
 
         if target_profile.exists() {
             let content = with_spinner(
-                "Auto-configuring system...".to_string(),
+                t!("install_configuring").to_string(),
                 || -> anyhow::Result<String> {
                     let raw = std::fs::read_to_string(&target_profile)?;
                     Ok(raw)
@@ -29,16 +28,15 @@ pub fn handle_install() -> Result<()> {
             )?;
             if content.contains("# ULTIMATE GIT-AI WORKFLOW") {
                 logger::path(
-                    "⚠️  Configuration already exists in:",
+                    t!("install_existing_config").as_ref(),
                     &target_profile.display().to_string(),
                 );
 
-                let prompt = "🔄 Overwrite existing configuration? (y/N): ";
-                if ask_confirm_default_no(prompt)? {
+                if ask_confirm_default_no(t!("install_overwrite_prompt").as_ref())? {
                     clean_profile_file(&target_profile)?;
-                    logger::info("🧹 Cleaned old configuration.");
+                    logger::info(t!("install_cleaned_old_config").as_ref());
                 } else {
-                    logger::success("Install cancelled. Kept existing config.");
+                    logger::success(t!("install_cancelled_kept_config").as_ref());
                     return Ok(());
                 }
             }
@@ -51,13 +49,16 @@ pub fn handle_install() -> Result<()> {
 
         append_to_file(&target_profile, &alias_lines)?;
 
-        logger::success("Configuration successful! Added aliases:");
-        let dummy_locales = Locales::new("English");
-        print_commands_help(&dummy_locales);
-        logger::note(&format!(
-            "\n👉 Please run command: source {}",
-            target_profile.display()
-        ));
+        logger::success(t!("install_success_aliases").as_ref());
+        let locales = crate::helper::Helper::get_locales();
+        print_commands_help(&locales);
+        logger::note(
+            t!(
+                "install_source_command",
+                path = target_profile.display().to_string()
+            )
+            .as_ref(),
+        );
     }
 
     #[cfg(target_os = "windows")]
@@ -68,16 +69,15 @@ pub fn handle_install() -> Result<()> {
             let content = std::fs::read_to_string(&profile_path)?;
             if content.contains("# ULTIMATE GIT-AI WORKFLOW") {
                 logger::path(
-                    "⚠️  Configuration already exists in:",
+                    t!("install_existing_config").as_ref(),
                     &profile_path.display().to_string(),
                 );
 
-                let prompt = "🔄 Overwrite existing configuration? (y/N): ";
-                if ask_confirm_default_no(prompt)? {
+                if ask_confirm_default_no(t!("install_overwrite_prompt").as_ref())? {
                     clean_profile_file(&profile_path)?;
-                    logger::info("🧹 Cleaned old configuration.");
+                    logger::info(t!("install_cleaned_old_config").as_ref());
                 } else {
-                    logger::success("Install cancelled. Kept existing config.");
+                    logger::success(t!("install_cancelled_kept_config").as_ref());
                     return Ok(());
                 }
             }
@@ -94,10 +94,10 @@ pub fn handle_install() -> Result<()> {
 
         append_to_file(&profile_path, &func_lines)?;
 
-        logger::success("Configuration successful! Added aliases:");
-        let dummy_locales = Locales::new("English");
-        print_commands_help(&dummy_locales);
-        logger::note("\n👉 Please restart PowerShell to apply new commands.");
+        logger::success(t!("install_success_aliases").as_ref());
+        let locales = crate::helper::Helper::get_locales();
+        print_commands_help(&locales);
+        logger::note(t!("install_restart_powershell").as_ref());
     }
     Ok(())
 }

@@ -736,8 +736,9 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                                 if let Ok(c_out) = checkout_out {
                                     if c_out.status.success() {
                                         if let Err(e) = app.visit_repo_dir() {
-                                            let _ = e;
-                                            app.status_message = format!("❌ Lỗi: {}", e);
+                                            app.status_message =
+                                                t!("github_repo_visit_err", err = e.to_string())
+                                                    .to_string();
                                         } else {
                                             app.current_github_branch = selected_branch;
                                             app.selected_github_tree_index = 0;
@@ -756,7 +757,8 @@ pub fn handle_select_modal_keys(app: &mut App, key: &KeyEvent) {
                             } else {
                                 let stderr =
                                     String::from_utf8_lossy(&out.stderr).trim().to_string();
-                                app.status_message = format!("❌ Fetch failed: {}", stderr);
+                                app.status_message =
+                                    t!("github_branch_fetch_err", err = stderr).to_string();
                             }
                         } else {
                             app.status_message = t!("github_branch_fetch_cmd_err").to_string();

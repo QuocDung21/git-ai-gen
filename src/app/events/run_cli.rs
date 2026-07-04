@@ -5,6 +5,7 @@ use crossterm::{
 };
 use ratatui::backend::Backend;
 use ratatui::Terminal;
+use rust_i18n::t;
 
 use std::io::Write;
 
@@ -34,10 +35,10 @@ where
     stdout.flush()?;
 
     if let Err(e) = cmd() {
-        println!("❌ Error: {}", e);
+        println!("{} {}", t!("error_prefix"), e);
     }
 
-    println!("\n👉 Press Enter to return to Dashboard...");
+    println!("\n{}", t!("press_enter"));
     let mut buf = String::new();
     std::io::stdin().read_line(&mut buf)?;
 

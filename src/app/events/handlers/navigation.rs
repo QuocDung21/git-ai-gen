@@ -306,7 +306,7 @@ fn handle_ai_prompt_send(app: &mut App) {
             return;
         }
         Err(err) => {
-            app.status_message = format!("❌ Error capturing diff: {}", err);
+            app.status_message = t!("diff_capture_err", err = err).to_string();
             return;
         }
     };
@@ -442,7 +442,7 @@ fn handle_diff_capture(app: &mut App) {
             }
         }
         Err(e) => {
-            app.status_message = format!("❌ Error capturing diff: {}", e);
+            app.status_message = t!("diff_capture_err", err = e).to_string();
         }
     }
 }
