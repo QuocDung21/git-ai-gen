@@ -1,32 +1,24 @@
-# GitAiCleanupUI
+# GitAiMacApp
 
-SwiftUI macOS example that calls `git-ai` cleanup through the Rust C ABI.
+Canonical SwiftUI macOS app shell for `git-ai`, organized in the same shape as `look` under `apps/macos/LauncherApp`.
 
 ## Structure
 
 ```text
-examples/cleanup-ui/macos-swift/
+apps/macos/LauncherApp/
 ├── Package.swift
-├── Sources/
-│   ├── CGitAiCore/
-│   │   ├── git_ai_core.c
-│   │   └── include/git_ai_core.h
-│   ├── GitAiCleanupUI/
-│   │   └── App/
-│   │       └── GitAiCleanupApp.swift
-│   ├── GitAiCleanupUILibrary/
-│   │   └── Features/
-│   │       └── Cleanup/
-│   │           ├── Models/
-│   │           │   └── CleanupModels.swift
-│   │           ├── Services/
-│   │           │   └── RustCleanupBridge.swift
-│   │           └── Views/
-│   │               ├── CleanupBroadScanWarningView.swift
-│   │               ├── CleanupPreview.swift
-│   │               ├── CleanupResultsView.swift
-│   │               ├── CleanupSettingsView.swift
-│   │               └── CleanupView.swift
+├── CGitAiCore/
+│   ├── git_ai_core.c
+│   └── include/git_ai_core.h
+├── LauncherLogicTests/
+└── git-ai-app/
+    ├── App/
+    │   └── GitAiCleanupApp.swift
+    └── Features/
+        └── Cleanup/
+            ├── Models/
+            ├── Services/
+            └── Views/
 ```
 
 Swift calls only the stable C ABI:
@@ -88,7 +80,7 @@ This creates:
 target/debug/libgit_ai_core.a
 ```
 
-## Run SwiftUI Example
+## Run SwiftUI App
 
 From this folder:
 
@@ -96,11 +88,11 @@ From this folder:
 swift run
 ```
 
-The package links against `../../../target/debug/libgit_ai_core.a`.
+The package links against `../../../target/debug/libgit_ai_core.a` or `../../../target/release/libgit_ai_core.a`.
 
 ## Xcode Previews
 
-Open `Sources/GitAiCleanupUILibrary/Features/Cleanup/Views/CleanupPreview.swift` and select the `GitAiCleanupUILibrary` scheme for Canvas previews. If Xcode does not preview package files on your machine, use `swift run` for the app workflow.
+Open `git-ai-app/Features/Cleanup/Views/CleanupPreview.swift` and select the `GitAiMacLogic` scheme for Canvas previews. If Xcode does not preview package files on your machine, use `swift run` for the app workflow.
 
 ## Notes
 
@@ -112,4 +104,4 @@ Open `Sources/GitAiCleanupUILibrary/Features/Cleanup/Views/CleanupPreview.swift`
 - Delete accepts a JSON string array of paths and returns JSON `reports`.
 - The Swift wrapper always calls `git_ai_free_string` after reading Rust strings.
 - macOS Swift code is organized by feature so new screens can be added without crowding the target root.
-- This example intentionally keeps cleanup UI outside the Rust app so future Swift/macOS apps can replace it without touching Rust core modules.
+- The macOS app intentionally stays outside the Rust TUI so native shells can evolve without touching Rust dashboard modules.

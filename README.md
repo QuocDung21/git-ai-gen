@@ -137,17 +137,12 @@ git-ai reset
 The project follows a clean, maintainable structure:
 
 ```
-apps/tui/
-├── src/
-│   ├── main.rs      # Clap CLI entrypoint
-│   ├── app/         # TUI state + event loop
-│   ├── ui/          # ratatui rendering
-│   └── cli/         # Non-TUI commands + shell install
-
-bridge/ffi/          # dedicated C ABI crate
-core/git-ai-core/    # pure/shared Rust logic
-packaging/           # release artifacts and package recipes
-scripts/             # check/build helpers
+apps/tui/                  # Rust TUI package and git-ai binary
+apps/macos/LauncherApp/    # SwiftUI macOS shell, structured like look
+bridge/ffi/                # dedicated C ABI crate
+core/git-ai-core/          # pure/shared Rust logic
+packaging/                 # release artifacts and package recipes
+scripts/                   # check/build helpers
 ```
 
 **Important rules** (see `AGENTS.md` for full details):

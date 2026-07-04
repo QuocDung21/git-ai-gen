@@ -11,12 +11,9 @@ This file provides context for AI agents to work efficiently on this Rust TUI co
 ## Core Architecture
 
 ```
-apps/tui/
-├── src/
-│   ├── main.rs      # Clap CLI router
-│   ├── app/         # App state, config, event loop, key handlers
-│   ├── ui/          # Layout, components, modal renderers
-│   └── cli/         # Non-TUI commands and shell install
+apps/tui/           # Rust TUI package and git-ai binary
+apps/macos/LauncherApp/
+                   # SwiftUI macOS shell, structured like look
 bridge/ffi/          # Dedicated C ABI crate
 core/git-ai-core/    # Pure/shared Rust logic and locales
 ```

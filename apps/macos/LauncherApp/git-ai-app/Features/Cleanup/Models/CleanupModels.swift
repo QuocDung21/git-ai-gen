@@ -1,29 +1,35 @@
 import Foundation
 
-enum CleanupKind: String, CaseIterable, Identifiable {
+public enum CleanupKind: String, CaseIterable, Identifiable {
     case nodeModules = "Node Modules"
     case buildFolders = "Build Folders"
     case devCleaner = "DevCleaner"
 
-    var id: String { rawValue }
+    public var id: String { rawValue }
 }
 
 struct CleanupScanResponse: Decodable {
     let items: [CleanupItem]
 }
 
-struct CleanupItem: Decodable, Identifiable, Hashable {
+public struct CleanupItem: Decodable, Identifiable, Hashable {
     let path: String
     let target: String
     let sizeBytes: UInt64
 
-    var id: String { path }
+    public init(path: String, target: String, sizeBytes: UInt64) {
+        self.path = path
+        self.target = target
+        self.sizeBytes = sizeBytes
+    }
 
-    var formattedSize: String {
+    public var id: String { path }
+
+    public var formattedSize: String {
         ByteCountFormatter.string(fromByteCount: Int64(sizeBytes), countStyle: .file)
     }
 
-    var displayName: String {
+    public var displayName: String {
         let url = URL(fileURLWithPath: path)
         let name = url.lastPathComponent
         if name.isEmpty {
@@ -35,7 +41,7 @@ struct CleanupItem: Decodable, Identifiable, Hashable {
         return name
     }
 
-    var groupName: String {
+    public var groupName: String {
         if path.contains("/.cache/codex-runtimes/") {
             return "Codex Runtime Caches"
         }
@@ -72,7 +78,7 @@ struct CleanupItem: Decodable, Identifiable, Hashable {
         return target
     }
 
-    var parentFolderName: String? {
+    public var parentFolderName: String? {
         let parent = URL(fileURLWithPath: path).deletingLastPathComponent().lastPathComponent
         return parent.isEmpty ? nil : parent
     }

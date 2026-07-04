@@ -35,6 +35,14 @@ target/release/libgit_ai_core.dylib
 
 On Linux the dynamic library uses `.so`.
 
+## Build macOS App
+
+```bash
+scripts/build-macos-app.sh
+```
+
+This builds the FFI debug library first, then runs `swift build` and `swift test` in `apps/macos/LauncherApp`.
+
 ## Cleanup
 
 ```bash

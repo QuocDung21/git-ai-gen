@@ -1,5 +1,5 @@
 import AppKit
-import GitAiCleanupUILibrary
+import GitAiMacLogic
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {

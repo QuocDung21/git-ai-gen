@@ -14,14 +14,16 @@ This file provides the **standard context** for AI agents to work on this Rust T
 
 ```
 apps/
-└── tui/
-    ├── Cargo.toml             # Current git-ai package
-    └── src/
-        ├── main.rs            # Binary entry point
-        ├── lib.rs             # Library root — uses Cargo feature "tui"
-        ├── app/               # TUI state & logic
-        ├── ui/                # Ratatui rendering + modals
-        └── cli/               # Interactive CLI commands
+├── tui/
+│   ├── Cargo.toml             # Current git-ai package
+│   └── src/
+│       ├── main.rs            # Binary entry point
+│       ├── lib.rs             # Library root — uses Cargo feature "tui"
+│       ├── app/               # TUI state & logic
+│       ├── ui/                # Ratatui rendering + modals
+│       └── cli/               # Interactive CLI commands
+└── macos/
+    └── LauncherApp/           # SwiftUI macOS shell, shaped like look
 bridge/
 └── ffi/                       # Dedicated C ABI crate
 core/

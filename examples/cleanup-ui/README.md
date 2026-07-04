@@ -7,14 +7,13 @@ Platform-specific cleanup UI examples live here. Each app calls the shared Rust 
 ```text
 examples/cleanup-ui/
 ├── README.md
-├── macos-swift/
 ├── linux-gtk/
 └── windows-winui/
 ```
 
 ## Current Example
 
-- `macos-swift`: SwiftUI macOS app/package that scans and deletes cleanup targets through the C ABI.
+- The canonical macOS SwiftUI app now lives in `apps/macos/LauncherApp`, matching the workspace layout used by `look`.
 
 ## Future Platform Slots
 
