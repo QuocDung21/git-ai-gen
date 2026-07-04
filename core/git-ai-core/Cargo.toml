@@ -1,0 +1,24 @@
+[package]
+name = "git-ai-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "git_ai_core_shared"
+
+[features]
+default = []
+tui = ["dep:ratatui"]
+
+[dependencies]
+dark-light = "2.0.0"
+ratatui = { version = "0.26", optional = true }
+rust-i18n = "3.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_yaml = "0.9.34"
+sys-locale = "0.3"
+walkdir = "2.5.0"
+
+[dev-dependencies]
+tempfile = "3.27.0"

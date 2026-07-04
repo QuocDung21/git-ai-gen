@@ -13,37 +13,37 @@ This file provides the **standard context** for AI agents to work on this Rust T
 ## Current Recommended Architecture (2026)
 
 ```
-src/
-├── main.rs                    # Binary entry point (always builds full TUI)
-├── lib.rs                     # Library root — uses Cargo feature "tui"
-├── ffi.rs                     # C ABI layer (#[no_mangle] exports) — always compiled
-│
-├── constant/                  # Pure constants (prompts, markers) — always public
-├── git/                       # Pure Git command wrappers — always public
-│   ├── mod.rs
-│   ├── status.rs
-│   ├── commit.rs
-│   ├── remote.rs
-│   ├── branch.rs
-│   └── stash.rs
-├── helper/                    # Helper utilities (get_ai_language, get_locales, ...) — always public
-├── locales.rs                 # i18n (struct Locales + new()) — top-level for FFI + helper
-├── models/                    # All data models (BranchEntry, ActiveModal, ...) — top-level shared
-├── theme/                     # Theme definitions (AppTheme, palettes) — always public
-│
-├── app/                       # Heavy TUI state & logic (only when "tui" feature)
-│   ├── mod.rs
-│   ├── events.rs
-│   └── ...
-├── ui/                        # Ratatui rendering + modals (only when "tui" feature)
-├── cli/                       # Interactive CLI commands (only when "tui" feature)
+apps/
+└── tui/
+    ├── Cargo.toml             # Current git-ai package
+    ├── locales/               # Bilingual locale files for rust_i18n
+    ├── tests/
+    └── src/
+        ├── main.rs            # Binary entry point
+        ├── lib.rs             # Library root — uses Cargo feature "tui"
+        ├── ffi.rs             # C ABI layer — currently still here
+        ├── constant/          # Pure constants
+        ├── git/               # Pure Git command wrappers
+        ├── helper/            # Helper utilities
+        ├── locales.rs         # i18n helper struct/tests
+        ├── models/            # Shared data models
+        ├── theme/             # Theme definitions
+        ├── app/               # TUI state & logic
+        ├── ui/                # Ratatui rendering + modals
+        └── cli/               # Interactive CLI commands
+bridge/
+└── ffi/                       # Dedicated C ABI crate
+core/
+└── git-ai-core/               # Pure/shared Rust logic
+packaging/                     # Homebrew, macOS, and release artifacts
+scripts/                       # Release/build scripts
 ```
 
 **Cargo Feature Split (Critical for FFI)**
 
 - `default = ["tui"]`
 - `cargo build` (or for the binary) → full TUI included
-- `cargo build --no-default-features` → **slim FFI library only** (constant + git + helper + locales + models + theme + ffi). No ratatui, no console, no interactive code.
+- `cargo build -p git-ai-ffi` → **FFI staticlib/cdylib/rlib**. No ratatui, no console, no interactive code.
 
 This allows building a tiny staticlib/rlib for Swift, Kotlin, Node, etc. without pulling the entire dashboard.
 
@@ -52,7 +52,7 @@ This allows building a tiny staticlib/rlib for Swift, Kotlin, Node, etc. without
 ## Critical Rules (Always Follow)
 
 1. **Bilingual mandatory**  
-   Every user-facing string must exist in both `locales/en.yml` and `locales/vi.yml`. Always use the `t!` macro from `rust_i18n` (via `use rust_i18n::t;`). Do not use manual `is_vi` checks.
+Every user-facing string must exist in both `core/git-ai-core/locales/en.yml` and `core/git-ai-core/locales/vi.yml`. Always use the `t!` macro from `rust_i18n` (via `use rust_i18n::t;`). Do not use manual `is_vi` checks.
 
 2. **TUI is sacred**  
    All rendering must go through `ratatui`. Never use `println!` / `eprintln!` inside the dashboard.
@@ -87,7 +87,7 @@ This allows building a tiny staticlib/rlib for Swift, Kotlin, Node, etc. without
 
 - **Read the smallest possible context** — prefer one focused file over large ones.
 - **Copy existing patterns** — look for similar modals or handlers before creating new ones.
-- **Prefer per-file modals** — do not add new logic into `confirm.rs`.
+- **Prefer per-file modals** — do not create catch-all modal files.
 - **Use `app.theme()` everywhere** for colors.
 - When adding a feature, first check if a similar pattern already exists in the codebase.
 
@@ -95,16 +95,16 @@ This allows building a tiny staticlib/rlib for Swift, Kotlin, Node, etc. without
 
 ### Adding a New Modal (Preferred Modern Way)
 
-1. Add variant to `ActiveModal` enum (`app/models.rs`)
+1. Add variant to `ActiveModal` enum (`apps/tui/src/models/mod.rs`)
 2. (Optional) Add state fields to `App` struct
 3. **Create new file**: `ui/modals/<name>.rs`
 4. Export the render function in `ui/modals/mod.rs`
 5. Add size + dispatch in `ui/mod.rs`
-6. Handle keys in `events.rs` under `match &app.active_modal`
+6. Handle keys in `apps/tui/src/app/events/handlers/<name>.rs` or a focused existing handler
 
 ### Adding a Git Operation
 
-- Add pure wrapper in `src/git/<module>.rs`
+- Add pure wrapper in `core/git-ai-core/src/git/<module>.rs`
 - Call it from `events.rs` or `cli/system.rs`
 - Update relevant `App` state
 - Add bilingual status messages
@@ -118,7 +118,7 @@ Style::default().fg(theme.green).add_modifier(Modifier::BOLD)
 
 ## What to Avoid
 
-- Do not put multiple modals into one file (legacy `confirm.rs`).
+- Do not put multiple unrelated modals into one file.
 - Do not create files larger than ~400 lines without strong reason.
 - Do not introduce async/await or tokio.
 - Do not hardcode colors or user-facing strings.
@@ -129,12 +129,12 @@ Style::default().fg(theme.green).add_modifier(Modifier::BOLD)
 
 | Task                    | Primary Files                           | Notes                         |
 | ----------------------- | --------------------------------------- | ----------------------------- |
-| New Modal (recommended) | `app/models.rs` + `ui/modals/<name>.rs` | One file per modal            |
-| New Git wrapper         | `src/git/<module>.rs`                   | Keep pure                     |
+| New Modal (recommended) | `apps/tui/src/models/mod.rs` + `apps/tui/src/ui/modals/<name>.rs` | One file per modal |
+| New Git wrapper         | `core/git-ai-core/src/git/<module>.rs`  | Keep pure                     |
 | Add UI state            | `app/mod.rs` (App struct)               | Keep struct manageable        |
-| Handle keys for modal   | `events.rs`                             | Use `match &app.active_modal` |
+| Handle keys for modal   | `apps/tui/src/app/events/handlers/<name>.rs` | Keep handlers focused    |
 | Theme colors            | `app.theme()`                           | Never hardcode                |
-| Bilingual strings       | `locales/en.yml` + `locales/vi.yml`     | Always use `t!` macro         |
+| Bilingual strings       | `core/git-ai-core/locales/en.yml` + `core/git-ai-core/locales/vi.yml` | Always use `t!` macro |
 
 ---
 
@@ -146,9 +146,10 @@ When modifying code that must work for FFI consumers:
 
 - Always test both:
   - `cargo check`                    (full TUI)
-  - `cargo check --no-default-features` (slim FFI mode)
+  - `cargo check --no-default-features -p git-ai` (TUI library without default features)
+  - `cargo check -p git-ai-ffi` (FFI bridge)
 - New pure logic (Git wrappers, helpers, data types, i18n) **must** live in the always-compiled modules (`git/`, `helper/`, `models/`, `locales.rs`, `constant/`, `theme/`).
 - Never add `use crate::app::...` or `use crate::ui::...` or `use crate::cli::...` from FFI-reachable code.
 - The blanket `#![allow(dead_code)]` was removed from lib.rs root. TUI modules carry their own scoped allow when the feature is active.
 
-Last updated: 2026-05-23
+Last updated: 2026-07-04

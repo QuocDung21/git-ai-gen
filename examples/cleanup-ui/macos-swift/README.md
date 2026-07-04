@@ -72,14 +72,14 @@ char *git_ai_cleanup_delete_paths(const char *paths_json);
 void git_ai_free_string(char *s);
 ```
 
-The Swift UI does not import Rust internals or `src/cli`.
+The Swift UI does not import Rust internals or `apps/tui/src/cli`.
 
 ## Build Rust Core
 
 From the repository root:
 
 ```bash
-cargo build --no-default-features
+cargo build -p git-ai-ffi
 ```
 
 This creates:

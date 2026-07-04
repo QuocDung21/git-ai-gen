@@ -137,18 +137,24 @@ git-ai reset
 The project follows a clean, maintainable structure:
 
 ```
-src/
-├── main.rs          # Clap CLI entrypoint
-├── app/             # Core TUI state + event loop (App struct, 65+ fields)
-├── ui/              # ratatui rendering (components + modals)
-├── git/             # Thin wrappers around `git` CLI commands
-├── cli/             # Non-TUI commands + shell install + locales
-└── helper/          # Language & theme detection
+apps/tui/
+├── src/
+│   ├── main.rs      # Clap CLI entrypoint
+│   ├── app/         # TUI state + event loop
+│   ├── ui/          # ratatui rendering
+│   ├── git/         # Thin wrappers around `git` CLI commands
+│   ├── cli/         # Non-TUI commands + shell install
+│   └── helper/      # Language & theme detection
+└── locales/         # bilingual strings
+
+bridge/ffi/          # dedicated C ABI crate
+core/git-ai-core/    # pure/shared Rust logic
+packaging/           # release artifacts and package recipes
 ```
 
 **Important rules** (see `AGENTS.md` for full details):
 
-- All user strings must be bilingual (`locales/en.yml` + `vi.yml`)
+- All user strings must be bilingual (`core/git-ai-core/locales/en.yml` + `vi.yml`)
 - Git operations only via `std::process::Command`
 - No comments in source code
 - New features → add to `ActiveModal` enum + `App` state

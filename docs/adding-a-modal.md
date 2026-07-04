@@ -4,7 +4,7 @@ This document describes the **preferred modern way** to add a new modal in git-a
 
 ## Why We Split Modals
 
-- `ui/modals/confirm.rs` has grown too large (>2500 lines).
+- Large catch-all modal files are hard to review and expensive for agents to load.
 - Each modal should live in its own file for better maintainability and lower token usage for AI agents.
 - Follow the principle: **One concept = one file**.
 
@@ -12,7 +12,7 @@ This document describes the **preferred modern way** to add a new modal in git-a
 
 ### 1. Add the Modal Variant
 
-Edit `src/app/models.rs`:
+Edit `apps/tui/src/models/mod.rs`:
 
 ```rust
 pub enum ActiveModal {
@@ -24,7 +24,7 @@ pub enum ActiveModal {
 
 ### 2. (Optional) Add State to App
 
-If your modal needs state, add it in `src/app/mod.rs`:
+If your modal needs state, add it in `apps/tui/src/app/mod.rs`:
 
 ```rust
 pub struct App {
@@ -39,7 +39,7 @@ Initialize it in `App::new()`.
 
 ### 3. Create the Modal File
 
-Create a new file: `src/ui/modals/my_new_modal.rs`
+Create a new file: `apps/tui/src/ui/modals/my_new_modal.rs`
 
 The file should export a render function with this signature:
 
@@ -94,18 +94,17 @@ pub fn render_my_new_modal(f: &mut Frame, app: &App, area: Rect) {
 
 ### 4. Export the Modal
 
-Edit `src/ui/modals/mod.rs`:
+Edit `apps/tui/src/ui/modals/mod.rs`:
 
 ```rust
-pub use confirm::{
-    // ... existing exports
-    render_my_new_modal,
-};
+pub mod my_new_modal;
+
+pub use my_new_modal::render_my_new_modal;
 ```
 
 ### 5. Register Size and Dispatch
 
-Edit `src/ui/mod.rs`:
+Edit `apps/tui/src/ui/mod.rs`:
 
 ```rust
 // In the size calculation match
@@ -117,10 +116,10 @@ ActiveModal::MyNewModal => modals::render_my_new_modal(f, app, area),
 
 ### 6. Handle Keyboard Input
 
-Edit `src/app/events.rs` inside the big `match &app.active_modal`:
+Create or update a focused handler under `apps/tui/src/app/events/handlers/`, then wire it in `apps/tui/src/app/events/handlers/mod.rs`:
 
 ```rust
-ActiveModal::MyNewModal => {
+pub fn handle_my_new_modal(app: &mut App, key: &KeyEvent) {
     match key.code {
         KeyCode::Esc | KeyCode::Char('q') => {
             app.active_modal = ActiveModal::None;
@@ -134,7 +133,6 @@ ActiveModal::MyNewModal => {
         }
         _ => {}
     }
-    continue;
 }
 ```
 
@@ -150,7 +148,8 @@ ActiveModal::MyNewModal => {
 - [ ] Created `ui/modals/<name>.rs`
 - [ ] Exported in `ui/modals/mod.rs`
 - [ ] Registered size + dispatch in `ui/mod.rs`
-- [ ] Added key handling in `events.rs`
+- [ ] Added key handling in `apps/tui/src/app/events/handlers/`
+- [ ] Wired handler dispatch in `apps/tui/src/app/events/handlers/mod.rs`
 - [ ] Used `app.theme()` for all colors
 - [ ] Added bilingual strings to locales and used `t!` macro
 - [ ] No comments added to source code
@@ -159,10 +158,10 @@ ActiveModal::MyNewModal => {
 
 - `manual_commit.rs` (simple text input)
 - `commit_tree.rs` (list + diff preview)
-- `kilo_model_select.rs` (searchable list)
+- `github_quick_view.rs` (viewer with highlighting)
 
 Copy the structure from these files when creating new ones.
 
 ---
 
-**Last updated**: 2026-05-22
+**Last updated**: 2026-07-04

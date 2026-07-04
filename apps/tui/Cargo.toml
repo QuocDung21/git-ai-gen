@@ -1,0 +1,59 @@
+[package]
+name = "git-ai"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "git_ai_tui"
+crate-type = ["rlib"]
+
+[features]
+default = ["tui"]
+tui = [
+    "git-ai-core/tui",
+    "dep:arboard",
+    "dep:chrono",
+    "dep:clap",
+    "dep:cli-log",
+    "dep:colored",
+    "dep:console",
+    "dep:crossterm",
+    "dep:enigo",
+    "dep:indicatif",
+    "dep:inquire",
+    "dep:open",
+    "dep:ratatui",
+    "dep:rfd",
+    "dep:tempfile",
+]
+
+[[bin]]
+name = "git-ai"
+path = "src/main.rs"
+required-features = ["tui"]
+
+[dependencies]
+git-ai-core = { path = "../../core/git-ai-core", default-features = false }
+clap = { version = "4.4", features = ["derive"], optional = true }
+inquire = { version = "0.7", optional = true }
+arboard = { version = "3.3", optional = true }
+colored = { version = "2.1", optional = true }
+crossterm = { version = "0.27", optional = true }
+sys-locale = "0.3"
+anyhow = "1.0.102"
+console = { version = "0.16.3", optional = true }
+indicatif = { version = "0.18.4", optional = true }
+ratatui = { version = "0.26", optional = true }
+rfd = { version = "0.17.2", optional = true }
+serde_yaml = "0.9.34"
+serde = { version = "1.0.228", features = ["derive"] }
+dark-light = "2.0.0"
+open = { version = "5.3.5", optional = true }
+enigo = { version = "0.2", optional = true }
+tempfile = { version = "3.27.0", optional = true }
+chrono = { version = "0.4.44", optional = true }
+cli-log = { version = "2.1.0", optional = true }
+serde_json = "1.0.100"
+rust-i18n = "3.0"
+walkdir = "2.5.0"

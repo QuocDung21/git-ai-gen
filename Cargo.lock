@@ -1110,6 +1110,7 @@ dependencies = [
  "crossterm 0.27.0",
  "dark-light",
  "enigo",
+ "git-ai-core",
  "indicatif",
  "inquire",
  "open",
@@ -1122,6 +1123,29 @@ dependencies = [
  "sys-locale",
  "tempfile",
  "walkdir",
+]
+
+[[package]]
+name = "git-ai-core"
+version = "3.0.0"
+dependencies = [
+ "dark-light",
+ "ratatui",
+ "rust-i18n",
+ "serde",
+ "serde_yaml",
+ "sys-locale",
+ "tempfile",
+ "walkdir",
+]
+
+[[package]]
+name = "git-ai-ffi"
+version = "3.0.0"
+dependencies = [
+ "git-ai-core",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
